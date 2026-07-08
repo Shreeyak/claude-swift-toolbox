@@ -37,9 +37,16 @@ error naming the key.
 ## Rules for agents
 
 - **Exit codes are the API**: 0 ok, 1 failed, 2 usage, 3 no usable device,
-  4 device LOCKED (stop and ask the human to unlock — do not retry),
-  5 await timeout (the app never logged the line). Prefer `--json`: envelope
-  `{ok, error: {code, evidence}, hints, artifacts}` with stable codes.
+  4 device LOCKED (stop and ask the human to unlock — do not retry; no CLI
+  can unlock a passcode-protected iPad, and ferry checks lock state in ~1 s
+  BEFORE building), 5 await timeout (the app never logged the line). Prefer
+  `--json`: envelope `{ok, error: {code, evidence}, hints, artifacts}` with
+  stable codes.
+- **Known deterministic failures are named** — trust the message over
+  re-diagnosing: "free-profile app limit (3 dev apps)" means delete a
+  dev-signed app from the iPad or use a paid team; "maximum App ID limit"
+  means the free account minted too many app ids this week. Neither is
+  transient; don't retry them.
 - **Don't background-fight the poller.** `ferry logs start` is already
   non-blocking; `ferry logs tail` blocks — use `run_in_background`, or skip
   tail and Read/Grep the mirror path shown by `ferry status`.
