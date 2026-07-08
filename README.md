@@ -13,9 +13,9 @@ claude plugin install swift-cxx-interop@claude-swift-toolbox
 
 ### `ferry`
 
-Physical iPad/iPhone workflows via the [ferry CLI](https://github.com/Shreeyak)
-(`~/work/cli-tools-clara/ferry` — install with
-`uv tool install --editable <path>`). Teaches agents:
+Physical iPad/iPhone workflows via the `ferry` CLI (lives in the private
+`cli-tools-clara` collection; install with
+`uv tool install --editable ~/work/cli-tools-clara/ferry`). Teaches agents:
 
 - Deploy / run / log-capture decision tree (`ferry run --for 30s`,
   `ferry logs await 'PATTERN'`, `ferry logs pull --session last`)
