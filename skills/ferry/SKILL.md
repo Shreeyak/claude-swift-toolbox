@@ -47,9 +47,22 @@ error naming the key.
   dev-signed app from the iPad or use a paid team; "maximum App ID limit"
   means the free account minted too many app ids this week. Neither is
   transient; don't retry them.
+- **Long tasks (deploy/run build for minutes): use `run_in_background`.**
+  xcodebuild routinely exceeds the foreground Bash timeout. Launch
+  `ferry deploy` / `ferry run --for 30s` with `run_in_background` — Claude
+  Code notifies you when the command exits; that notification IS the
+  completion signal (there is no other CLI→agent push channel). While it
+  runs, ferry prints the build-log path in its first lines — Read that file
+  for progress. `ferry logs await 'PATTERN'` is the poll-free way to wait
+  for an in-app event (exit 0 = seen, 5 = timeout).
+- **Streaming modes protect you automatically.** Without a TTY (i.e. any
+  agent shell): bare `ferry run` and `maclogs --stream` refuse with exit 2
+  and tell you which bounded flag to use; `ferry logs tail` prints the
+  recent lines and returns instead of following forever. You should still
+  prefer the bounded forms (`--for`, `--await`, `--last`, `logs grep`).
 - **Don't background-fight the poller.** `ferry logs start` is already
-  non-blocking; `ferry logs tail` blocks — use `run_in_background`, or skip
-  tail and Read/Grep the mirror path shown by `ferry status`.
+  non-blocking and returns immediately; Read/Grep the mirror path shown by
+  `ferry status` instead of tailing.
 - **Device logs need the app's file sink** (e.g.
   `CameraKitLog.enableFileLogging()` at startup) writing the `log_file`
   configured in `.ferry.toml`. Empty pulls → verify the init call exists.
