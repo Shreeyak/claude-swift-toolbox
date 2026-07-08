@@ -1,0 +1,71 @@
+---
+name: ferry
+description: Use this skill whenever working with a physical iPad/iPhone — deploying or launching an app on device, reading/tailing/grepping device logs, checking why a device build won't install, copying files to/from the app container, or picking between connected iPads. Trigger phrases include "deploy to the iPad", "get device logs", "what does the iPad say", "install on device", "is the iPad locked", "pull the recording off the device". The `ferry` CLI is the canonical path for ALL of this — do not hand-roll xcrun devicectl / xcodebuild pipelines, and never use `log collect`, `log stream --device`, `idevicesyslog`, `pymobiledevice3`, or `devicectl … --console` (all broken on iOS 26.4).
+---
+
+# ferry — physical-device CLI
+
+`ferry` wraps every working physical-iPad path on this machine: deploy,
+signing recovery, device selection, lock detection, log capture, file
+transfer. Check availability with `ferry --help`; install with
+`uv tool install --editable ~/work/cli-tools-clara/ferry`.
+
+Projects configure it with `.ferry.toml` at the repo root (project/workspace,
+scheme, bundle_id, log_file). Missing keys produce a `config_missing_key`
+error naming the key.
+
+## Command decision tree
+
+| You want | Run |
+|---|---|
+| Deploy code and watch what it logs | `ferry run --for 30s` (agent) / `ferry run` (stream) |
+| Deploy and verify a specific line appears | `ferry run --await 'PATTERN' --timeout 60` |
+| Just deploy | `ferry deploy` (`--release`, `--no-launch`, `--clean`) |
+| Compile check / run tests | `ferry build` / `ferry test --filter Suite/Case` |
+| One-shot log snapshot | `ferry logs pull --session last` then Read the printed path |
+| Live log monitoring | `ferry logs start` then Read/Grep the mirror; `ferry logs stop` |
+| Wait for a log line (no deploy) | `ferry logs await 'PATTERN' --timeout 60` |
+| Search captured logs | `ferry logs grep 'expr' [--session last]` |
+| List app launches in the log | `ferry logs sessions` |
+| Which iPads are visible? | `ferry devices` (`--all` for iPhones) |
+| Pin a device for the whole session | `ferry use <name-or-udid>`; `ferry use --auto` to unpin |
+| Fast context (device/poller/app/last deploy) | `ferry status --json` |
+| Anything misbehaving | `ferry doctor` |
+| File off/onto the device | `ferry cp device:/Documents/x ./x` (one side has `device:`) |
+| Mac-app unified logs | `ferry maclogs --last 5m [--category C --level debug]` |
+
+## Rules for agents
+
+- **Exit codes are the API**: 0 ok, 1 failed, 2 usage, 3 no usable device,
+  4 device LOCKED (stop and ask the human to unlock — do not retry),
+  5 await timeout (the app never logged the line). Prefer `--json`: envelope
+  `{ok, error: {code, evidence}, hints, artifacts}` with stable codes.
+- **Don't background-fight the poller.** `ferry logs start` is already
+  non-blocking; `ferry logs tail` blocks — use `run_in_background`, or skip
+  tail and Read/Grep the mirror path shown by `ferry status`.
+- **Device logs need the app's file sink** (e.g.
+  `CameraKitLog.enableFileLogging()` at startup) writing the `log_file`
+  configured in `.ferry.toml`. Empty pulls → verify the init call exists.
+- **The 4 s poll interval is intentional** (devicectl rate-limits). Never
+  lower it; never poll `devicectl` yourself in a loop.
+- **Sessions**: the device log appends across launches. Almost always you
+  want `--session last`. A session with zero lines after its marker = the
+  app crashed before logging.
+- **One device at a time.** `ferry use` pins it; an unreachable pinned
+  device is exit 3 with a hint — ferry never silently switches iPads, so
+  surface that to the human instead of retrying.
+- **No simulators.** They are disallowed on this machine. `ferry build`/
+  `ferry test` fall back to Mac "Designed for iPad" automatically;
+  `ferry deploy`/`ferry run` are physical-only by design.
+- **Signing**: "No Account for Team" self-corrects (CN parenthetical → real
+  OU from the keychain, persisted to `.env.local`). If `signing_no_team`,
+  ask the human to set `DEVELOPMENT_TEAM` in `.env.local`.
+
+## Why the do-not-use list exists (iOS 26.4)
+
+WiFi unified-log access is broken: `log collect` fails ("Device not
+configured"), `log stream --device` doesn't exist, `devicectl --console` is
+USB-only and kills the app over WiFi, `pymobiledevice3` and
+`idevicesyslog` are dead on modern iOS. The in-app file sink pulled via
+`devicectl device copy from` (what `ferry logs` does) is the only working
+route — suggesting the broken tools wastes the session.

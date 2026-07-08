@@ -9,6 +9,18 @@
   },
   "plugins": [
     {
+      "name": "ferry",
+      "source": "./",
+      "description": "Physical iPad/iPhone workflows via the ferry CLI — deploy, device selection, lock detection, iOS 26.4-safe log capture, container file transfer",
+      "version": "1.0.0",
+      "keywords": ["ios", "ipad", "device", "deploy", "devicectl", "logs", "xcodebuild", "signing"],
+      "category": "development",
+      "strict": false,
+      "skills": [
+        "./skills/ferry"
+      ]
+    },
+    {
       "name": "swift-cxx-interop",
       "source": "./",
       "description": "Swift 6 / C++ interoperability — importing C++ types into Swift, SWIFT_SHARED_REFERENCE, lifetime annotations, std::span safe interop, std::string bridging, cv::Mat patterns, and Swift-to-C++ export",
