@@ -11,6 +11,25 @@ claude plugin install swift-cxx-interop@claude-swift-toolbox
 
 ## Plugins
 
+### `ferry`
+
+Physical iPad/iPhone workflows via the [ferry CLI](https://github.com/Shreeyak)
+(`~/work/cli-tools-clara/ferry` — install with
+`uv tool install --editable <path>`). Teaches agents:
+
+- Deploy / run / log-capture decision tree (`ferry run --for 30s`,
+  `ferry logs await 'PATTERN'`, `ferry logs pull --session last`)
+- Exit-code branching (3 = no device, 4 = locked → ask the human, 5 = await
+  timeout) and the `--json` envelope
+- iOS 26.4 log constraints — the do-not-use list (`log collect`,
+  `pymobiledevice3`, `idevicesyslog`, `devicectl --console`)
+- Long-task guidance: background deploys, named deterministic failures
+  (free-profile app limit), sticky device selection (`ferry use`)
+
+```bash
+claude plugin install ferry@claude-swift-toolbox
+```
+
 ### `swift-cxx-interop`
 
 Swift 6 / C++ interoperability reference. Covers:
