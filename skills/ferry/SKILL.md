@@ -86,7 +86,10 @@ error naming the key.
   policy — NEVER work around it (no manual xcodebuild, no editing the
   blacklist); surface it to the human. "No Account for Team" still
   self-corrects (CN parenthetical → real OU). If `signing_no_team`, ask
-  the human which identity to pin.
+  the human which identity to pin. A deploy warning `signed by "…" — NOT
+  the configured account` means a different signed-in Apple ID minted the
+  cert (the deploy summary's `signed_by` shows who) — surface it to the
+  human, don't ignore it.
 
 ## Why the do-not-use list exists (iOS 26.4)
 
