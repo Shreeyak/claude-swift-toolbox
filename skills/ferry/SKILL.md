@@ -81,10 +81,12 @@ error naming the key.
 - **Signing**: identities are managed — `ferry team` shows the effective
   team, `ferry team <alias>` pins one for the project (persists in
   `.env.local`), the default is Shreeyak's team, and **blacklisted teams
-  (Sous Chef) are refused everywhere**, including a codesign check of the
-  built app before install. A `signing_blacklisted` error is intentional
-  policy — NEVER work around it (no manual xcodebuild, no editing the
-  blacklist); surface it to the human. "No Account for Team" still
+  are refused everywhere and hidden from `ferry team --list`** — including
+  a codesign check of the built app before install. `signing_blacklisted`
+  and `signing_wrong_account` (a different signed-in Apple ID owns the
+  only cert for the team) are intentional policy errors — NEVER work
+  around them (no manual xcodebuild, no editing the blacklist, no deleting
+  keychain items on your own); surface them to the human. "No Account for Team" still
   self-corrects (CN parenthetical → real OU). If `signing_no_team`, ask
   the human which identity to pin. A deploy warning `signed by "…" — NOT
   the configured account` means a different signed-in Apple ID minted the
