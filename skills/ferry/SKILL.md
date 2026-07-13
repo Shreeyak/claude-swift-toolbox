@@ -13,8 +13,10 @@ is not on PATH, ask the human where the ferry repo lives and install it
 with `uv tool install --editable <ferry-repo>`.
 
 Projects configure it with `.ferry.toml` at the repo root (project/workspace,
-scheme, bundle_id, log_file). Missing keys produce a `config_missing_key`
-error naming the key.
+scheme, bundle_id, log_file) — scaffold it with `ferry init` (auto-detects
+all of that; commit the file), and `ferry init --global` scaffolds the
+per-user signing config on a fresh machine. Missing keys produce a
+`config_missing_key` error naming the key.
 
 ## Command decision tree
 
