@@ -29,6 +29,7 @@ error naming the key.
 | List app launches in the log | `ferry logs sessions` |
 | Which iPads are visible? | `ferry devices` (`--all` for iPhones) |
 | Pin a device for the whole session | `ferry use <name-or-udid>`; `ferry use --auto` to unpin |
+| Which Apple ID / team signs this project? | `ferry team` (show), `ferry team <alias>` (pin per-project), `ferry team --list` |
 | Fast context (device/poller/app/last deploy) | `ferry status --json` |
 | Anything misbehaving | `ferry doctor` |
 | File off/onto the device | `ferry cp device:/Documents/x ./x` (one side has `device:`) |
@@ -77,9 +78,15 @@ error naming the key.
 - **No simulators.** They are disallowed on this machine. `ferry build`/
   `ferry test` fall back to Mac "Designed for iPad" automatically;
   `ferry deploy`/`ferry run` are physical-only by design.
-- **Signing**: "No Account for Team" self-corrects (CN parenthetical → real
-  OU from the keychain, persisted to `.env.local`). If `signing_no_team`,
-  ask the human to set `DEVELOPMENT_TEAM` in `.env.local`.
+- **Signing**: identities are managed — `ferry team` shows the effective
+  team, `ferry team <alias>` pins one for the project (persists in
+  `.env.local`), the default is Shreeyak's team, and **blacklisted teams
+  (Sous Chef) are refused everywhere**, including a codesign check of the
+  built app before install. A `signing_blacklisted` error is intentional
+  policy — NEVER work around it (no manual xcodebuild, no editing the
+  blacklist); surface it to the human. "No Account for Team" still
+  self-corrects (CN parenthetical → real OU). If `signing_no_team`, ask
+  the human which identity to pin.
 
 ## Why the do-not-use list exists (iOS 26.4)
 
