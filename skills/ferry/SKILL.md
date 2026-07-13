@@ -7,8 +7,10 @@ description: Use this skill whenever working with a physical iPad/iPhone — dep
 
 `ferry` wraps every working physical-iPad path on this machine: deploy,
 signing recovery, device selection, lock detection, log capture, file
-transfer. Check availability with `ferry --help`; install with
-`uv tool install --editable ~/work/cli-tools-clara/ferry`.
+transfer. Check availability with `ferry --help` (its output is a full
+usage guide, including paths to the README and design spec). If `ferry`
+is not on PATH, ask the human where the ferry repo lives and install it
+with `uv tool install --editable <ferry-repo>`.
 
 Projects configure it with `.ferry.toml` at the repo root (project/workspace,
 scheme, bundle_id, log_file). Missing keys produce a `config_missing_key`
@@ -30,6 +32,7 @@ error naming the key.
 | Which iPads are visible? | `ferry devices` (`--all` for iPhones) |
 | Pin a device for the whole session | `ferry use <name-or-udid>`; `ferry use --auto` to unpin |
 | Which Apple ID / team signs this project? | `ferry team` (show), `ferry team <alias>` (pin per-project), `ferry team --list` |
+| Where is a setting coming from? | `ferry config` — every config file, its path, and the effective result |
 | Fast context (device/poller/app/last deploy) | `ferry status --json` |
 | Anything misbehaving | `ferry doctor` |
 | File off/onto the device | `ferry cp device:/Documents/x ./x` (one side has `device:`) |
@@ -78,11 +81,14 @@ error naming the key.
 - **No simulators.** They are disallowed on this machine. `ferry build`/
   `ferry test` fall back to Mac "Designed for iPad" automatically;
   `ferry deploy`/`ferry run` are physical-only by design.
-- **Signing**: identities are managed — `ferry team` shows the effective
-  team, `ferry team <alias>` pins one for the project (persists in
-  `.env.local`), the default is Shreeyak's team, and **blacklisted teams
-  are refused everywhere and hidden from `ferry team --list`** — including
-  a codesign check of the built app before install. `signing_blacklisted`
+- **Signing**: identities are managed by the user's own policy in
+  `~/.config/ferry/config.toml` (default team, aliases, blacklist,
+  expected account) — never assume them; DISCOVER them with `ferry team`
+  (effective team + source) and `ferry team --list` (selectable
+  identities). `ferry team <alias>` pins one for the project (persists in
+  `.env.local`). **Blacklisted teams are refused everywhere and hidden
+  from every listing** — including a codesign check of the built app
+  before install. `signing_blacklisted`
   and `signing_wrong_account` (a different signed-in Apple ID owns the
   only cert for the team) are intentional policy errors — NEVER work
   around them (no manual xcodebuild, no editing the blacklist, no deleting
