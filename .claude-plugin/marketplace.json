@@ -21,6 +21,18 @@
       ]
     },
     {
+      "name": "dryad",
+      "source": "./",
+      "description": "Git branch topology via the dryad CLI — parent-branch inference, fork points, the branch forest with worktree locations, and a safe parents-before-children merge order",
+      "version": "1.0.0",
+      "keywords": ["git", "branches", "worktree", "merge-base", "topology", "merge-order"],
+      "category": "development",
+      "strict": false,
+      "skills": [
+        "./skills/dryad"
+      ]
+    },
+    {
       "name": "swift-cxx-interop",
       "source": "./",
       "description": "Swift 6 / C++ interoperability — importing C++ types into Swift, SWIFT_SHARED_REFERENCE, lifetime annotations, std::span safe interop, std::string bridging, cv::Mat patterns, and Swift-to-C++ export",

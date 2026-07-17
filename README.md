@@ -31,6 +31,25 @@ per-user configuration read by the CLI itself. Teaches agents:
 claude plugin install ferry@claude-swift-toolbox
 ```
 
+### `dryad`
+
+Git branch topology via the `dryad` CLI (a companion tool; install from
+its repo, must be on PATH). Teaches agents:
+
+- Command decision table: parent-branch inference (`dryad parent`), the
+  branch forest with worktree locations (`dryad tree`), a safe
+  parents-before-children merge order (`dryad merge-order --onto main`),
+  and the graph GUI (`dryad gui`)
+- Trust the CLI's parent-branch heuristic (closest fork wins,
+  cycle-guarded) instead of re-deriving it with raw `git merge-base` /
+  `--fork-point`
+- The `--json` (explicit nulls) and exit-code (0 ok, 1 unknown branch)
+  contract, and that output has no ANSI when piped
+
+```bash
+claude plugin install dryad@claude-swift-toolbox
+```
+
 ### `swift-cxx-interop`
 
 Swift 6 / C++ interoperability reference. Covers:
