@@ -20,6 +20,9 @@ If `dryad` is not on PATH, ask the human where the dryad repo lives.
 | A branch's parent + fork point | `dryad parent [<branch>]` (default: current branch) |
 | The whole branch forest, with worktree paths | `dryad tree` |
 | A safe order to merge branches (parents before children) | `dryad merge-order [--onto main]` |
+| Which files a branch changed since its fork point | `dryad files <branch> [--onto <base>]` |
+| Whether a branch merges cleanly into a target | `dryad conflicts <branch> [--onto main]` |
+| An AI summary of a branch's own work (spawns `claude -p`, haiku; cached) | `dryad summary <branch> [--refresh]` |
 | A visual graph | `dryad gui` |
 | zsh tab completion | `dryad completion` |
 
