@@ -9,7 +9,11 @@ description: Use this skill whenever working with a physical iPad/iPhone — dep
 signing recovery, device selection, lock detection, log capture, run
 retrieval, file transfer. `ferry --help` is a complete usage guide (workflows,
 config layers, exit codes, doc paths) — read it when unsure. Not on PATH? Ask
-where the ferry repo is, then `uv tool install --editable <ferry-repo>`.
+where the ferry repo is, then `uv tool install --editable <ferry-repo>/ferry-cli`
+(the subdirectory is required — that repo's root holds the LogBrook Swift
+package). From git: `uv tool install
+"git+ssh://git@github.com/Shreeyak/ferry#subdirectory=ferry-cli"` — the repo is
+private, so this needs an SSH key with access.
 
 Per-project config is `.ferry.toml` at the repo root (`ferry init`
 auto-detects and writes it; `ferry init --global` scaffolds per-user signing
