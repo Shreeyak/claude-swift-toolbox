@@ -4,10 +4,28 @@
     "name": "Shreeyak"
   },
   "metadata": {
-    "description": "Swift/iOS development skills and scripts for Claude Code",
-    "version": "1.0.0"
+    "description": "Development tooling for Claude Code — Swift/iOS workflows, git branch topology, and language-agnostic code intelligence (routing, LSP servers, per-stack setup)",
+    "version": "1.1.0"
   },
   "plugins": [
+    {
+      "name": "code-intel",
+      "source": "./plugins/code-intel",
+      "description": "Routes code-navigation questions to the right tool — LSP/serena for exact references, semantic graphs for concept search, ast-grep/semgrep for structural patterns, grep for constants and completeness — with per-stack setup guides, a propose-then-apply setup command, and a doctor",
+      "version": "0.1.0",
+      "keywords": ["code-intelligence", "lsp", "serena", "ast-grep", "semgrep", "refactoring", "code-search", "navigation", "grep"],
+      "category": "development",
+      "strict": false
+    },
+    {
+      "name": "code-intel-lsp",
+      "source": "./plugins/code-intel-lsp",
+      "description": "Four language servers in one togglable plugin — typescript-language-server, basedpyright, clangd, sourcekit-lsp. Diagnostics off; servers start lazily on the first LSP tool call and are skipped when their binary is absent",
+      "version": "0.1.0",
+      "keywords": ["lsp", "language-server", "typescript", "python", "cpp", "swift", "clangd", "sourcekit", "code-intelligence"],
+      "category": "development",
+      "strict": false
+    },
     {
       "name": "ferry",
       "source": "./",

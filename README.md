@@ -1,6 +1,7 @@
 # claude-swift-toolbox
 
-Swift and iOS development skills and scripts for Claude Code.
+Development tooling for Claude Code: Swift/iOS workflows, git branch topology,
+and language-agnostic code intelligence.
 
 ## Install
 
@@ -9,7 +10,42 @@ claude plugin marketplace add Shreeyak/claude-swift-toolbox
 claude plugin install swift-cxx-interop@claude-swift-toolbox
 ```
 
+macOS and Linux. All scripts are bash; Windows is untested and unsupported.
+
 ## Plugins
+
+### `code-intel`
+
+Routes code-navigation questions to the right tool, and makes every answer name
+its mechanism class. Full detail in [`plugins/code-intel/README.md`](plugins/code-intel/README.md).
+
+- Router skill triggering on explicit navigation intent only (find callers,
+  references, definitions, implementations, rename, concept search)
+- Trust calibration across three fallible mechanism classes — semantic
+  (LSP/serena), name-match (tree-sitter graphs), textual (grep/ast-grep)
+- Deep setup guides for TypeScript, Python, C++, Swift and mixed-language
+  boundaries; a generic path for every other stack
+- Three fail-open bash hooks: dynamic session status (SessionStart), a
+  pre-decision intent router (UserPromptSubmit), and a corrective grep nudge
+  (PostToolUse — never auto-approves a tool call)
+- `/code-intel:setup` (propose-then-apply, never installs binaries) and
+  `/code-intel:doctor` (binary → started → initialized → workspace → probe)
+
+```bash
+claude plugin install code-intel@claude-swift-toolbox
+```
+
+### `code-intel-lsp`
+
+`typescript-language-server`, `basedpyright`, `clangd` and `sourcekit-lsp` in one
+togglable `lspServers` map instead of four singleton plugins — so navigation is
+one toggle, not four. Diagnostics off; activation measured lazy; upstream
+provenance and the extension-conflict rule are documented in
+[`plugins/code-intel-lsp/README.md`](plugins/code-intel-lsp/README.md).
+
+```bash
+claude plugin install code-intel-lsp@claude-swift-toolbox
+```
 
 ### `ferry`
 

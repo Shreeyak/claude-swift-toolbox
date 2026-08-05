@@ -1,0 +1,70 @@
+{
+  "name": "code-intel-lsp",
+  "description": "Four language servers in one togglable plugin — typescript-language-server, basedpyright, clangd, sourcekit-lsp. Diagnostics off; servers start lazily on the first LSP tool call and are skipped when their binary is absent.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Shreeyak"
+  },
+  "keywords": [
+    "lsp",
+    "language-server",
+    "typescript",
+    "python",
+    "cpp",
+    "swift",
+    "clangd",
+    "sourcekit",
+    "code-intelligence"
+  ],
+  "lspServers": {
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "diagnostics": false,
+      "extensionToLanguage": {
+        ".ts": "typescript",
+        ".tsx": "typescriptreact",
+        ".js": "javascript",
+        ".jsx": "javascriptreact",
+        ".mts": "typescript",
+        ".cts": "typescript",
+        ".mjs": "javascript",
+        ".cjs": "javascript"
+      }
+    },
+    "basedpyright": {
+      "command": "basedpyright-langserver",
+      "args": ["--stdio"],
+      "diagnostics": false,
+      "extensionToLanguage": {
+        ".py": "python",
+        ".pyi": "python"
+      }
+    },
+    "clangd": {
+      "command": "clangd",
+      "args": ["--background-index"],
+      "diagnostics": false,
+      "extensionToLanguage": {
+        ".c": "c",
+        ".h": "c",
+        ".cpp": "cpp",
+        ".cc": "cpp",
+        ".cxx": "cpp",
+        ".hpp": "cpp",
+        ".hxx": "cpp",
+        ".C": "cpp",
+        ".H": "cpp",
+        ".m": "objective-c",
+        ".mm": "objective-cpp"
+      }
+    },
+    "sourcekit-lsp": {
+      "command": "sourcekit-lsp",
+      "diagnostics": false,
+      "extensionToLanguage": {
+        ".swift": "swift"
+      }
+    }
+  }
+}
