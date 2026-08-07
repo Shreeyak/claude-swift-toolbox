@@ -341,7 +341,8 @@ for p in $profiles; do
     py)
       say "  [py]    Point the server at the project venv (pyrightconfig.json or"
       say "          [tool.basedpyright] venvPath/venv), or imports resolve against the"
-      say "          wrong interpreter and references come back empty. See setup-python.md."
+      say "          wrong interpreter and references come back empty. No venv yet? Create"
+      say "          one with 'uv venv' (never pip/venv). See setup-python.md."
       ;;
     cpp)
       say "  [cpp]   Generate a compile database -- clangd needs no build, but it needs this:"

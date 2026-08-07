@@ -60,6 +60,15 @@ up front. The failure shows up in `/plugin`'s Errors tab, not in the tool result
 made while the server is dead just returns an empty or generic-failure result. If find-references
 or goto-definition looks suspiciously empty, check `/plugin` before trusting the emptiness.
 
+## First query after session start can undercount
+
+Separately from the version trap: tsserver loads the project asynchronously after the server
+process starts, and the *first* `findReferences` call issued right after start can run before that
+load finishes. Measured 2026-08-07: the first call returned 1 reference where a hand count found 5;
+an immediate retry, no other change, returned all 5. Run a load-bearing reference query twice
+before trusting a short first answer — a retry that changes the count means the first one was
+premature, not final.
+
 ## Path aliases
 
 `paths` entries in `tsconfig.json` (e.g. `"@app/*": ["src/app/*"]`) resolve correctly for the LSP,

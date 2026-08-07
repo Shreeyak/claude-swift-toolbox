@@ -1,7 +1,7 @@
 {
   "name": "code-intel",
   "description": "Routes code-navigation questions to the right tool — LSP/serena for exact references, semantic graphs for concept search, ast-grep/semgrep for structural patterns, grep for constants and completeness. Ships per-stack setup guides, a propose-then-apply setup command, and a doctor.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Shreeyak"
   },

@@ -46,10 +46,41 @@ If you find a repo still on bare `pip`/`venv`, that's a legacy setup, not a reas
 yourself — use `uv pip install` against the existing `venv` instead of migrating mid-task unless
 asked.
 
+A `requirements.txt` with **no venv at all** is common and is a dead end for the server, not just a
+slow path — "point the server at the venv" (below) has nothing to point at. Create one:
+
+```bash
+uv venv .venv
+uv pip install --python .venv/bin/python -r requirements.txt
+```
+
+On Apple Silicon, pin the interpreter (`uv venv -p cpython-3.13-macos-aarch64-none .venv`) — see
+the Apple Silicon trap below; a stray x86_64 Python here fails the same way it does for
+`uv tool install`.
+
+Multiple requirements files (a root one plus a service-specific one, say) all go into the *same*
+venv in one shot, or the module you're actually working in stays unresolvable:
+
+```bash
+uv pip install --python .venv/bin/python -r requirements.txt -r ec2/some_service/requirements.txt
+```
+
+A repo with `pyproject.toml` uses `uv sync` instead of hand-rolling the venv. Add `.venv/` to
+`.gitignore` if it isn't already there.
+
+This is guidance for you or the human to act on with permission, not something `/code-intel:setup`
+does itself — creating a venv is an install, and the script's contract is that it never installs
+anything (it will only ever print `uv venv` as the suggested next step).
+
+Measured 2026-08-07: a repo with a root `requirements.txt` plus a service-specific
+`requirements.txt` and no venv had basedpyright resolving imports against the system interpreter.
+`uv venv -p cpython-3.13-macos-aarch64-none .venv` followed by installing both requirements files
+into it, paired with the `pyrightconfig.json` in the next step, fixed it.
+
 ## Per-project setup
 
 1. Confirm a virtualenv exists (`.venv` from `uv venv`, or whatever the repo already uses) and has
-   the project's dependencies installed into it.
+   the project's dependencies installed into it. See above if none exists yet.
 2. Point the server at it. Either:
    - `pyrightconfig.json` at the project root:
      ```json
@@ -69,6 +100,12 @@ asked.
    package boundary). If the server's notion of the root is wrong, every cross-module reference
    comes back empty even though the interpreter is correct.
 
+   This is a special case of a wider trap: the LSP always roots at the **workspace root**, not
+   wherever `pyrightconfig.json` happens to sit. Working inside an umbrella folder of independent
+   repos, or any layout where the config's intended root and the session's working directory
+   differ? See `setup-mixed-language.md`'s workspace-root section — it's the same failure with a
+   worked example of exactly how short the wrong answer looks.
+
 ## Apple Silicon trap
 
 `uv tool install` of anything that pulls in `cryptography` (serena and several other
@@ -81,6 +118,10 @@ uv tool install <pkg> -p cpython-3.13-macos-aarch64-none
 A stray x86_64 uv-managed Python cross-builds `cryptography` from source and fails. A failed
 `--force` re-install can leave the *previously working* tool uninstalled — recover by reinstalling
 with the pin above, not by retrying `--force` again.
+
+The same pin, same failure: `uv venv` and `uv pip install` cross-build `cryptography` from source
+on a stray x86_64 Python too, whenever a project's own dependencies pull it in — not just when
+installing a code-intel tool.
 
 ## Known-answer verification gate
 

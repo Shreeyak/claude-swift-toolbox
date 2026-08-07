@@ -80,6 +80,42 @@ both try to own the same extension, one of them silently never starts for that e
 the companion plugin's own documentation for the authoritative extension list before assuming a
 given file type is covered.
 
+## LSP workspace root vs. sub-repo config
+
+Not a language-boundary case, but the same "confident short answer" trap, and it shows up in
+exactly this kind of layout: the LSP roots at the **workspace root** — the directory the session
+opened in — not wherever a per-project config file happens to sit. A `pyrightconfig.json` (or
+`tsconfig.json`, or any per-project LSP config) placed inside a sub-repo below that root is never
+read if the server rooted one level up.
+
+Concretely: an umbrella folder holding two independent git repos (a frontend repo and a backend
+repo) with the session opened at the umbrella. A `pyrightconfig.json` inside the backend repo is
+invisible — the server rooted at the umbrella and has no reason to descend into a subdirectory
+looking for a config scoped to it.
+
+**The symptom is the dangerous kind.** `findReferences` returned 4 references in 1 file where a
+hand count found 6 across 3 files — a confident, short, wrong answer, and every miss was exactly
+the cross-file call that needed `extraPaths` to resolve. This is `doctor.md`'s rung-5 probe failure
+in miniature: fewer than you counted means the index is incomplete, and nothing about the response
+signals that.
+
+**Fix:** put the config at the umbrella root, with `extraPaths` reaching into the sub-repo:
+
+```json
+{
+  "venvPath": "backend",
+  "venv": ".venv",
+  "include": ["backend"],
+  "extraPaths": ["backend", "backend/ec2/some_service"]
+}
+```
+
+After that, `findReferences` returned the correct 6 across 3 files.
+
+Run the rung-5 known-answer probe whenever the workspace root and a config's intended root might
+differ — a monorepo, an umbrella folder of independent repos, a symlinked subproject. A server that
+starts cleanly and answers is not evidence it read the config you placed.
+
 ## Generated code
 
 Whichever side of the boundary is generated (protobuf/gRPC stubs, IDL-derived bindings, schema
@@ -98,6 +134,9 @@ not just the generated `.pb.cc`/`.pb.swift`/equivalent output.
   not evidence it's the only one.
 - Generated code whose upstream schema changed but whose generated output wasn't regenerated yet —
   a stale generated file answers for a boundary that no longer matches its source.
+- A per-project LSP config placed below the actual workspace root (umbrella folder of independent
+  repos, monorepo, symlinked subproject) — the server never reads it and under-reports with no
+  error. See the workspace-root section above.
 
 **The rule:** any cross-boundary reference answer must name which of the three situations
 (name-match / shared-index / nothing-crosses) it came from. An answer that doesn't is unverified,
