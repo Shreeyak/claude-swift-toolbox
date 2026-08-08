@@ -20,6 +20,7 @@ If `dryad` is not on PATH, ask the human where the dryad repo lives.
 | A branch's parent + fork point | `dryad parent [<branch>]` (default: current branch) |
 | The whole branch forest, with worktree paths | `dryad tree` |
 | …including branches already merged into main | `dryad tree --all` |
+| …plus branches pushed to `origin` but not checked out locally | `dryad tree --remote` (fetches) |
 | A safe order to merge branches (parents before children) | `dryad merge-order [--onto main]` |
 | Which files a branch changed since its fork point | `dryad files <branch> [--onto <base>]` |
 | Whether a branch merges cleanly into a target | `dryad conflicts <branch> [--onto main]` |
@@ -68,6 +69,18 @@ servedFromCache, summaryText}`.
 
 `dryad merge-order --json` → a JSON array of branch names, in order.
 
+`dryad tree --remote --json` (note: `--remote` changes the shape, `--json` alone
+never does) → `{forest, remoteBranches, remoteOriginConfigured}`. `forest` is the
+same nested-node array as plain `dryad tree --json`. `remoteBranches` is an array
+of branches present on `origin` but not checked out locally — always present, never
+`null`, possibly empty — each entry `{branch, tipCommitSha, tipCommitShortSha,
+tipCommittedAtEpochSeconds, commitSubject, authorName}`. `remoteOriginConfigured`
+is a boolean distinguishing "no `origin` remote" (`false`) from "`origin`
+configured but nothing is remote-only" (`true`, empty `remoteBranches`) — both
+would otherwise look identical (empty). **`dryad tree --json` alone is unaffected
+by any of this** — still exactly the plain forest array above, forever; only
+passing `--remote` alongside `--json` changes the top-level shape.
+
 ## Reading `dryad tree`'s human output
 
 Two metric columns: **tip age first** (`5d`, `21d` — live vs abandoned), then
@@ -101,3 +114,10 @@ everything.
   additionally runs one `git status` per checked-out branch and one `git diff
   --shortstat` per branch, concurrently — a second or two on a repo with huge
   diffs. Expected; don't kill and retry as if it hung.
+- **`--remote` is the one flag that touches the network.** Every other command
+  and flag reads local git state only. `dryad tree --remote` runs
+  `git fetch --prune origin` first — expect real network latency, and expect it
+  to fail cleanly (exit 1, local tree still printed in human output; nothing
+  printed in `--json`) with no network or no `origin` configured. Never pass
+  `--remote` reflexively; only when you actually need to know what's on
+  `origin` that isn't checked out locally.
