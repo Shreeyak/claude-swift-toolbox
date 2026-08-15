@@ -38,6 +38,14 @@ pipeline; ECC path removed. (abc1234)
   `<!-- one-sentence summary · published: <url-if-published> -->`
 - Immutable once committed. Revisiting a topic = a new dated file, not an
   edit to the old one.
+- **Review output** (subagent/codex/human code reviews): never save the
+  raw transcript, and save nothing for findings that were fixed — the
+  fix commits are the record. A review earns a note
+  (`YYYY-MM-DD-review-<topic>.md`, line 1 = one-sentence verdict) only
+  when it holds something that outlives the session: declined findings
+  with the reason, or a milestone verdict. Confirmed-but-unfixed bugs go
+  to `docs/bugs/` (one file each); design-changing findings go into the
+  openspec change/spec, not a note.
 
 ## Reference docs (`docs/reference/<topic>.md`)
 

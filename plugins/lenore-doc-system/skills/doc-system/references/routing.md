@@ -31,6 +31,32 @@ routine:
 Use `scripts/browse.py --plain` (or `--json`) for the live index instead of
 raw `grep` when you want dates and summaries, not just matches.
 
+## Subagent review output — what to save, where
+
+Reviews (subagent, codex, human) produce transcripts; the doctrine saves
+the knowledge, never the transcript. "History is what's committed"
+already covers most of a review:
+
+- **Findings that were fixed: save nothing.** The fix commits are the
+  record. A list of fixed nitpicks duplicates git history and goes
+  stale immediately.
+- **Findings deliberately declined are the valuable part.** "Reviewer
+  proposed X, rejected because Y" is what a future session will
+  otherwise re-litigate. Write `docs/notes/YYYY-MM-DD-review-<topic>.md`:
+  first line = one-sentence verdict, then only surviving findings and
+  declined-with-reason items. Distilled, never the raw transcript.
+- **Confirmed bugs not being fixed now** → one file each in
+  `docs/bugs/`, deleted later in the fix commit.
+- **A finding that changes the design** → into the openspec change or
+  spec, not a review note; a note may point there in plain words.
+- **Milestone reviews** (pre-release audit, multi-round hardening) earn
+  a note even if everything was fixed — the verdict is the finding. If
+  it changed project direction, also one `docs/journal/` entry.
+
+Rule of thumb: raw subagent transcripts never enter `docs/`; a review
+earns a note only if it holds a decision or an open item that outlives
+the session.
+
 ## Why an outdated note is never a trap
 
 There is deliberately no "obsolete" tag, status field, or superseded
