@@ -19,19 +19,19 @@ Only if the repo is not on disk, fall back to raw GitHub URLs **pinned to a
 specific commit** (not `main`, which can change under you and has no
 offline/no-network fallback in Codex's default sandbox):
 
-- Skill (agent-facing summary): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/skills/doc-system/SKILL.md`
-- Tier 1 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/skills/doc-system/references/rules-tier1.md`
-- Tier 0 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/skills/doc-system/references/rules-tier0.md`
+- Skill (agent-facing summary): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/skills/doc-system/SKILL.md`
+- Tier 1 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/skills/doc-system/references/rules-tier1.md`
+- Tier 0 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/skills/doc-system/references/rules-tier0.md`
 - Full doctrine (rationale, human-readable): https://claude.ai/code/artifact/fe938177-22fc-43d6-be6d-842ece97226b
-- Pre-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/templates/githooks/pre-commit`
-- Pre-push hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/templates/githooks/pre-push`
-- Pre-merge-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/templates/githooks/pre-merge-commit`
-- browse.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/templates/scripts/browse.py`
-- doc-status.sh: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/templates/scripts/doc-status.sh`
-- docs-search.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/templates/scripts/docs-search.py`
-- docs/CLAUDE.md formatting details: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/templates/docs-CLAUDE.md`
-- .gitignore snippet: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/templates/gitignore-snippet`
-- Codex SessionStart hook config: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/76433edc6a93f710bf7780655c1bea8e1ee312c1/plugins/lenore-doc-system/templates/codex-hooks.json`
+- Pre-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/templates/githooks/pre-commit`
+- Pre-push hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/templates/githooks/pre-push`
+- Pre-merge-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/templates/githooks/pre-merge-commit`
+- browse.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/templates/scripts/browse.py`
+- doc-status.sh: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/templates/scripts/doc-status.sh`
+- docs-search.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/templates/scripts/docs-search.py`
+- docs/CLAUDE.md formatting details: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/templates/docs-CLAUDE.md`
+- .gitignore snippet: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/templates/gitignore-snippet`
+- Codex SessionStart hook config: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/6961552ebdfee6ff9c0cbaa1fff1f823552b2ad1/plugins/lenore-doc-system/templates/codex-hooks.json`
 
 When you bump the pin, re-verify each template still matches what's
 described in this prompt.
