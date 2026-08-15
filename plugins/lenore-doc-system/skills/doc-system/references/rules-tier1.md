@@ -1,3 +1,4 @@
+<!-- lenore:rules:start (tier 1) — managed by lenore-doc-system; edits inside this span are overwritten on upgrade -->
 ## Documentation rules   (Tier 1 — full system)
 
 - Write documentation directly, in the same message the trigger occurs.
@@ -88,8 +89,10 @@
 - Deleting or pruning doc content requires showing the user the diff.
   Writing new content does not.
 - Do not create state.md, decisions.md, STATUS.md, CHANGELOG.md,
-  HANDOFF.md, or any new tracking doc. (A hook enforces this for that
+  HANDOFF.md, PLAN-*.md, HANDOFF-*.md, or any new tracking doc. (A hook
+  enforces this for that
   specific list of names as a representative sample — the rule is the
   doctrine, not the list: any file whose job is "current status/decision
   tracking outside openspec/specs and CLAUDE.md" is out, hook-caught or
   not.)
+<!-- lenore:rules:end -->

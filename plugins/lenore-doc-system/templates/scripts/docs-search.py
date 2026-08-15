@@ -195,11 +195,14 @@ def chunk_file(raw: str, is_html: bool) -> list[dict]:
 
 def iter_doc_files():
     for pattern in ("docs/**/*.md", "docs/**/*.html",
-                    "experiments/*/README.md", "experiments/*/runs/*.md"):
+                    "experiments/*/README.md", "experiments/*/runs/*.md",
+                    "openspec/**/*.md"):
         for p in ROOT.glob(pattern):
             rel = p.relative_to(ROOT).as_posix()
             if any(rel.startswith(s) for s in SKIP_DIRS):
                 continue
+            if rel.startswith("openspec/") and p.name == "tasks.md":
+                continue  # checkbox manifests embed as noise; grep covers them
             if p.is_symlink():
                 continue  # avoid duplicate entries (e.g. docs/AGENTS.md -> CLAUDE.md)
             if p.is_file():
@@ -320,7 +323,7 @@ def build_index(force: bool = False):
         out_meta = {"_model_revision": MODEL_REVISION, "_chunks": new_meta}
 
         # Atomic write: vectors first, meta last (meta is the "index is ready" marker).
-        tmp_vectors = VECTORS_FILE.with_suffix(".npz.tmp")
+        tmp_vectors = VECTORS_FILE.with_name("vectors.tmp.npz")
         np.savez(tmp_vectors, **vectors)
         os.replace(tmp_vectors, VECTORS_FILE)
 
@@ -375,6 +378,26 @@ def search(query: str, k: int, refresh: bool = True) -> list[dict]:
         if len(results) >= k:
             break
     return results
+
+
+DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
+
+def row_date(path):
+    # Date from the filename or any dated path segment (archive dirs are dated).
+    m = DATE_RE.search(path.rsplit("/", 1)[-1]) or DATE_RE.search(path)
+    return f"{m.group(1)}  " if m else "          "  # aligned blank when undated
+
+def row_class(path):
+    # Authority class from the path alone — computed at print time, no state.
+    if path.startswith("openspec/changes/archive/"):
+        return "[archive]  "
+    if path.startswith("openspec/specs/"):
+        return "[spec]     "
+    if path.startswith("openspec/changes/"):
+        return "[change]   "
+    if path.startswith("docs/reference/"):
+        return "[ref]      "
+    return "           "  # dated history classes: the date is the signal
 
 
 def print_status():
@@ -444,7 +467,11 @@ def main():
         return
     for r in results:
         heading = f" [{r['heading']}]" if r["heading"] else ""
-        print(f"{r['score']:.3f}  {r['path']}{heading}  — {r['summary']}")
+        print(f"{r['score']:.3f}  {row_date(r['path'])}{row_class(r['path'])}"
+              f"{r['path']}{heading}  — {r['summary']}")
+    if results and results[0]["score"] < 0.35:
+        print("weak matches — for exact identifiers/numbers use grep",
+              file=sys.stderr)
 
 
 if __name__ == "__main__":

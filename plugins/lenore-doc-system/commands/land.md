@@ -55,9 +55,11 @@ edit this entry after the fact. If autonomous mode skipped the desk walk
 
 ## 3. Archive the openspec change folder
 
-Move `openspec/changes/<name>/` to its archive location per the OpenSpec
-workflow already in use in this repo, with a one-line note if it was
-dropped rather than completed.
+Run `openspec archive <name>` — the CLI also performs the spec update
+and writes to `openspec/changes/archive/<date>-<name>/`. Only if the CLI
+is absent, hand-move the folder there and sync `openspec/specs/`
+yourself. Add a one-line note if the change was dropped rather than
+completed.
 
 ## 4. Walk the branch task file and the desk
 

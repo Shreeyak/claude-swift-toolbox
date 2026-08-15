@@ -106,10 +106,11 @@ abandonment) always last.
    the merge/push in step 5 then fails, append a **new** journal entry
    noting the landing did not complete — never edit the first entry
    (journal entries are immutable once committed).
-3. **Archive the openspec change folder.** Move
-   `openspec/changes/<name>/` to `openspec/changes/archive/<name>/` (the
-   standard OpenSpec archive location), with a one-line note if it was
-   dropped rather than completed.
+3. **Archive the openspec change folder.** Run `openspec archive <name>`
+   (the CLI also performs the spec update; it writes to
+   `openspec/changes/archive/<date>-<name>/`). Only if the CLI is absent,
+   hand-move the folder there and sync `openspec/specs/` yourself. Add a
+   one-line note if the change was dropped rather than completed.
 4. **Graduate branch tasks; walk the desk.** Open
    `docs/tasks/branch-<slug>.md`; for each open item, graduate it into
    `docs/tasks/project.md` (`## Next` or `## Someday`) or drop it, then

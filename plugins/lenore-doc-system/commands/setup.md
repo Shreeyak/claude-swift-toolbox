@@ -10,15 +10,44 @@ the plan, apply only after the user confirms.
 
 ## 1. Detect current state
 
-- `grep -l "docs-system:" CLAUDE.md` (or its absence) tells you whether the
-  repo already has the system installed, and at which tier.
-- If found: this is an **upgrade**. Diff the repo's copies of
+- Detect an existing install by **any** of these signals — treat the repo
+  as installed if at least one holds; never classify as fresh while any is
+  present (blind-appending the rules block onto a repo that already has
+  rules is the single most damaging failure mode):
+  - `.githooks/pre-commit` exists **and** contains a lenore signature
+    (grep it for `denied_names`) — a bare `.githooks/pre-commit` without
+    that signature is someone else's hook framework: stop and ask, don't
+    assume either way;
+  - `docs/journal/` or `docs/log/` exists;
+  - `CLAUDE.md` contains a `docs-system:` line or a line beginning with
+    `<!-- lenore:rules:start` (a partial install — rules appended but
+    machinery never created — must land in the upgrade path, not fresh).
+  The `docs-system:` marker (or the start-marker's tier annotation) tells
+  you the tier; if the two disagree, ask the user which is right.
+- If artifacts are found: this is an **upgrade**. Diff the repo's copies of
   `.githooks/pre-commit`, `.githooks/pre-push`, `.githooks/pre-merge-commit`,
   `scripts/doc-status.sh`, `scripts/browse.py`, `scripts/docs-search.py`,
   `docs/CLAUDE.md` against this plugin's `templates/` — propose replacing
   any that differ, and report the diffs. Do not touch `docs/journal/`,
   `docs/notes/`, or other content.
-- If not found: this is a **fresh install** — go to step 2.
+  For the rules block in root `CLAUDE.md`: the managed span starts at the
+  line **beginning with** `<!-- lenore:rules:start` (the shipped marker
+  carries a tier annotation and warning text after that prefix — match the
+  prefix, never the full literal) and runs through the first subsequent
+  `<!-- lenore:rules:end -->` line, inclusive. If the span is present,
+  replace exactly that span with the current tier's rules block, showing a
+  diff first for any local edits inside it; everything outside the span —
+  project-specific rules, qualifiers, exceptions — is never touched.
+  Edge cases: a start marker with **no** end marker is a damaged span —
+  never replace start-to-end-of-file; fall through to the legacy merge
+  path below. **Multiple** start markers (a legacy double-append): replace
+  the first span and include the deletion of the later span(s) in the
+  shown diff — never silently leave a stale second block. If the repo has
+  rules but no markers (legacy), do NOT append: show the user the current
+  rules next to the template block, propose a merge that wraps the managed
+  portion in the markers while keeping every project-specific qualifier
+  outside them, and apply only what they confirm.
+- If no artifacts are found: this is a **fresh install** — go to step 2.
 - **Activation check — always run, on both upgrade and fresh install.**
   The `docs-system:` marker being present in `CLAUDE.md` only means the
   system was installed *once*; it does not mean *this clone* is active
@@ -80,10 +109,16 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   already points at the right target; if `AGENTS.md` exists and is
   *not* that symlink, stop and ask before overwriting it.
 - Append the block from `skills/doc-system/references/rules-tier1.md`
-  verbatim into the repo's `CLAUDE.md`, followed by a line:
-  `docs-system: lenore-v1 (tier 1)` — **idempotent**: grep the file for
-  this marker text first and skip the append if already present, so a
-  re-run after a partial install doesn't duplicate the block.
+  verbatim into the repo's `CLAUDE.md` (the block ships wrapped in
+  `<!-- lenore:rules:start -->` / `<!-- lenore:rules:end -->` markers —
+  keep them; they are what makes future upgrades surgical), followed by a
+  line: `docs-system: lenore-v1 (tier 1)` — **idempotent**: skip the
+  append if the start marker or the `docs-system:` line is already
+  present. Even on a fresh install, if `CLAUDE.md` already contains
+  doc-related rules, show the user what the block would add next to what
+  exists rather than appending blind — a project qualifier (an exception,
+  a local naming rule, a "specs don't exist yet" caveat) must survive
+  outside the managed span.
 - Append `templates/gitignore-snippet` to `.gitignore` (create it if
   absent) — **idempotent**: grep for the snippet's marker line first and
   skip if already present.

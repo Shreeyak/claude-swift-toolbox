@@ -1,3 +1,4 @@
+<!-- lenore:rules:start (tier 0) — managed by lenore-doc-system; edits inside this span are overwritten on upgrade -->
 ## Documentation rules   (Tier 0 — small repo)
 
 - This repo is Tier 0: docs-system: lenore-v1 (tier 0).
@@ -21,3 +22,4 @@
   to Tier 1 (see the doc-system skill's setup command).
 - docs/log/ is the whole index: `ls docs/log/` sorted by name is the
   timeline. No maintained index file.
+<!-- lenore:rules:end -->

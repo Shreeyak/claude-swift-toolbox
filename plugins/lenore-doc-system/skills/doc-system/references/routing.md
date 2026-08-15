@@ -41,3 +41,33 @@ newest-first `browse.py` listing; a note that's *wrong* misleads nobody,
 because notes are never authority — the routing table above sends every
 "what's true now" question to specs, `CLAUDE.md`, and experiment READMEs,
 so an outdated note is by definition historical context, not a trap.
+
+## Semantic search while coding — the rules
+
+- **Search before designing, not before typing.** Run
+  `uv run scripts/docs-search.py "query"` when about to propose a design,
+  write an openspec change, or start an experiment — the question is "has
+  this repo already explored this?" Trivial edits, mechanical refactors,
+  and bug fixes with a known cause need no search.
+- **Search on unfamiliar vocabulary.** When a comment, spec, or the user
+  uses a project term you can't ground in code, search the term before
+  guessing — concepts and vocabulary are what embeddings are for.
+- **Before re-running or proposing an experiment, search for its
+  verdict.** A concluded experiment's README outranks your intuition.
+- **Exact values go to grep, never here.** Numbers, thresholds, flags,
+  config keys, error strings, file names, "list every place that…" —
+  embeddings retrieve the topic, not the value, and will happily surface
+  an adjacent table's figure.
+- **Results are pointers, not answers.** Open the top 1-3 files and read
+  them; never quote a fact from the result row's summary line alone.
+- **Check the date and class before trusting.** Dated files (journal,
+  notes, runs, archived changes) are snapshots of what was believed then;
+  `openspec/specs/` and `CLAUDE.md` are what's true now. A dated hit that
+  contradicts a spec loses.
+- **Never cite a figure you found semantically without re-finding it
+  exactly** — confirm any number or identifier with grep or by reading it
+  at its own line in the opened file. This is the single most common
+  failure mode.
+- **Low scores mean stop.** If nothing scores well (the tool warns below
+  ~0.35), the answer likely isn't in the docs — say so or grep; don't
+  stretch a weak hit into support for your design.
