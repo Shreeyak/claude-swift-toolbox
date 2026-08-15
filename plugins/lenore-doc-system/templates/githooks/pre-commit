@@ -25,7 +25,8 @@ added=""
 denied_names='^(state|decisions|status|changelog|handoff)\.md$'
 
 is_immutable_path() {
-  case "$1" in
+  lc=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
+  case "$lc" in
     docs/journal/*|docs/notes/*|experiments/*/runs/*.md) return 0 ;;
     *) return 1 ;;
   esac

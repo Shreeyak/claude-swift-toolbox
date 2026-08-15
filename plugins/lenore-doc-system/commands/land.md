@@ -4,7 +4,7 @@ argument-hint: "[--autonomous]"
 allowed-tools: Bash(git:*), Bash(rm:*), Read, Write, Edit, Glob, Grep
 ---
 
-Run the Lenore doc system's landing flow (see the `doc-system` skill §4)
+Run the Lenore doc system's landing flow (the `doc-system` skill describes what counts as a landing and what doesn't)
 for the current branch. A landing is a merge into main, or an explicit
 decision to abandon the branch. Both paths run this flow; the merge (or the
 abandonment) is always the **last** step.
@@ -43,7 +43,7 @@ now, in the same commit style as the rest of the branch.
 
 ## 2. Closing journal entry
 
-Write one `docs/journal/YYYY-MM-DD-HHMM-topic.md` entry following the §5
+Write one `docs/journal/YYYY-MM-DD-HHMM-topic.md` entry following the journal
 shape rules (line 1 = one sentence, ≤10 lines / 150 words, no headers or
 bullets, cite commit hashes), opening with "landing <branch>: …" — e.g.
 "landing feature/x: after N days; the arc was A→B→C" — or, if abandoning,
@@ -93,8 +93,8 @@ dropped rather than completed.
 - Clean up the branch's worktree if one was used for this branch
   (`git worktree remove`), after the merge succeeds.
 - **Recovery if the merge or push fails:** the closing journal entry
-  (step 2) was already written before this step and is immutable — it
-  cannot be edited or deleted. If the merge or push does not complete
+  (step 2) was already written before this step; once committed it is
+  immutable and cannot be edited or deleted. If the merge or push does not complete
   successfully, append a **new** `docs/journal/` entry noting that the
   landing described in the earlier entry did not complete (what failed,
   and the branch's current state), so the journal stays a truthful

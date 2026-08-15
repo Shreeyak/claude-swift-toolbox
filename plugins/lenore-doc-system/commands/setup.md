@@ -92,7 +92,7 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   overwrite the file**; skip if an entry for this command already exists.
   If a Codex config exists in this repo, install `templates/codex-hooks.json`
   as `.codex/hooks.json` (merge, don't overwrite): it registers
-  `scripts/doc-status.sh` as Codex's `SessionStart` hook equivalent.
+  `scripts/doc-status.sh` as Codex's `SessionStart` hook equivalent. (Codex requires per-repo hooks to be trusted: the first interactive `codex` session in the repo prompts to trust the hook and records a `trusted_hash` in `~/.codex/config.toml`; until then, non-interactive `codex exec` runs silently skip it).
 
 **Tier 0:**
 
@@ -118,8 +118,7 @@ detect "no marker yet" and resume).
 ## 5. Offer migration of legacy files (Tier 1 only, confirmable per item)
 
 If any of these exist, propose — as separate, individually confirmable
-diffs — the migration steps from `doc-system` skill §11 / the artifact's
-§11:
+diffs — the migration steps:
 
 - `decisions.md` → split: still-true constraints into `CLAUDE.md`/specs;
   the rest becomes dated `docs/journal/` files (dated from git blame/log),
@@ -136,12 +135,11 @@ diffs — the migration steps from `doc-system` skill §11 / the artifact's
   `status`/`verdict`/`concluded` fields.
 
 Never delete the legacy file until its replacement is written and the user
-has confirmed the diff. This mirrors §04's "deleting or pruning requires
+has confirmed the diff. This mirrors the standing rule that "deleting or pruning requires
 showing the diff" rule.
 
 ## 6. Close out
 
-Tell the user to run `/code-intel:setup`-style follow-up isn't needed here;
-just point them at `uv run scripts/browse.py` to confirm the install looks
+No follow-up command is needed. Point the user at `uv run scripts/browse.py` to confirm the install looks
 right, and remind them the pre-commit/pre-push hooks are now live for every
 future commit and push in this clone.

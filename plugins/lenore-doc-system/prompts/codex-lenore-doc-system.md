@@ -68,7 +68,7 @@ described in this prompt.
    gitignore snippet to `.gitignore` (skip if already present); install
    `templates/codex-hooks.json` as `.codex/hooks.json` in this repo (merge
    into any existing hooks config, never overwrite) — it registers
-   `scripts/doc-status.sh` as the `SessionStart` hook.
+   `scripts/doc-status.sh` as the `SessionStart` hook. (Codex requires per-repo hooks to be trusted: the first interactive `codex` session in the repo prompts to trust the hook and records a `trusted_hash` in `~/.codex/config.toml`; until then, non-interactive `codex exec` runs silently skip it).
    For Tier 0: create `docs/log/` with a `.gitkeep` inside it (survives a
    fresh clone), symlink root `AGENTS.md -> CLAUDE.md`, and append the
    Tier 0 rules block only (idempotent, same marker check).

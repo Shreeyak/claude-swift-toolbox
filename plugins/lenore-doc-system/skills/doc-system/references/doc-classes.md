@@ -124,8 +124,8 @@ reading set; the only coupling is both get walked at landing.
 - **Plain words only.** "Put on / take off my desk" does what it says, any
   time. No CLI tool is required — `ln -s` is all an agent needs.
 - **Two expiry paths, so it can't accumulate by inertia.** Links older than
-  14 days get a renew-or-drop prompt on open (forced review; renewal is a
-  deliberate act). The landing flow walks the desk before clearing it —
+  14 days are flagged stale by `browse.py` and counted in the status line —
+  when a session sees the flag, it asks the user renew-or-drop. The landing flow walks the desk before clearing it —
   each pin either disappears (default) or, if the user says keep,
   graduates to one pointer line in `project.md`.
 - **Remove vs delete — the deletion policy in one line.** "Take it off my

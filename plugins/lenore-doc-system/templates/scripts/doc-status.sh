@@ -82,7 +82,7 @@ if [ -d docs/desk ]; then
       dangling_desk=$((dangling_desk + 1))
       continue
     fi
-    mtime=$(stat -f %m "$l" 2>/dev/null || stat -c %Y "$l" 2>/dev/null || echo "$now")
+    mtime=$(stat -f %m "$l" 2>/dev/null || stat -c %Y -- "$l" 2>/dev/null || echo "$now")
     age_days=$(( (now - mtime) / day ))
     [ "$age_days" -ge 14 ] && stale_desk=$((stale_desk + 1))
   done
