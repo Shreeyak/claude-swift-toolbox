@@ -123,12 +123,12 @@ def split_headings(text: str) -> list[tuple[str, str]]:
     """Return [(heading_path, section_text), ...] split on markdown headings."""
     lines = text.splitlines()
     sections: list[tuple[str, str]] = []
-    stack: list[str] = []
+    stack: list[tuple[int, str]] = []  # (level, title) — docs often start at H2, so pop by level, not index
     buf: list[str] = []
 
     def flush():
         if buf:
-            sections.append((" › ".join(stack), "\n".join(buf).strip()))
+            sections.append((" › ".join(t for _, t in stack), "\n".join(buf).strip()))
             buf.clear()
 
     for line in lines:
@@ -136,7 +136,9 @@ def split_headings(text: str) -> list[tuple[str, str]]:
         if m:
             flush()
             level = len(m.group(1))
-            stack[level - 1 :] = [m.group(2).strip()]
+            while stack and stack[-1][0] >= level:
+                stack.pop()
+            stack.append((level, m.group(2).strip()))
         else:
             buf.append(line)
     flush()

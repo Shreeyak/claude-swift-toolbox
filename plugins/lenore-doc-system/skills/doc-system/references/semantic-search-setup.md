@@ -81,6 +81,46 @@ moves, or if the cache looks corrupted). Deleting `.docs-embeddings/`
 entirely is always safe — it's a cache, not a record; the next search
 rebuilds it.
 
+## Chunking — what the script does and what that means for writing
+
+Files at or under roughly 1500 tokens embed as a single whole-file chunk.
+Longer files split at markdown headings (each section capped near 512
+tokens, oversized sections split again at paragraphs), with no overlap;
+each chunk embeds with a contextual prefix carrying the file path,
+heading path, and the file's first-line summary. Heading paths nest by
+actual heading level, so documents that start at `##` (the normal case
+here — line 1 is a plain sentence, not a heading) chunk correctly.
+
+Empirically validated (adversarial test corpus, 2026-08-16, this exact
+model and script): conceptual queries land the right section of a long
+document even when the fact is a single sentence buried mid-file
+(~0.62–0.65); two near-identical result tables in sibling sections are
+discriminated correctly by their headings (correct section top in both
+directions at ~0.67); vocabulary drift resolves well ("double exposure
+artifacts from motion" → the ghosting note at 0.70); checkbox task lists
+score well below their prose equivalents (~0.45 vs ~0.65) but never
+outrank them — skipping openspec `tasks.md` is noise reduction, not a
+correctness requirement. Queries for a bare numeric value ("which arm
+had p95 7.81") still resolve to the right *file* but at ~0.35 — exactly
+the weak-match footer threshold, which is why that footer tells you to
+switch to grep.
+
+Writing guidance this implies (only two rules, both cheap):
+
+- **In any document long enough to split (~1500+ tokens), use real,
+  descriptive headings.** Retrieval of a buried fact rides on its
+  section's heading and text; a wall of prose under one vague heading
+  chunks by paragraph with no useful heading context.
+- **When two sections hold near-identical content (per-scenario result
+  tables, per-arm configs), let the headings name what differs**
+  ("Dense scenario results" / "Sparse scenario results"). The model
+  separates them cleanly when the distinguishing term is in the heading
+  or nearby prose.
+
+No overlap, reranker, BM25 hybrid, or bigger model is warranted — the
+tested failure modes are covered by the routing rules (numbers → grep)
+and the display columns (date, authority class).
+
 ## Troubleshooting
 
 - **Model download fails or is slow.** Corporate proxy or flaky network —
