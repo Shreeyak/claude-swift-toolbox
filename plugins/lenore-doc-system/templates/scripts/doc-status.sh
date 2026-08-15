@@ -95,7 +95,7 @@ docs_index_part=""
 if [ -f .docs-embeddings/meta.json ]; then
   stale_docs=$(find docs -type f \( -name "*.md" -o -name "*.html" \) -newer .docs-embeddings/meta.json 2>/dev/null | grep -v '^docs/desk/' | wc -l | tr -d ' ')
   stale_exp=0
-  [ -d experiments ] && stale_exp=$(find experiments -maxdepth 2 -type f -name "README.md" -newer .docs-embeddings/meta.json 2>/dev/null | wc -l | tr -d ' ')
+  [ -d experiments ] && stale_exp=$(find experiments -maxdepth 3 -type f \( -name "README.md" -o -path "*/runs/*.md" \) -newer .docs-embeddings/meta.json 2>/dev/null | wc -l | tr -d ' ')
   stale_total=$((stale_docs + stale_exp))
   # docs-search.py auto-refreshes incrementally on every search, so this
   # isn't "stale" in the sense of giving wrong answers — just files that

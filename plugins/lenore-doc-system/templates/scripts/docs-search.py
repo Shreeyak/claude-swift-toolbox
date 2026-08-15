@@ -4,8 +4,8 @@
 # dependencies = ["mlx", "tokenizers", "huggingface_hub", "numpy"]
 # ///
 # usage: uv run scripts/docs-search.py "query text" [-k N] [--json] [--reindex] [--no-refresh] [--status]
-# what it does: local semantic search over docs/**/*.md, docs/**/*.html, and
-# experiments/*/README.md using jina-embeddings-v5-text-nano on MLX (Apple
+# what it does: local semantic search over docs/**/*.md, docs/**/*.html,
+# experiments/*/README.md, and experiments/*/runs/*.md using jina-embeddings-v5-text-nano on MLX (Apple
 # Silicon). By default every search refreshes the index incrementally first
 # (content-hash keyed — only changed/new files re-embed, usually zero or a
 # few), so a normal search rarely sees stale results without you doing
@@ -194,7 +194,8 @@ def chunk_file(raw: str, is_html: bool) -> list[dict]:
 
 
 def iter_doc_files():
-    for pattern in ("docs/**/*.md", "docs/**/*.html", "experiments/*/README.md"):
+    for pattern in ("docs/**/*.md", "docs/**/*.html",
+                    "experiments/*/README.md", "experiments/*/runs/*.md"):
         for p in ROOT.glob(pattern):
             rel = p.relative_to(ROOT).as_posix()
             if any(rel.startswith(s) for s in SKIP_DIRS):

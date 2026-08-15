@@ -95,7 +95,7 @@ afterward — renaming the symlink never touches the target.
 ## Semantic index (`.docs-embeddings/`, optional)
 
 If present, this whole tree (docs/**/*.md, docs/**/*.html,
-experiments/*/README.md) is semantically indexed for
+experiments/*/README.md, experiments/*/runs/*.md) is semantically indexed for
 `scripts/docs-search.py`. The index is gitignored and content-hash keyed
 per chunk, so new or changed docs are picked up automatically by the next
 `docs-search.py` run — no separate reindex step required for routine
