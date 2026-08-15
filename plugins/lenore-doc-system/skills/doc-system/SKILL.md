@@ -177,3 +177,7 @@ doc maintenance is event-driven only.
 - `/lenore-doc-system:setup` — propose-then-apply installer, including
   migration of legacy tracking docs.
 - `/lenore-doc-system:land` — the landing flow.
+- `/lenore-doc-system:desk` — desk review (list, renew-or-drop stale pins,
+  suggestions). Interactive only.
+- `/lenore-doc-system:doc-cleanup` — hygiene pass over Someday, stale
+  branch-task files, and stale bugs; confirmed diffs only. Interactive only.

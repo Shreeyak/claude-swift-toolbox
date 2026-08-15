@@ -22,6 +22,11 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
 - `/lenore-doc-system:land` — run the landing flow for the current branch:
   spec sync, closing journal entry, archive the openspec change, walk
   branch tasks and the desk, merge as the last step.
+- `/lenore-doc-system:desk` — review the desk: list pins with summaries
+  and ages, renew-or-drop the stale ones, suggest unpinned docs.
+- `/lenore-doc-system:doc-cleanup` — doc-hygiene pass: Someday prunes,
+  stale branch-task disposal, stale-bug triage, optional catch-up entry —
+  all as diffs the user confirms.
 
 Codex users: copy `prompts/codex-lenore-doc-system.md` to
 `~/.codex/prompts/` for an equivalent setup flow.
