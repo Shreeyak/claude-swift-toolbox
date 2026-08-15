@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; [ -x \"$root/scripts/doc-status.sh\" ] && \"$root/scripts/doc-status.sh\"",
+            "statusMessage": "Checking Lenore doc status",
+            "additionalContextLimit": 1000
+          }
+        ]
+      }
+    ]
+  }
+}

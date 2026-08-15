@@ -22,22 +22,40 @@ if [ -d docs/journal ] && [ -n "$(ls -A docs/journal 2>/dev/null)" ]; then
   if [ -n "${newest_sha:-}" ]; then
     newest_commit=$(git log -1 --format=%ct "$newest_sha" 2>/dev/null)
     age_days=$(( (now - newest_commit) / day ))
-    commits_since=$(git log --no-merges --oneline "${newest_sha}..HEAD" 2>/dev/null | wc -l | tr -d ' ')
+    commits_since=$(git rev-list --count --first-parent "${newest_sha}..HEAD" 2>/dev/null | tr -d ' ')
     journal_part="last journal ${age_days}d ago (${commits_since} commits)"
   fi
 fi
 [ -z "$journal_part" ] && journal_part="no journal entries yet"
 
-# --- stale branch-task files (no commits on branch in 14 days) --------
+# --- stale branch-task files (no commits on branch in 14 days, or the
+# branch no longer exists at all — slug convention: branch name with every
+# "/" replaced by "-") ---------------------------------------------------
 stale_branch_tasks=0
+stale_task_files=""
 if [ -d docs/tasks ]; then
+  # Build slug -> branch-name map for all local branches once.
+  branch_slugs=$(git for-each-ref --format='%(refname:short)' refs/heads 2>/dev/null)
   for f in docs/tasks/branch-*.md; do
     [ -e "$f" ] || continue
-    branch=$(basename "$f" .md | sed 's/^branch-//')
-    if git show-ref --verify -q "refs/heads/$branch"; then
-      last_commit=$(git log -1 --format=%ct "$branch" 2>/dev/null || echo 0)
+    slug=$(basename "$f" .md | sed 's/^branch-//')
+    match=""
+    while IFS= read -r b; do
+      [ -z "$b" ] && continue
+      b_slug=$(printf '%s' "$b" | tr '/' '-')
+      if [ "$b_slug" = "$slug" ]; then
+        match="$b"
+        break
+      fi
+    done <<< "$branch_slugs"
+    if [ -n "$match" ]; then
+      last_commit=$(git log -1 --format=%ct "$match" 2>/dev/null || echo 0)
       age_days=$(( (now - last_commit) / day ))
       [ "$age_days" -ge 14 ] && stale_branch_tasks=$((stale_branch_tasks + 1))
+    else
+      # branch no longer exists locally — the strongest staleness signal
+      stale_branch_tasks=$((stale_branch_tasks + 1))
+      stale_task_files="${stale_task_files}stale-task:${f} "
     fi
   done
 fi
@@ -84,13 +102,24 @@ if [ -f .docs-embeddings/meta.json ]; then
   # haven't been embedded yet; the next search embeds them automatically.
   [ "$stale_total" -gt 0 ] && docs_index_part=" · docs-index: ${stale_total} pending (embeds on next search)"
 else
-  doc_file_count=$(find docs -type f \( -name "*.md" -o -name "*.html" \) 2>/dev/null | grep -v '^docs/desk/' | wc -l | tr -d ' ')
-  exp_file_count=0
-  [ -d experiments ] && exp_file_count=$(find experiments -maxdepth 2 -type f -name "README.md" 2>/dev/null | wc -l | tr -d ' ')
-  total_doc_files=$((doc_file_count + exp_file_count))
+  # Bounded scan: stop counting past 21 — we only need to know ">20", not
+  # the exact count, so don't walk the whole tree on a huge repo.
+  doc_file_count=$(find docs -type f \( -name "*.md" -o -name "*.html" \) 2>/dev/null | grep -v '^docs/desk/' | head -21 | wc -l | tr -d ' ')
+  if [ "$doc_file_count" -gt 20 ]; then
+    total_doc_files=21
+  else
+    exp_file_count=0
+    [ -d experiments ] && exp_file_count=$(find experiments -maxdepth 2 -type f -name "README.md" 2>/dev/null | wc -l | tr -d ' ')
+    total_doc_files=$((doc_file_count + exp_file_count))
+  fi
   if [ "$total_doc_files" -gt 20 ]; then
     docs_index_part=" · docs-index: none (semantic search off — see semantic-search-setup)"
   fi
 fi
 
-echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}"
+stale_task_part=""
+if [ -n "$stale_task_files" ]; then
+  stale_task_part=" · $(printf '%s' "$stale_task_files" | sed 's/ *$//')"
+fi
+
+echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${stale_task_part}"

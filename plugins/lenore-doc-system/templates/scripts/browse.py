@@ -13,9 +13,11 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import subprocess
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(
@@ -39,6 +41,9 @@ GROUPS = [
 
 STALE_DAYS = 14
 
+DATED_GROUPS = {"journal", "notes", "bugs", "reference", "log"}
+IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+
 
 @dataclass
 class Row:
@@ -48,6 +53,7 @@ class Row:
     summary: str
     extra: str = ""
     mtime: float = 0.0
+    date_ts: float | None = None  # epoch seconds parsed from filename, if any
 
 
 def html_comment_summary(path: Path) -> str:
@@ -79,7 +85,9 @@ def md_first_line_summary(path: Path) -> str:
 
 def script_header_summary(path: Path) -> str:
     try:
-        lines = path.read_text(errors="replace").splitlines()[:5]
+        # 15 lines, not 5: PEP 723 `# /// script` blocks push the header
+        # comment further down than a plain shebang+comment file would.
+        lines = path.read_text(errors="replace").splitlines()[:15]
     except OSError:
         return ""
     for line in lines:
@@ -96,6 +104,16 @@ def date_from_name(name: str) -> str:
     return ""
 
 
+def date_ts_from_name(name: str) -> float | None:
+    date = date_from_name(name)
+    if not date:
+        return None
+    try:
+        return datetime.strptime(date, "%Y-%m-%d").timestamp()
+    except ValueError:
+        return None
+
+
 def scan_dated_dir(group: str, dirpath: Path) -> list[Row]:
     rows = []
     if not dirpath.is_dir():
@@ -103,9 +121,12 @@ def scan_dated_dir(group: str, dirpath: Path) -> list[Row]:
     for p in sorted(dirpath.glob("*")):
         if p.is_dir() or p.name.startswith("."):
             continue
-        summary = (
-            html_comment_summary(p) if p.suffix == ".html" else md_first_line_summary(p)
-        )
+        if p.suffix.lower() in IMAGE_EXTS:
+            summary = ""
+        elif p.suffix == ".html":
+            summary = html_comment_summary(p)
+        else:
+            summary = md_first_line_summary(p)
         date = date_from_name(p.stem)
         rows.append(
             Row(
@@ -114,6 +135,7 @@ def scan_dated_dir(group: str, dirpath: Path) -> list[Row]:
                 date=date,
                 summary=summary,
                 mtime=p.stat().st_mtime,
+                date_ts=date_ts_from_name(p.stem),
             )
         )
     return rows
@@ -245,7 +267,16 @@ def collect() -> list[Row]:
 
 
 def sorted_rows(rows: list[Row]) -> list[Row]:
-    return sorted(rows, key=lambda r: r.mtime, reverse=True)
+    # Dated doc classes (journal, notes, bugs, reference, log) sort by the
+    # date parsed from the filename (newest first); mtime is only a
+    # fallback when no date parses. Living docs (tasks, desk, experiments,
+    # scripts) keep plain mtime sort.
+    def key(r: Row):
+        if r.group in DATED_GROUPS and r.date_ts is not None:
+            return r.date_ts
+        return r.mtime
+
+    return sorted(rows, key=key, reverse=True)
 
 
 def filter_group(rows: list[Row], group: str | None) -> list[Row]:
@@ -288,7 +319,7 @@ def open_in_editor(path: Path) -> None:
     editor = os.environ.get("EDITOR")
     try:
         if editor:
-            subprocess.run([editor, str(path)])
+            subprocess.run([*shlex.split(editor), str(path)])
         else:
             subprocess.run(["open", str(path)])
     except OSError:

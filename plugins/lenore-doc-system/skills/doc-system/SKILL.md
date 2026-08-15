@@ -34,9 +34,12 @@ enforced by committed git hooks, not by prose discipline.
   staging, no filing agent. Cadence ties to milestones (phase done,
   experiment concluded, direction changed), never to commits.
 - **Rules are enforced by git, or they're advisory.** Committed
-  `.githooks/` (pre-commit + pre-push) bind every writer and every ref
-  path. Harness hooks carry only information (the status line), never
-  rules.
+  `.githooks/` (pre-commit + pre-merge-commit + pre-push) catch the common
+  local write and merge paths once activated in a clone (`core.hooksPath`
+  set, hook files executable) — they do not cover web-UI merges, `--no-verify`,
+  or a clone where activation hasn't run yet; `/lenore-doc-system:setup`'s
+  activation check exists to keep that gap small. Harness hooks carry only
+  information (the status line), never rules.
 - **Deleting/pruning doc content requires showing the diff; writing new
   content does not.**
 
@@ -118,8 +121,11 @@ branch — both run `/lenore-doc-system:land`: final spec sync, closing
 journal entry, change folder archived, branch task file disposed with the
 user's confirmation on what graduates to `project.md`, desk walked and
 cleared, merge as the *last* step. Trigger is plain words ("merge it") —
-never a ritual invocation. The pre-push hook makes it unskippable even for
-a bare `git merge`.
+never a ritual invocation. The pre-push hook gates any `git push` that
+updates main/master with structural marker checks — it does not gate a
+bare local `git merge` with no push, and it's local config that only
+applies once a clone has run `/lenore-doc-system:setup`'s activation
+check.
 
 Not a landing: direct-to-main work on Tier 0 (no ceremony), syncing main
 into a feature branch, an experiment conclusion on its own, a partial

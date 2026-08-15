@@ -20,10 +20,12 @@
 - Cross-references: cite commit hashes; name dated files or experiment
   folders in plain words. One-way only. Never IDs, never code→doc
   links, never link-consistency checks.
-- docs/tasks/branch-<branch>.md is this session's scratch — write
-  freely; other branch files are read-only. project.md is edited at
-  landings, items graduating only with the user's confirmation.
-  Entries: one-line title + ≤5 lines context; more becomes a note.
+- docs/tasks/branch-<slug>.md is this session's scratch — write freely;
+  other branch files are read-only. `<slug>` is the branch name with
+  every `/` replaced by `-` (branch `feature/x` -> `branch-feature-x.md`).
+  project.md is edited at landings, items graduating only with the
+  user's confirmation. Entries: one-line title + ≤5 lines context; more
+  becomes a note.
 - docs/notes/YYYY-MM-DD-topic.md for all ad-hoc artifacts, including
   architecture snapshots (stamp the source commit). Immutable once
   committed.
@@ -86,4 +88,8 @@
 - Deleting or pruning doc content requires showing the user the diff.
   Writing new content does not.
 - Do not create state.md, decisions.md, STATUS.md, CHANGELOG.md,
-  HANDOFF.md, or any new tracking doc. (A hook enforces this.)
+  HANDOFF.md, or any new tracking doc. (A hook enforces this for that
+  specific list of names as a representative sample — the rule is the
+  doctrine, not the list: any file whose job is "current status/decision
+  tracking outside openspec/specs and CLAUDE.md" is out, hook-caught or
+  not.)

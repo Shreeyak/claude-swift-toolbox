@@ -48,7 +48,8 @@ pipeline; ECC path removed. (abc1234)
 
 ## Tasks (`docs/tasks/`)
 
-- `branch-<branch>.md`: your session's scratch on this branch. Write
+- `branch-<slug>.md`: your session's scratch on this branch, where
+  `<slug>` is the branch name with every `/` replaced by `-`. Write
   freely. Other branches' files are read-only context.
 - `project.md`: two headings, `## Next` and `## Someday`. Entries: one-line
   title, then ≤5 lines of context. Longer context becomes a dated note the

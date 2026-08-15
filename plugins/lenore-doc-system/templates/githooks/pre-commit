@@ -2,48 +2,89 @@
 # Lenore doc system — pre-commit
 # Enforces: (1) immutability of docs/journal, docs/notes, experiments/*/runs
 #           (2) deny-filename for tracking docs (state.md, decisions.md, ...)
-#           (3) prose-only docs/ (additions must be .md/.html/image)
-#
-# Escape hatch (not documented to agents): SKIP_DOC_HOOKS=1 git commit ...
+#           (3) prose-only docs/ (additions must be .md/.html/image/.gitkeep)
+#           (4) no symlinks/gitlinks under docs/ or experiments/ (except AGENTS.md)
 set -euo pipefail
 
-if [ "${SKIP_DOC_HOOKS:-0}" = "1" ]; then
-  exit 0
-fi
+[ "${SKIP_DOC_HOOKS:-0}" = "1" ] && exit 0
 
-EMPTY_TREE=4b825dc642cb6eb9a060e54bf8d69288fbee4904
 if git rev-parse --verify -q HEAD >/dev/null; then
   AGAINST=HEAD
 else
-  AGAINST=$EMPTY_TREE
+  AGAINST=$(git hash-object -t tree /dev/null)
 fi
 
 fail=0
 
-# --- (1) Immutability -------------------------------------------------
-# docs/journal/*.md and experiments/*/runs/*.md: no modify, no delete.
-# docs/notes/*.md: no modify (deletion allowed — git rm is fine).
-modified=$(git diff --cached --name-only --diff-filter=M "$AGAINST" -- 'docs/journal/*' 'docs/notes/*' 'experiments/*/runs/*.md' || true)
-deleted_immutable=$(git diff --cached --name-only --diff-filter=D "$AGAINST" -- 'docs/journal/*' 'experiments/*/runs/*.md' || true)
+# Parse the staged diff with -z so renames/copies and odd filenames are safe.
+# --name-status -z -M: records are NUL-separated; R/C records carry an extra
+# similarity/src/dst triple.
+immutable_modified=""
+immutable_deleted=""
+added=""
+denied_names='^(state|decisions|status|changelog|handoff)\.md$'
 
-if [ -n "$modified" ]; then
+is_immutable_path() {
+  case "$1" in
+    docs/journal/*|docs/notes/*|experiments/*/runs/*.md) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+while IFS= read -r -d '' status; do
+  case "$status" in
+    R*|C*)
+      IFS= read -r -d '' src
+      IFS= read -r -d '' dst
+      if is_immutable_path "$src"; then
+        immutable_modified="${immutable_modified}${src} (renamed/copied away)"$'\n'
+      fi
+      f="$dst"
+      # dst is treated like an addition for filename/prose checks below.
+      added="${added}${f}"$'\n'
+      ;;
+    M)
+      IFS= read -r -d '' f
+      if is_immutable_path "$f"; then
+        immutable_modified="${immutable_modified}${f}"$'\n'
+      fi
+      ;;
+    D)
+      IFS= read -r -d '' f
+      case "$f" in
+        docs/journal/*|experiments/*/runs/*.md)
+          immutable_deleted="${immutable_deleted}${f}"$'\n'
+          ;;
+      esac
+      ;;
+    A)
+      IFS= read -r -d '' f
+      added="${added}${f}"$'\n'
+      ;;
+    *)
+      # T (typechange) and any other single-path status: consume one path.
+      IFS= read -r -d '' f || true
+      ;;
+  esac
+done < <(git diff --cached --name-status -z -M "$AGAINST" 2>/dev/null || true)
+
+# --- (1) Immutability -------------------------------------------------
+if [ -n "$immutable_modified" ]; then
   echo "error: pre-commit (immutability): the following files are immutable once committed" >&2
-  echo "$modified" | sed 's/^/  modified: /' >&2
-  echo "  journal entries, notes, and experiment run records may not be edited after commit." >&2
+  printf '%s' "$immutable_modified" | sed '/^$/d;s/^/  modified: /' >&2
+  echo "  journal entries, notes, and experiment run records may not be edited or renamed after commit." >&2
   echo "  fix typos before the first commit, or write a new dated file instead." >&2
   fail=1
 fi
 
-if [ -n "$deleted_immutable" ]; then
+if [ -n "$immutable_deleted" ]; then
   echo "error: pre-commit (immutability): journal entries and run records may not be deleted" >&2
-  echo "$deleted_immutable" | sed 's/^/  deleted: /' >&2
+  printf '%s' "$immutable_deleted" | sed '/^$/d;s/^/  deleted: /' >&2
   echo "  these are history and evidence. notes/ may be deleted; these may not." >&2
   fail=1
 fi
 
 # --- (2) Deny tracking-doc filenames -----------------------------------
-denied_names='^(state|decisions|status|changelog|handoff)\.md$'
-added=$(git diff --cached --name-only --diff-filter=A "$AGAINST" || true)
 if [ -n "$added" ]; then
   while IFS= read -r f; do
     [ -z "$f" ] && continue
@@ -63,8 +104,13 @@ fi
 if [ -n "$added" ]; then
   while IFS= read -r f; do
     [ -z "$f" ] && continue
-    case "$f" in
+    lower_f=$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')
+    case "$lower_f" in
       docs/*)
+        base=$(basename "$f")
+        if [ "$base" = ".gitkeep" ]; then
+          continue
+        fi
         ext=$(printf '%s' "$f" | sed -n 's/.*\.\([A-Za-z0-9]*\)$/\1/p' | tr '[:upper:]' '[:lower:]')
         case "$ext" in
           md|html|png|jpg|jpeg|gif|svg|webp) ;;
@@ -80,6 +126,42 @@ if [ -n "$added" ]; then
     esac
   done <<< "$added"
 fi
+
+# --- (4) No symlinks/gitlinks under docs/ or experiments/ (except AGENTS.md) --
+while IFS= read -r -d '' rec; do
+  case "$rec" in
+    :*)
+      # format: :old_mode new_mode old_sha new_sha status
+      new_mode=$(printf '%s' "$rec" | awk '{print $2}')
+      status=$(printf '%s' "$rec" | awk '{print $5}')
+      ;;
+    *)
+      continue
+      ;;
+  esac
+  case "$status" in
+    R*|C*)
+      IFS= read -r -d '' src
+      IFS= read -r -d '' dst
+      path="$dst"
+      ;;
+    *)
+      IFS= read -r -d '' path
+      ;;
+  esac
+  case "$path" in
+    docs/*|experiments/*) ;;
+    *) continue ;;
+  esac
+  if [ "$new_mode" = "120000" ] || [ "$new_mode" = "160000" ]; then
+    base=$(basename "$path")
+    if [ "$new_mode" = "120000" ] && [ "$base" = "AGENTS.md" ]; then
+      continue
+    fi
+    echo "error: pre-commit (no symlinks/gitlinks): $path (mode $new_mode) may not be added under docs/ or experiments/" >&2
+    fail=1
+  fi
+done < <(git diff --cached --raw -z -M "$AGAINST" 2>/dev/null || true)
 
 if [ "$fail" -ne 0 ]; then
   echo "" >&2

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Lenore doc system — pre-merge-commit
+# Runs the same checks as pre-commit for automatic merge commits.
+set -euo pipefail
+
+hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "$hook_dir/pre-commit" "$@"

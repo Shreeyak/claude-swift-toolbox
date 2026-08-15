@@ -1,7 +1,7 @@
 ---
 description: Run the landing flow — close out and merge the current branch into main
 argument-hint: "[--autonomous]"
-allowed-tools: Bash(git:*), Read, Write, Edit, Glob, Grep
+allowed-tools: Bash(git:*), Bash(rm:*), Read, Write, Edit, Glob, Grep
 ---
 
 Run the Lenore doc system's landing flow (see the `doc-system` skill §4)
@@ -11,8 +11,23 @@ abandonment) is always the **last** step.
 
 ## 0. Preconditions
 
-- Verify the current branch is **not** `main`/`master`. If it is, stop —
-  there is nothing to land.
+- Verify the current branch is **not** the default branch. Detect the
+  default branch via `git symbolic-ref refs/remotes/origin/HEAD`
+  (strip the `refs/remotes/origin/` prefix); if that's unset, fall back to
+  `main` if it exists, else `master`. If the current branch is the default
+  branch, stop — there is nothing to land.
+- **Branch task slug convention:** the branch's task file is
+  `docs/tasks/branch-<slug>.md`, where `<slug>` is the branch name with
+  every `/` replaced by `-` (e.g. branch `feature/x` →
+  `docs/tasks/branch-feature-x.md`). Use this slug everywhere below that
+  this doc says "the branch task file."
+- **Worktrees:** if the default branch is checked out in a *different*
+  worktree than the one you're running in (check with `git worktree
+  list`), run the merge (step 5) in that other worktree — `cd` there for
+  the merge command, or use `git -C <path>`. Do not attempt to `git
+  checkout` the default branch in the current (feature) worktree; that
+  fails or corrupts the feature branch's checkout if the default branch is
+  already checked out elsewhere.
 - Determine whether this session is operating **autonomously** (the user
   earlier gave a standing instruction like "build this out, don't wait on
   me") or **interactively** (the user is present now). This determines
@@ -30,9 +45,13 @@ now, in the same commit style as the rest of the branch.
 
 Write one `docs/journal/YYYY-MM-DD-HHMM-topic.md` entry following the §5
 shape rules (line 1 = one sentence, ≤10 lines / 150 words, no headers or
-bullets, cite commit hashes): "landed X after N days; the arc was A→B→C" —
-or, if abandoning, why. If autonomous mode skipped the desk walk (step 4),
-say so explicitly in this entry: "desk not reviewed."
+bullets, cite commit hashes), opening with "landing <branch>: …" — e.g.
+"landing feature/x: after N days; the arc was A→B→C" — or, if abandoning,
+"landing feature/x: abandoned because...". Writing this entry before the
+merge (step 5) is fine and intentional (it's a plan-to-land statement);
+if the merge/push subsequently fails, see step 5's recovery rule — do not
+edit this entry after the fact. If autonomous mode skipped the desk walk
+(step 4), say so explicitly in this entry: "desk not reviewed."
 
 ## 3. Archive the openspec change folder
 
@@ -44,17 +63,18 @@ dropped rather than completed.
 
 **If interactive:**
 
-- Open `docs/tasks/branch-<branch>.md`. For each open item, ask the user
+- Open `docs/tasks/branch-<slug>.md`. For each open item, ask the user
   whether it graduates to `docs/tasks/project.md` (Next or Someday) or is
   dropped. Apply only what's confirmed, then delete the branch file.
 - Walk `docs/desk/`: for each symlink, default is unpin (remove the
-  symlink); if the user says keep, add one pointer line to
+  symlink with `rm`, not `git rm` — desk pins are gitignored so git does
+  not track them); if the user says keep, add one pointer line to
   `docs/tasks/project.md` instead, then remove the symlink. Clear the desk
   completely by the end of this step.
 
 **If autonomous** (skip all questions in this step):
 
-- Move every open item in `docs/tasks/branch-<branch>.md` verbatim into
+- Move every open item in `docs/tasks/branch-<slug>.md` verbatim into
   `docs/tasks/project.md` under `## Next`, each tagged
   `(unreviewed, from branch <branch>)`. Delete the branch file.
 - Leave every desk pin exactly as-is — do not unpin, do not graduate, do
@@ -65,12 +85,21 @@ dropped rather than completed.
 
 - Confirm the landing markers now hold: no `docs/tasks/branch-*.md` for
   this branch, no unarchived `openspec/changes/*/` folders.
-- Merge the branch into main using the repo's normal merge method. **Never
-  pass `--no-verify` to skip hooks** — if the pre-push landing gate rejects
-  the push, that means a marker is still missing; fix it and retry, do not
-  bypass.
+- Merge the branch into the default branch (detected in step 0) using the
+  repo's normal merge method, in the worktree where the default branch is
+  checked out. **Never pass `--no-verify` to skip hooks** — if the
+  pre-push landing gate rejects the push, that means a marker is still
+  missing; fix it and retry, do not bypass.
 - Clean up the branch's worktree if one was used for this branch
   (`git worktree remove`), after the merge succeeds.
+- **Recovery if the merge or push fails:** the closing journal entry
+  (step 2) was already written before this step and is immutable — it
+  cannot be edited or deleted. If the merge or push does not complete
+  successfully, append a **new** `docs/journal/` entry noting that the
+  landing described in the earlier entry did not complete (what failed,
+  and the branch's current state), so the journal stays a truthful
+  record. Do not retroactively make the earlier entry's claim true by
+  force-completing an unsafe merge.
 
 ## Notes
 
