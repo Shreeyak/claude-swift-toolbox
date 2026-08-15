@@ -59,6 +59,10 @@ name-matched call graph.
 - Winning lane: "find code by meaning," and reviewing a diff's blast radius against the graph.
 - Blind spots: name-match caveats above; embedding search returns *similar*, not *correct* —
   still verify a consequential hit with grep or serena.
+- **Embeddings are opt-in and silently absent by default**: `semantic_search` falls back to
+  keyword FTS over node names until `code-review-graph embed` has been run in the repo
+  (incremental afterwards — vectors keyed by text hash, only changed nodes re-embed). If concept
+  queries only ever return exact-name matches, run `embed`; `/code-intel:doctor` has the check.
 - Data boundary: embeddings computed locally; the graph is stored in a repo-local directory. The
   embedding model itself is downloaded once on first use — that download is a network call, the
   embedding computation afterward is not.

@@ -34,7 +34,13 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/setup-code-intel.sh" $ARGUMENTS
    printed per-profile next steps; several of them (generating a compile
    database, a full workspace build, pinning a `typescript` version) are the
    difference between a server that starts and a server that answers correctly.
-5. **Finish with `/code-intel:doctor`** — a written config is not a working one.
+5. **If the repo uses code-review-graph**, run `code-review-graph embed` once
+   after the graph is built (ask first — it downloads the embedding model on
+   first ever use). Without this step `semantic_search` silently falls back to
+   keyword FTS over node names — the graph exists but concept search is lexical.
+   Incremental afterwards: vectors are keyed by text hash, only changed nodes
+   re-embed on the next `embed`.
+6. **Finish with `/code-intel:doctor`** — a written config is not a working one.
 
 ## What it writes
 

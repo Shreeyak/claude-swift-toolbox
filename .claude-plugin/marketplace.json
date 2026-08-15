@@ -11,7 +11,7 @@
     {
       "name": "code-intel",
       "source": "./plugins/code-intel",
-      "description": "Routes code-navigation questions to the right tool — LSP/serena for exact references, semantic graphs for concept search, ast-grep/semgrep for structural patterns, grep for constants and completeness — with per-stack setup guides, a propose-then-apply setup command, and a doctor",
+      "description": "Routes code-navigation questions to the right tool — LSP/serena for exact references, embedding search (code-review-graph) for concept queries, ast-grep/semgrep for structural patterns, grep for constants and completeness — with per-stack setup guides, a propose-then-apply setup command, and a doctor",
       "version": "0.2.0",
       "keywords": ["code-intelligence", "lsp", "serena", "ast-grep", "semgrep", "refactoring", "code-search", "navigation", "grep"],
       "category": "development",
@@ -49,6 +49,15 @@
       "skills": [
         "./skills/dryad"
       ]
+    },
+    {
+      "name": "lenore-doc-system",
+      "source": "./plugins/lenore-doc-system",
+      "description": "Documentation-as-history system for AI-maintained repos — dated immutable files, git-hook-enforced rules, a desk for human retrieval, and setup/land commands",
+      "version": "0.1.0",
+      "keywords": ["documentation", "journal", "git-hooks", "openspec", "experiments"],
+      "category": "development",
+      "strict": false
     },
     {
       "name": "swift-cxx-interop",

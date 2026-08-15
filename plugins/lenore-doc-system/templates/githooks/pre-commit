@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Lenore doc system — pre-commit
+# Enforces: (1) immutability of docs/journal, docs/notes, experiments/*/runs
+#           (2) deny-filename for tracking docs (state.md, decisions.md, ...)
+#           (3) prose-only docs/ (additions must be .md/.html/image)
+#
+# Escape hatch (not documented to agents): SKIP_DOC_HOOKS=1 git commit ...
+set -euo pipefail
+
+if [ "${SKIP_DOC_HOOKS:-0}" = "1" ]; then
+  exit 0
+fi
+
+EMPTY_TREE=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+if git rev-parse --verify -q HEAD >/dev/null; then
+  AGAINST=HEAD
+else
+  AGAINST=$EMPTY_TREE
+fi
+
+fail=0
+
+# --- (1) Immutability -------------------------------------------------
+# docs/journal/*.md and experiments/*/runs/*.md: no modify, no delete.
+# docs/notes/*.md: no modify (deletion allowed — git rm is fine).
+modified=$(git diff --cached --name-only --diff-filter=M "$AGAINST" -- 'docs/journal/*' 'docs/notes/*' 'experiments/*/runs/*.md' || true)
+deleted_immutable=$(git diff --cached --name-only --diff-filter=D "$AGAINST" -- 'docs/journal/*' 'experiments/*/runs/*.md' || true)
+
+if [ -n "$modified" ]; then
+  echo "error: pre-commit (immutability): the following files are immutable once committed" >&2
+  echo "$modified" | sed 's/^/  modified: /' >&2
+  echo "  journal entries, notes, and experiment run records may not be edited after commit." >&2
+  echo "  fix typos before the first commit, or write a new dated file instead." >&2
+  fail=1
+fi
+
+if [ -n "$deleted_immutable" ]; then
+  echo "error: pre-commit (immutability): journal entries and run records may not be deleted" >&2
+  echo "$deleted_immutable" | sed 's/^/  deleted: /' >&2
+  echo "  these are history and evidence. notes/ may be deleted; these may not." >&2
+  fail=1
+fi
+
+# --- (2) Deny tracking-doc filenames -----------------------------------
+denied_names='^(state|decisions|status|changelog|handoff)\.md$'
+added=$(git diff --cached --name-only --diff-filter=A "$AGAINST" || true)
+if [ -n "$added" ]; then
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    base=$(basename "$f")
+    lower=$(printf '%s' "$base" | tr '[:upper:]' '[:lower:]')
+    if printf '%s' "$lower" | grep -qE "$denied_names"; then
+      echo "error: pre-commit (deny-filename): $f is a disallowed tracking-doc filename" >&2
+      echo "  state.md/decisions.md/STATUS.md/CHANGELOG.md/HANDOFF.md are not part of this" >&2
+      echo "  doc system. decisions-as-history -> docs/journal/; decisions-as-current-truth" >&2
+      echo "  -> openspec/specs/ or CLAUDE.md; status -> docs/tasks/ + the status line." >&2
+      fail=1
+    fi
+  done <<< "$added"
+fi
+
+# --- (3) Prose-only docs/ ------------------------------------------------
+if [ -n "$added" ]; then
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    case "$f" in
+      docs/*)
+        ext=$(printf '%s' "$f" | sed -n 's/.*\.\([A-Za-z0-9]*\)$/\1/p' | tr '[:upper:]' '[:lower:]')
+        case "$ext" in
+          md|html|png|jpg|jpeg|gif|svg|webp) ;;
+          *)
+            echo "error: pre-commit (prose-only docs/): $f has a disallowed extension for docs/" >&2
+            echo "  docs/ holds prose and images only (.md .html .png .jpg .jpeg .gif .svg .webp)." >&2
+            echo "  code -> scripts/ or experiments/*/src/ ; outputs -> experiments/*/out/ ;" >&2
+            echo "  throwaway -> tmp/ (gitignored)." >&2
+            fail=1
+            ;;
+        esac
+        ;;
+    esac
+  done <<< "$added"
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "" >&2
+  echo "pre-commit rejected. See the doc-system skill (lenore-doc-system) for the rules." >&2
+  exit 1
+fi
+
+exit 0

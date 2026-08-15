@@ -1,0 +1,15 @@
+{
+  "name": "lenore-doc-system",
+  "description": "Documentation-as-history system for AI-maintained repos — dated immutable files, git-hook-enforced rules, a desk for human retrieval, and setup/land commands",
+  "version": "0.1.0",
+  "author": {
+    "name": "Shreeyak"
+  },
+  "keywords": [
+    "documentation",
+    "journal",
+    "git-hooks",
+    "openspec",
+    "experiments"
+  ]
+}

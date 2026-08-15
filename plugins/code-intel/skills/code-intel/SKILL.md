@@ -19,7 +19,7 @@ you got (below), because each class fails differently.
 | Symbol overview of a file before editing it | serena `get_symbols_overview` |
 | Find code by meaning / concept ("where do we retry uploads") | a semantic-search graph (e.g. code-review-graph `semantic_search`) |
 | Review a diff / what a branch touched | code-review-graph `detect-changes` |
-| Search docs and prose, connect prior work | graphify — the only tool **in this toolset** that indexes `docs/` |
+| Search docs and prose, connect prior work | graphify — the only tool **in this toolset** that indexes `docs/`. Lexical label-match + graph traversal, NOT embedding search — concept queries belong in the row above |
 | Config constants, env vars, build flags, star-imported values | **grep / rg** — no graph or LSP resolves these |
 | Structural code pattern across a repo ("every `await` inside a loop") | **ast-grep** — syntax-aware structural matching, language-agnostic |
 | Known security / correctness anti-pattern | **semgrep** — structural plus, rule-dependent, dataflow/taint |

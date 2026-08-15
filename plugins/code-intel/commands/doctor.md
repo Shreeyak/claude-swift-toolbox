@@ -54,6 +54,7 @@ For each tool: its rung, and if it stopped short, the one-line fix. Common fixes
 | `.mcp.json` launches a server through an ephemeral runner (`uvx …`) | point it at the installed binary — the runner rebuilds its environment each launch and stalls at "connecting…" |
 | `.mcp.json` names a binary that is not on `PATH` | install it, then reload the session |
 | Graph file referenced but absent | rebuild the graph, or remove the stale entry |
+| `semantic_search` results look lexical (only name matches, no near-synonyms) | the repo's graph.db has no `embeddings` table — `semantic_search` is silently falling back to keyword FTS. Run `code-review-graph embed`. Check: `sqlite3 .code-review-graph/graph.db ".tables" \| grep -q embeddings` |
 | `clangd` answers empty for a file | that file is not in the compile database — check `clangd --check=<file> --compile-commands-dir=<dir>` |
 | TypeScript server starts then dies | no resolvable `typescript` lib, or `typescript@7` is installed: pin `^5` |
 | Two plugins claim the same extension | first registered wins, the other never starts — disable one, explicitly |

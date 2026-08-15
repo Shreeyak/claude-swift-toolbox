@@ -1,0 +1,7 @@
+# --- Lenore doc system ---
+tmp/
+docs/desk/
+# Heavy experiment artifacts — uncomment/adjust per repo:
+# experiments/*/data/
+# experiments/*/out/
+.docs-embeddings
