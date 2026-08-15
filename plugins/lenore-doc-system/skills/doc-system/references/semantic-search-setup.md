@@ -121,6 +121,42 @@ No overlap, reranker, BM25 hybrid, or bigger model is warranted — the
 tested failure modes are covered by the routing rules (numbers → grep)
 and the display columns (date, authority class).
 
+## Retrieval — how to query well
+
+The routing rules (when to search vs grep) live in
+`references/routing.md` and the repo's `docs/CLAUDE.md`. On top of
+those, phrasing matters:
+
+- **One concept per query, phrased as a short natural sentence.** "why
+  was GPU-side fragment sorting rejected" beats "GPU sorting atomics".
+  Several concepts ORed into one query dilute all of them — run two
+  queries instead.
+- **Use the domain's own vocabulary when you know it, and plain
+  description when you don't** — vocabulary drift is exactly what the
+  embeddings absorb ("double exposure artifacts from motion" finds the
+  ghosting note at 0.70 with zero shared keywords).
+- **Iterate once, then switch tools.** A weak top score (<0.35, the
+  tool warns) after one rephrase means the answer isn't in the docs
+  semantically — grep, browse, or say so.
+- **Keep `-k` small and read the files.** Result rows are pointers;
+  the top 1–3 files opened and read is the retrieval, not the row's
+  summary line. `--json` exists for programmatic consumers, not for
+  quoting.
+- **Trust the columns.** Date and authority-class tags exist so a
+  dated note from last spring doesn't beat the current spec; apply the
+  doctrine before acting on a hit.
+
+## Index lifecycle — creating and maintaining embeddings
+
+Nothing to schedule. The first search builds the index (model download
+~424MB once per machine, then ~1s warm); every later search runs the
+incremental content-hash refresh first, so only new or changed files
+re-embed. `--reindex` is for bulk moves or a suspect cache;
+deleting `.docs-embeddings/` is always safe. The status line surfaces a
+stale or missing index, and concurrent sessions are safe (flock +
+atomic writes). The only human-side input to index quality is the
+writing guidance above — heading structure is the chunk structure.
+
 ## Troubleshooting
 
 - **Model download fails or is slow.** Corporate proxy or flaky network —

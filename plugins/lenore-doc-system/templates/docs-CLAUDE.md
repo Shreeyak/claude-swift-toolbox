@@ -132,3 +132,14 @@ if it's missing and you want to set it up.
 - **Low scores mean stop.** If nothing scores well (the tool warns below
   ~0.35), the answer likely isn't in the docs — say so or grep; don't
   stretch a weak hit into support for your design.
+- **Phrase queries as concepts, not keyword lists.** A short natural
+  sentence naming the idea ("why was GPU-side sorting rejected", "seam
+  visibility from feathered blending") retrieves better than bare
+  keywords, and one concept per query beats several ORed together. If
+  the first phrasing scores weak, rephrase once with different
+  vocabulary before falling back to grep.
+- **Write for retrieval.** Any doc long enough to split into chunks
+  (~1500+ tokens) needs real, descriptive headings — a buried fact is
+  found through its section's heading and text. When sibling sections
+  hold near-identical content (per-scenario tables, per-arm configs),
+  the headings must name what differs.
