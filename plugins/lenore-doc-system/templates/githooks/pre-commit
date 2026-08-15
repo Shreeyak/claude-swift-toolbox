@@ -22,7 +22,7 @@ fail=0
 immutable_modified=""
 immutable_deleted=""
 added=""
-denied_names='^(state|decisions|status|changelog|handoff(-.+)?|plan(-.+)?)\.md$'
+denied_names='^(state|decisions|status|changelog|handoff(-.+)?|plan(-.+)?|review(-.+)?)\.md$'
 
 is_immutable_path() {
   lc=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')

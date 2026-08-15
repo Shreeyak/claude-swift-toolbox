@@ -89,7 +89,8 @@
 - Deleting or pruning doc content requires showing the user the diff.
   Writing new content does not.
 - Do not create state.md, decisions.md, STATUS.md, CHANGELOG.md,
-  HANDOFF.md, PLAN-*.md, HANDOFF-*.md, or any new tracking doc. (A hook
+  HANDOFF.md, PLAN-*.md, HANDOFF-*.md, REVIEW-*.md, or any new
+  tracking doc. Review findings worth keeping go in a dated note. (A hook
   enforces this for that
   specific list of names as a representative sample — the rule is the
   doctrine, not the list: any file whose job is "current status/decision
