@@ -139,7 +139,10 @@ reading set; the only coupling is both get walked at landing.
   exactly the rule that stops "tidying" of failed runs). An unwanted
   journal or run link just gets removed from the desk and ignored.
   Deletion is human-initiated only — agents never delete unprompted, and
-  every deletion shows as a diff before it happens.
+  every deletion shows as a diff before it happens. Before deleting a
+  note, grep `docs/` for its filename — a hit in a task file means a
+  task still depends on it: drop the pointer too or reconsider the
+  deletion.
 - **Autonomous mode.** When the human is not present to make destructive or
   pruning calls (a standing "act autonomously" instruction is in effect),
   the landing flow skips the desk walk entirely, leaves every pin in

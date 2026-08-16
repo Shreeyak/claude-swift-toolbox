@@ -61,8 +61,12 @@ pipeline; ECC path removed. (abc1234)
   freely. Other branches' files are read-only context.
 - `project.md`: two headings, `## Next` and `## Someday`. Entries: one-line
   title, then ≤5 lines of context. Longer context becomes a dated note the
-  line points to by name. Edited only at landings, with the user's
-  confirmation on what graduates.
+  line points to by name — `— details: notes/YYYY-MM-DD-topic.md`. Write
+  that note at discovery time, while the context is still in-session; the
+  pointer can't rot because notes are immutable and never renamed. Details
+  never creep into the task file; whoever picks up the task reads the note
+  first. Edited only at landings, with the user's confirmation on what
+  graduates.
 
 ## Bugs (`docs/bugs/YYYY-MM-DD-topic.md`)
 
