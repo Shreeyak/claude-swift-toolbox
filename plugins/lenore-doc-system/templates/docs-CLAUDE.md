@@ -38,6 +38,16 @@ pipeline; ECC path removed. (abc1234)
   `<!-- one-sentence summary · published: <url-if-published> -->`
 - Immutable once committed. Revisiting a topic = a new dated file, not an
   edit to the old one.
+- **A note that corrects or supersedes an earlier note names it in its
+  body, in plain words** ("revises notes/2026-08-10-x.md"). The old note
+  is not edited, gets no marker, and stays unless it's junk
+  (human-confirmed delete). This makes succession discoverable in both
+  directions with zero infrastructure: newest-first listings and search
+  dates surface the newer note, and grepping an old note's filename
+  finds its successors. No need to check for supersession on every
+  read — notes are never authority, so an old note can't mislead about
+  what's true now; check only when about to act on one (the date+class
+  rule already says this).
 - **Review output** (subagent/codex/human code reviews): never save the
   raw transcript, and save nothing for findings that were fixed — the
   fix commits are the record. A review earns a note
