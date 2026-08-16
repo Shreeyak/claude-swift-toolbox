@@ -26,7 +26,8 @@ the plan, apply only after the user confirms.
   you the tier; if the two disagree, ask the user which is right.
 - If artifacts are found: this is an **upgrade**. Diff the repo's copies of
   `.githooks/pre-commit`, `.githooks/pre-push`, `.githooks/pre-merge-commit`,
-  `scripts/doc-status.sh`, `scripts/browse.py`, `scripts/docs-search.py`,
+  `.githooks/commit-msg`, `scripts/doc-status.sh`, `scripts/browse.py`,
+  `scripts/docs-search.py`, `scripts/lenore-docs.py`,
   `docs/CLAUDE.md` against this plugin's `templates/` — propose replacing
   any that differ, and report the diffs. Do not touch `docs/journal/`,
   `docs/notes/`, or other content.
@@ -57,7 +58,8 @@ the plan, apply only after the user confirms.
   - `git config core.hooksPath` is `.githooks` (set it if missing or
     unset — see the "existing hooks" note below if it's set to something
     else).
-  - `.githooks/pre-commit`, `.githooks/pre-push`, `.githooks/pre-merge-commit`
+  - `.githooks/pre-commit`, `.githooks/pre-push`, `.githooks/pre-merge-commit`,
+    `.githooks/commit-msg`
     exist and are executable (`chmod +x` if not, restore from `templates/`
     if missing).
   - `AGENTS.md -> CLAUDE.md` exists at repo root and `docs/AGENTS.md ->
@@ -93,10 +95,10 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   which is also gitignored — see gitignore-snippet).
 - Create `docs/tasks/project.md` with `## Next` and `## Someday` headings
   if it does not already exist.
-- Copy `templates/githooks/{pre-commit,pre-push,pre-merge-commit}` to
-  `.githooks/`, then `chmod +x` all three.
-- Copy `templates/scripts/{browse.py,doc-status.sh,docs-search.py}` to
-  `scripts/`, then `chmod +x doc-status.sh` (`browse.py`/`docs-search.py`
+- Copy `templates/githooks/{pre-commit,pre-push,pre-merge-commit,commit-msg}`
+  to `.githooks/`, then `chmod +x` all four.
+- Copy `templates/scripts/{browse.py,doc-status.sh,docs-search.py,lenore-docs.py}`
+  to `scripts/`, then `chmod +x doc-status.sh lenore-docs.py` (`browse.py`/`docs-search.py`
   are invoked via `uv run`, executable bit optional but harmless to set).
   Mention to the user that `docs-search.py` (local semantic search, Apple
   Silicon only) is optional — its setup and troubleshooting live in

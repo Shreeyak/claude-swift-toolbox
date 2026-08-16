@@ -77,6 +77,36 @@ pipeline; ECC path removed. (abc1234)
   never creep into the task file; whoever picks up the task reads the note
   first. Edited only at landings, with the user's confirmation on what
   graduates.
+- **Every task entry must be readable by someone with none of your
+  session context.** Mid-task shorthand ("re-run the sweep after the
+  τ/μ fix") is the classic failure — a week later nobody knows which
+  sweep, which fix, or what τ is. Expand: name the files, commits, and
+  parameters; state what triggers the task and what done looks like.
+  If self-containment takes more than the title + 5 context lines, that
+  is the signal for a backing note, not a longer entry.
+
+## Creating entries — `scripts/lenore-docs.py`
+
+Prefer the CLI for creating notes, bugs, journal entries, and tasks — it
+generates correct dated filenames, enforces the shape caps with
+explanatory errors, and makes task + backing note + pointer a single
+atomic operation (a forgotten pointer becomes impossible). Body goes in
+via heredoc:
+
+```
+uv run scripts/lenore-docs.py note "One-sentence summary" <<'EOF'
+Full prose body...
+EOF
+scripts/lenore-docs.py note "..." --supersedes notes/2026-08-10-x.md <<'EOF' ... EOF
+scripts/lenore-docs.py bug "..." <<'EOF' repro, expected vs actual ... EOF
+scripts/lenore-docs.py journal "One-sentence event" [body ≤10 lines/150 words total]
+scripts/lenore-docs.py task "Self-contained title" [--someday|--branch] [--note] [context]
+```
+
+`task --note` files the body as a dated note and appends the
+`— details:` pointer to the task line automatically. Plain Write remains
+a valid fallback (the hooks still enforce the rules); the CLI is the
+convenient path, not a gate.
 
 ## Bugs (`docs/bugs/YYYY-MM-DD-topic.md`)
 

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Lenore doc system — commit-msg
+# Enforces: a commit message that CLAIMS to fix a docs/bugs/ file must also
+# delete that file in the same commit (bug files are deleted in their fix
+# commit). Bare mentions ("see docs/bugs/x.md", "refs docs/bugs/x.md") are
+# always fine — only fix-claim keywords on the same line as a bug path
+# trigger the check.
+set -euo pipefail
+
+[ "${SKIP_DOC_HOOKS:-0}" = "1" ] && exit 0
+
+msg_file="$1"
+[ -f "$msg_file" ] || exit 0
+
+fix_words='(fix|fixes|fixed|close|closes|closed|resolve|resolves|resolved)'
+fail=0
+
+# Lines carrying both a fix-claim keyword and a docs/bugs path.
+while IFS= read -r line; do
+  # Strip comment lines (commit template / verbose diff).
+  case "$line" in \#*) continue ;; esac
+  if printf '%s' "$line" | grep -qiE "$fix_words"; then
+    # Every bug path mentioned on this line must be deleted in this commit.
+    for path in $(printf '%s' "$line" | grep -oE 'docs/bugs/[A-Za-z0-9._-]+\.md' || true); do
+      status=$(git diff --cached --name-status -- "$path" | cut -f1 | head -1)
+      if [ "$status" != "D" ]; then
+        echo "commit-msg rejected: the message claims to fix $path, but this commit does not delete it." >&2
+        echo "Bug files are deleted in their fix commit. Either:" >&2
+        echo "  git rm $path      # if the bug is actually fixed here" >&2
+        echo "  ...or reword the claim (e.g. 'refs $path', 'partial work on $path')." >&2
+        fail=1
+      fi
+    done
+  fi
+done < "$msg_file"
+
+exit $fail
