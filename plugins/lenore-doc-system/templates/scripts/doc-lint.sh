@@ -104,8 +104,17 @@ $payload
 EOF
 ) || exit 0
 
-case "$verdict" in
-  OK|ok|Ok|"") exit 0 ;;
+# Tolerant OK detection: "OK", "OK.", "OK — all clear" etc. all pass. A
+# verdict whose first line is OK-ish and which contains no violation
+# bullets is a pass; only real findings block.
+[ -z "$verdict" ] && exit 0
+norm=$(printf '%s' "$verdict" | tr '[:upper:]' '[:lower:]' | sed 's/[[:space:][:punct:]]//g')
+[ "$norm" = "ok" ] && exit 0
+first=$(printf '%s\n' "$verdict" | sed -n '/[^[:space:]]/{p;q;}' | tr '[:upper:]' '[:lower:]')
+case "$first" in
+  ok*)
+    printf '%s\n' "$verdict" | grep -qE '^[[:space:]]*[-*]' || exit 0
+    ;;
 esac
 
 printf '%s' "$payload_hash" > "$ack_file" 2>/dev/null || true
