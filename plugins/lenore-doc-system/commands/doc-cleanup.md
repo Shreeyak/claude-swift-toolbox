@@ -10,7 +10,7 @@ after the user confirms. If the session is operating autonomously, do not
 run this command; defer it to an interactive session.
 
 Run `scripts/doc-status.sh` first (or `uv run scripts/browse.py --plain`)
-to ground the pass in current numbers. Then work through the five areas,
+to ground the pass in current numbers. Then work through the six areas,
 skipping any with nothing to propose:
 
 ## 1. Someday prune
@@ -53,7 +53,18 @@ dropping it: a task nobody can decode is already lost. The commit-time
 drift lint catches most of these at write time; this pass sweeps up what
 predates it or slipped through.
 
-## 5. Catch-up journal entry
+## 5. Experiment data hygiene
+
+For each `experiments/*/`, report the disk size of `data/` and `out/`
+(`du -sh`). For experiments whose README `status:` is concluded or
+shelved, propose deleting regenerable data — anything whose README
+records a regeneration command or download source. Never propose deleting
+data with no recorded way back; instead flag it ("no regeneration command
+recorded — add one to the README or keep the data"). Deletions are `rm`
+of gitignored files (no git surface), applied only after the user
+confirms each experiment.
+
+## 6. Catch-up journal entry
 
 If the status line shows a large gap (last entry many days / many commits
 ago), offer to write **one** catch-up entry summarizing the arc from

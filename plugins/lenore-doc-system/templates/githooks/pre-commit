@@ -11,7 +11,12 @@
 #           (7) experiment isolation: no import-shaped references to experiments/
 #               from code outside experiments/, and no symlinks targeting it
 #           (8) merge guidance for conflicting dated notes/bugs: both versions
-#               must survive (one refiled under a new dated name)
+#               should survive (one refiled under a new dated name); a repeated
+#               identical attempt proceeds — deliberate drops are allowed
+#           (9) optional (LENORE_COMMIT_LINT=1): run the judgment lint
+#               (scripts/doc-lint.sh --git-hook) for harnesses without an
+#               agent-hook layer; commits already vetted by a harness hook
+#               are not judged twice
 set -euo pipefail
 
 [ "${SKIP_DOC_HOOKS:-0}" = "1" ] && exit 0
@@ -335,16 +340,37 @@ if [ -n "$MERGE_HEAD_REF" ]; then
     printf '%s\n' "$staged_blobs" | grep -q "^$ours$"   || missing="${missing}HEAD:$path "
     printf '%s\n' "$staged_blobs" | grep -q "^$theirs$" || missing="${missing}MERGE_HEAD:$path "
     if [ -n "$missing" ]; then
+      # Warn-once: a repeated identical resolution is a deliberate drop
+      # (deleting the junk twin IS valid conflict resolution) — only a
+      # SILENT drop is blocked, and it costs exactly one retry.
+      gitdir=$(git rev-parse --git-dir 2>/dev/null || echo .git)
+      merge_ack="$gitdir/lenore-merge-ack"
+      sig=$(printf '%s %s %s' "$path" "$ours" "$theirs" | git hash-object --stdin 2>/dev/null || echo none)
+      if [ -f "$merge_ack" ] && grep -q "^$sig$" "$merge_ack" 2>/dev/null; then
+        continue
+      fi
+      echo "$sig" >> "$merge_ack" 2>/dev/null || true
       echo "error: pre-commit (merge guidance): $path was filed independently on both branches" >&2
       echo "  with different content, and this merge drops a version: $missing" >&2
-      echo "  Both are committed history — keep both. Refile the losing version under a new" >&2
-      echo "  dated name, e.g.:" >&2
+      echo "  Both are committed history — default is keep both: refile the losing version" >&2
+      echo "  under a new dated name, e.g.:" >&2
       echo "    git show ${missing%% *} > docs/notes/\$(date +%F)-<new-topic-slug>.md && git add docs/notes/" >&2
-      echo "  then re-run the merge commit. (If one version is genuinely junk, delete it in a" >&2
-      echo "  follow-up commit — notes and bugs are deletable; silent loss in a merge is not.)" >&2
+      echo "  then re-run the merge commit. If you have READ the dropped version and judge it" >&2
+      echo "  junk/duplicate, dropping it here is a valid resolution: re-run the same commit" >&2
+      echo "  unchanged and it will proceed." >&2
       fail=1
     fi
   done < <(git ls-files -- docs/notes docs/bugs 2>/dev/null)
+fi
+
+# --- (9) Optional judgment lint at the git layer -------------------------
+# For harnesses with no agent-hook layer (and CI). The harness PreToolUse
+# hook records an ok-hash after a clean judgment, so agent commits vetted
+# there are not judged twice.
+if [ "$fail" -eq 0 ] && [ "${LENORE_COMMIT_LINT:-0}" = "1" ] && [ -x scripts/doc-lint.sh ]; then
+  if ! scripts/doc-lint.sh --git-hook scripts; then
+    fail=1
+  fi
 fi
 
 if [ "$fail" -ne 0 ]; then

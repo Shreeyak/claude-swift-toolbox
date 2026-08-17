@@ -164,9 +164,19 @@ README's "Lifted into production" section.
 ## Merged twins (same-named notes from parallel sessions)
 
 If a merge conflicts on a same-named dated note or bug filed by two
-sessions, keep both: one under the original name, the other refiled under
-a new dated name — the pre-commit hook blocks the merge otherwise and
-prints the exact command.
+sessions, default to keeping both: one under the original name, the other
+refiled under a new dated name — the pre-commit hook blocks a silent drop
+and prints the exact command. If you have read the dropped version and
+judge it junk, dropping it is a valid resolution: re-run the same commit
+unchanged and it proceeds.
+
+## Experiment data
+
+Never committed — `data/`, `experiments/*/data/`, `experiments/*/out/`
+are gitignored. Data lives in the MAIN checkout; worktrees symlink to it
+instead of copying. Record every dataset's regeneration command (or
+source + hash) in the experiment README; regenerable data of concluded
+experiments gets cleaned up by /doc-cleanup.
 
 ## Desk (`docs/desk/`)
 

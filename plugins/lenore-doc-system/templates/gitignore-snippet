@@ -1,7 +1,11 @@
 # --- Lenore doc system ---
 tmp/
 docs/desk/
-# Heavy experiment artifacts — uncomment/adjust per repo:
-# experiments/*/data/
-# experiments/*/out/
+# Data is git-ignored, never committed: it lives in the MAIN checkout's
+# data/ dirs; worktrees symlink to it (symlinks are gitignored too, so the
+# hooks never see them). Manifest/regeneration commands are recorded in the
+# experiment README instead.
+data/
+experiments/*/data/
+experiments/*/out/
 .docs-embeddings

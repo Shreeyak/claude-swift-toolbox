@@ -165,9 +165,13 @@ experiment README's `status` to concluded/shelved requires a real verdict,
 a concluded date, and a journal entry in the same commit), quarantines
 experiments (no import-shaped references or symlinks into `experiments/`
 from production code — promotion goes through "Lifted into production"),
-and guides merge conflicts on same-named dated notes/bugs: both committed
-versions must survive the merge, one refiled under a new dated name (the
-hook prints the exact refile command). No
+and guides merge conflicts on same-named dated notes/bugs: default is
+both committed versions survive (one refiled under a new dated name — the
+hook prints the exact command); a deliberate drop of a read-and-judged
+junk twin proceeds on an unchanged retry (warn-once). Setting
+`LENORE_COMMIT_LINT=1` additionally runs the judgment lint inside git
+pre-commit itself (for harnesses with no agent-hook layer; commits a
+harness hook already vetted are not judged twice). No
 scheduled jobs; doc maintenance is event-driven only.
 
 ## Settled decisions — do not re-litigate

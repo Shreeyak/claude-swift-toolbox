@@ -51,9 +51,10 @@ immutable files. Doctrine: **both versions survive.** Keep one under the
 original name, refile the other's exact content under a new dated name
 (`git show MERGE_HEAD:docs/notes/<f>.md > docs/notes/YYYY-MM-DD-<new-slug>.md`),
 then complete the merge — the pre-commit hook blocks a merge that silently
-drops either version and prints this recovery. If one version is genuinely
-junk, delete it in a follow-up commit (notes are deletable; silent loss in
-a merge is not).
+drops either version and prints this recovery. Dropping one twin IS a valid
+resolution when you have read it and judge it junk or duplicate: re-run the
+same merge commit unchanged and it proceeds (warn-once — only a SILENT drop
+is blocked, and a deliberate one costs one retry).
 
 ## `docs/bugs/` — the live bug list
 
@@ -141,6 +142,20 @@ quarantined from production: the hook rejects import-shaped references to
 `experiments/` from code outside it and symlinks pointing into it — the
 sanctioned path is lifting the code into the production tree and recording
 it in the README's "Lifted into production" section.
+
+### Experiment data — gitignored in the main checkout, symlinked in worktrees
+
+Data is never committed (`data/`, `experiments/*/data/`, and
+`experiments/*/out/` are gitignored by the installed snippet — committed
+data bloats every clone permanently and gets physically duplicated per
+worktree). It lives in the MAIN checkout's data directories; a worktree
+that needs it symlinks to the main checkout's copy (`ln -s
+<main>/experiments/<name>/data experiments/<name>/data`) — the symlink is
+inside a gitignored path, so no hook ever sees it and nothing is
+duplicated. Every dataset's regeneration command (or download source +
+content hash) is recorded in the experiment README so the data is always
+rebuildable; regenerable data of concluded/shelved experiments is the
+first thing `/doc-cleanup`'s data-hygiene pass proposes deleting.
 
 ## `openspec/` — plans and feature truth
 

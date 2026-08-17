@@ -23,9 +23,23 @@ set -uo pipefail
 [ "${LENORE_NO_LINT:-0}" = "1" ] && exit 0
 command -v claude >/dev/null 2>&1 || command -v codex >/dev/null 2>&1 || exit 0
 
-input=$(cat)
+# Two entry modes:
+#   harness (default): PreToolUse hook — hook JSON on stdin, act only on
+#     `git commit` commands. $1 = plugin root.
+#   --git-hook: invoked from the git pre-commit hook (LENORE_COMMIT_LINT=1)
+#     for harnesses with no agent-hook layer. $2 = plugin root. Skips the
+#     stdin/command parsing; the ok-hash handshake below prevents a commit
+#     already vetted by a harness hook from being judged twice.
+mode=harness
+if [ "${1:-}" = "--git-hook" ]; then
+  mode=git
+  shift
+fi
 
-cmd=$(printf '%s' "$input" | python3 -c '
+if [ "$mode" = "harness" ]; then
+  input=$(cat)
+
+  cmd=$(printf '%s' "$input" | python3 -c '
 import json, sys
 try:
     d = json.load(sys.stdin)
@@ -34,10 +48,11 @@ except Exception:
     pass
 ' 2>/dev/null) || exit 0
 
-# Only act on git commit commands (compound commands included).
-printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])git[[:space:]]+([^[:space:]]+[[:space:]]+)*commit([[:space:]]|$)' || exit 0
-# Respect an explicit skip in the command itself.
-printf '%s' "$cmd" | grep -q 'LENORE_NO_LINT=1' && exit 0
+  # Only act on git commit commands (compound commands included).
+  printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])git[[:space:]]+([^[:space:]]+[[:space:]]+)*commit([[:space:]]|$)' || exit 0
+  # Respect an explicit skip in the command itself.
+  printf '%s' "$cmd" | grep -q 'LENORE_NO_LINT=1' && exit 0
+fi
 
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$root" || exit 0
@@ -93,9 +108,16 @@ done <<< "$run_exps"
 # through — a disputed judgment call costs one retry, never a standoff.
 gitdir=$(git rev-parse --git-dir 2>/dev/null) || exit 0
 ack_file="$gitdir/lenore-lint-ack"
+ok_file="$gitdir/lenore-lint-ok"
 payload_hash=$(printf '%s' "$payload" | git hash-object --stdin 2>/dev/null || echo none)
 if [ -f "$ack_file" ] && [ "$(cat "$ack_file" 2>/dev/null)" = "$payload_hash" ]; then
   rm -f "$ack_file"
+  [ "$mode" = harness ] && printf '%s' "$payload_hash" > "$ok_file" 2>/dev/null
+  exit 0
+fi
+# In git mode, skip content a harness hook already judged OK this commit.
+if [ "$mode" = git ] && [ -f "$ok_file" ] && [ "$(cat "$ok_file" 2>/dev/null)" = "$payload_hash" ]; then
+  rm -f "$ok_file"
   exit 0
 fi
 
@@ -130,11 +152,15 @@ fi
 # bullets is a pass; only real findings block.
 [ -z "$verdict" ] && exit 0
 norm=$(printf '%s' "$verdict" | tr '[:upper:]' '[:lower:]' | sed 's/[[:space:][:punct:]]//g')
-[ "$norm" = "ok" ] && exit 0
+ok_pass() {
+  [ "$mode" = harness ] && printf '%s' "$payload_hash" > "$ok_file" 2>/dev/null
+  exit 0
+}
+[ "$norm" = "ok" ] && ok_pass
 first=$(printf '%s\n' "$verdict" | sed -n '/[^[:space:]]/{p;q;}' | tr '[:upper:]' '[:lower:]')
 case "$first" in
   ok*)
-    printf '%s\n' "$verdict" | grep -qE '^[[:space:]]*[-*]' || exit 0
+    printf '%s\n' "$verdict" | grep -qE '^[[:space:]]*[-*]' || ok_pass
     ;;
 esac
 
