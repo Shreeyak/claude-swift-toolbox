@@ -119,9 +119,33 @@ else
   fi
 fi
 
+# --- dangling pointers (task "— details:" -> notes, note "Revises" -> note) --
+dangling_ptr_part=""
+dang=""
+if [ -d docs/tasks ]; then
+  for tf in docs/tasks/*.md; do
+    [ -e "$tf" ] || continue
+    for ref in $(grep -oE '(docs/)?notes/[A-Za-z0-9._-]+\.md' "$tf" 2>/dev/null | sort -u); do
+      rel="${ref#docs/}"
+      [ -f "docs/$rel" ] || dang="${dang}${tf}->${rel} "
+    done
+  done
+fi
+if [ -d docs/notes ]; then
+  for ref in $(grep -hoE '^Revises (docs/)?notes/[A-Za-z0-9._-]+\.md' docs/notes/*.md 2>/dev/null | awk '{print $2}' | sort -u); do
+    rel="${ref#docs/}"
+    [ -f "docs/$rel" ] || dang="${dang}revises->${rel} "
+  done
+fi
+if [ -n "$dang" ]; then
+  dang_n=$(printf '%s' "$dang" | wc -w | tr -d ' ')
+  dang_first=$(printf '%s' "$dang" | awk '{print $1}')
+  dangling_ptr_part=" · dangling-pointers: ${dang_n} (${dang_first})"
+fi
+
 stale_task_part=""
 if [ -n "$stale_task_files" ]; then
   stale_task_part=" · $(printf '%s' "$stale_task_files" | sed 's/ *$//')"
 fi
 
-echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${stale_task_part}"
+echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${stale_task_part}"

@@ -127,6 +127,15 @@ exec this plugin's, or vice versa) rather than silently overwriting.
 - Register `scripts/doc-status.sh` as a `SessionStart` hook in
   `.claude/settings.json` — **merge into the existing hooks array, never
   overwrite the file**; skip if an entry for this command already exists.
+  Register it **without a matcher** so it fires on every SessionStart
+  event — startup, resume, clear, *and compact* — which means long-lived
+  auto-compacting sessions re-see the status line at every compaction,
+  not just on day one.
+- Nothing to install for the advisory drift lint: `doc-lint.sh` runs as a
+  plugin-level PostToolUse hook (from the plugin's `hooks/hooks.json`) in
+  every repo where this plugin is enabled, self-gated on `docs/CLAUDE.md`
+  existing. Mention to the user it can be disabled per-shell with
+  `LENORE_NO_LINT=1`.
   If a Codex config exists in this repo, install `templates/codex-hooks.json`
   as `.codex/hooks.json` (merge, don't overwrite): it registers
   `scripts/doc-status.sh` as Codex's `SessionStart` hook equivalent. (Codex requires per-repo hooks to be trusted: the first interactive `codex` session in the repo prompts to trust the hook and records a `trusted_hash` in `~/.codex/config.toml`; until then, non-interactive `codex exec` runs silently skip it).
