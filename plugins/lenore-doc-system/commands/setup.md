@@ -27,7 +27,8 @@ the plan, apply only after the user confirms.
 - If artifacts are found: this is an **upgrade**. Diff the repo's copies of
   `.githooks/pre-commit`, `.githooks/pre-push`, `.githooks/pre-merge-commit`,
   `.githooks/commit-msg`, `scripts/doc-status.sh`, `scripts/browse.py`,
-  `scripts/docs-search.py`, `scripts/lenore-docs.py`,
+  `scripts/docs-search.py`, `scripts/lenore-docs.py`, `scripts/doc-lint.sh`,
+  `scripts/doc-lint-judge.md`, `.codex/hooks.json`,
   `docs/CLAUDE.md` against this plugin's `templates/` — propose replacing
   any that differ, and report the diffs. Do not touch `docs/journal/`,
   `docs/notes/`, or other content.
@@ -97,8 +98,10 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   if it does not already exist.
 - Copy `templates/githooks/{pre-commit,pre-push,pre-merge-commit,commit-msg}`
   to `.githooks/`, then `chmod +x` all four.
-- Copy `templates/scripts/{browse.py,doc-status.sh,docs-search.py,lenore-docs.py}`
-  to `scripts/`, then `chmod +x doc-status.sh lenore-docs.py` (`browse.py`/`docs-search.py`
+- Copy `templates/scripts/{browse.py,doc-status.sh,docs-search.py,lenore-docs.py,doc-lint.sh}`
+  and the plugin's `agents/doc-lint-judge.md` to `scripts/` (the committed
+  lint + judge copies are what Codex and CI invoke; Claude Code keeps using
+  the plugin's own copies), then `chmod +x doc-status.sh lenore-docs.py doc-lint.sh` (`browse.py`/`docs-search.py`
   are invoked via `uv run`, executable bit optional but harmless to set).
   Mention to the user that `docs-search.py` (local semantic search, Apple
   Silicon only) is optional — its setup and troubleshooting live in
@@ -141,9 +144,18 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   a run contradicting a stale verdict) into one cheap Haiku check; violations block that one commit attempt with the reasons,
   and re-running the same commit unchanged proceeds (warn-once). Self-gated
   on `docs/CLAUDE.md` existing; disable with `LENORE_NO_LINT=1`.
-  If a Codex config exists in this repo, install `templates/codex-hooks.json`
-  as `.codex/hooks.json` (merge, don't overwrite): it registers
-  `scripts/doc-status.sh` as Codex's `SessionStart` hook equivalent. (Codex requires per-repo hooks to be trusted: the first interactive `codex` session in the repo prompts to trust the hook and records a `trusted_hash` in `~/.codex/config.toml`; until then, non-interactive `codex exec` runs silently skip it).
+  Always install `templates/codex-hooks.json` as `.codex/hooks.json`
+  (merge, don't overwrite; install even if Codex isn't initialized in the
+  project — the file is inert until a Codex session runs here): it registers
+  `scripts/doc-status.sh` on Codex's `SessionStart` and `scripts/doc-lint.sh`
+  as a Codex `PreToolUse` hook on Bash — the same commit-time lint, which
+  auto-falls-back from `claude` (Haiku) to `codex exec` (gpt-5.6-terra,
+  medium effort) as its judge backend. Codex requires per-repo hooks to be
+  trusted: the first interactive `codex` session prompts once and records a
+  per-hook `trusted_hash` (sha256) under `[hooks.state]` in
+  `~/.codex/config.toml`; until then non-interactive `codex exec` runs skip
+  the hooks (CI can pass `--dangerously-bypass-hook-trust` if it vets
+  sources itself).
 
 **Tier 0:**
 

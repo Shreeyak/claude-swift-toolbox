@@ -154,6 +154,20 @@ Immutable once committed. Contents: exact command run, config, dataset
 identity, code commit hash, metrics, one paragraph of interpretation. Never
 edited or deleted after commit — dead ends stay on record.
 
+## Experiment isolation
+
+Production code never imports from `experiments/` and never symlinks into
+it (pre-commit enforces both). To use experiment code for real, lift it
+into the production tree and record the promotion in the experiment
+README's "Lifted into production" section.
+
+## Merged twins (same-named notes from parallel sessions)
+
+If a merge conflicts on a same-named dated note or bug filed by two
+sessions, keep both: one under the original name, the other refiled under
+a new dated name — the pre-commit hook blocks the merge otherwise and
+prints the exact command.
+
 ## Desk (`docs/desk/`)
 
 Managed via plain words, not commands. Symlink name is a short descriptive

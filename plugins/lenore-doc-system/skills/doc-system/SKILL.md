@@ -160,9 +160,14 @@ containedness, real summaries, actionable bugs, evidence-grade run
 records; a new run that contradicts its experiment README's verdict while
 the README goes untouched is flagged): violations block that one attempt
 with reasons, an unchanged retry proceeds (warn-once), `LENORE_NO_LINT=1`
-disables. The pre-commit hook additionally gates conclusions: flipping an
+disables. The pre-commit hook additionally gates conclusions (flipping an
 experiment README's `status` to concluded/shelved requires a real verdict,
-a concluded date, and a journal entry in the same commit. No
+a concluded date, and a journal entry in the same commit), quarantines
+experiments (no import-shaped references or symlinks into `experiments/`
+from production code — promotion goes through "Lifted into production"),
+and guides merge conflicts on same-named dated notes/bugs: both committed
+versions must survive the merge, one refiled under a new dated name (the
+hook prints the exact refile command). No
 scheduled jobs; doc maintenance is event-driven only.
 
 ## Settled decisions — do not re-litigate

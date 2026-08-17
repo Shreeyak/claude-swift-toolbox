@@ -8,6 +8,10 @@
 #           (6) experiment conclusion gate: flipping status to concluded/shelved
 #               requires a verdict, a concluded date, and a journal entry in the
 #               same commit
+#           (7) experiment isolation: no import-shaped references to experiments/
+#               from code outside experiments/, and no symlinks targeting it
+#           (8) merge guidance for conflicting dated notes/bugs: both versions
+#               must survive (one refiled under a new dated name)
 set -euo pipefail
 
 [ "${SKIP_DOC_HOOKS:-0}" = "1" ] && exit 0
@@ -19,6 +23,11 @@ else
 fi
 
 fail=0
+
+MERGE_HEAD_REF=""
+if git rev-parse --verify -q MERGE_HEAD >/dev/null 2>&1; then
+  MERGE_HEAD_REF=MERGE_HEAD
+fi
 
 # Parse the staged diff with -z so renames/copies and odd filenames are safe.
 # --name-status -z -M: records are NUL-separated; R/C records carry an extra
@@ -51,7 +60,21 @@ while IFS= read -r -d '' status; do
     M)
       IFS= read -r -d '' f
       if is_immutable_path "$f"; then
-        immutable_modified="${immutable_modified}${f}"$'\n'
+        # During a merge commit, resolving an add/add conflict to the OTHER
+        # branch's committed version is not a rewrite — both blobs were
+        # committed immutably on their own branches. Check (8) ensures the
+        # losing version survives under a new name.
+        if [ -n "$MERGE_HEAD_REF" ]; then
+          staged_blob=$(git rev-parse -q --verify ":$f" 2>/dev/null || true)
+          theirs_blob=$(git rev-parse -q --verify "$MERGE_HEAD_REF:$f" 2>/dev/null || true)
+          if [ -n "$staged_blob" ] && [ "$staged_blob" = "$theirs_blob" ]; then
+            :
+          else
+            immutable_modified="${immutable_modified}${f}"$'\n'
+          fi
+        else
+          immutable_modified="${immutable_modified}${f}"$'\n'
+        fi
       fi
       ;;
     D)
@@ -249,6 +272,79 @@ if [ -n "$exp_readmes" ]; then
       fail=1
     fi
   done <<< "$exp_readmes"
+fi
+
+# --- (7) Experiment isolation ---------------------------------------------
+# Production code must not import from experiments/. The sanctioned path is
+# promotion: lift the code into src/ and record it in the experiment README's
+# "Lifted into production" section. Narrow, import-shaped patterns only, so
+# prose and comments pass.
+code_ext='py|swift|js|jsx|ts|tsx|mjs|cjs|rb|go|rs|java|kt|c|cc|cpp|h|hpp|m|mm|sh'
+if [ -n "$added$immutable_modified" ] || true; then
+  while IFS= read -r -d '' f; do
+    case "$f" in experiments/*) continue ;; esac
+    printf '%s' "$f" | grep -qE "\.($code_ext)$" || continue
+    content=$(git show ":$f" 2>/dev/null) || continue
+    hits=$(printf '%s\n' "$content" | grep -nE \
+      '^[[:space:]]*(import|from)[[:space:]][^#]*\bexperiments[./]|^[[:space:]]*#include[[:space:]]*["<][^">]*experiments/|require\(?[[:space:]]*['"'"'"][^'"'"'"]*experiments/' \
+      | head -3 || true)
+    if [ -n "$hits" ]; then
+      echo "error: pre-commit (experiment isolation): $f references experiments/ from production code:" >&2
+      printf '%s\n' "$hits" | sed 's/^/  /' >&2
+      echo "  experiments are quarantined. To use experiment code in production, lift it into" >&2
+      echo "  the production tree and record the promotion in the experiment README's" >&2
+      echo "  'Lifted into production' section." >&2
+      fail=1
+    fi
+  done < <(git diff --cached --name-only -z --diff-filter=AM "$AGAINST" 2>/dev/null || true)
+fi
+
+# Symlinks anywhere in the repo may not point into experiments/.
+while IFS= read -r -d '' rec; do
+  case "$rec" in :*) ;; *) continue ;; esac
+  new_mode=$(printf '%s' "$rec" | awk '{print $2}')
+  st=$(printf '%s' "$rec" | awk '{print $5}')
+  case "$st" in
+    R*|C*) IFS= read -r -d '' _src; IFS= read -r -d '' path ;;
+    *) IFS= read -r -d '' path ;;
+  esac
+  [ "$new_mode" = "120000" ] || continue
+  target=$(git show ":$path" 2>/dev/null || true)
+  case "$target" in
+    *experiments/*)
+      echo "error: pre-commit (experiment isolation): symlink $path -> $target points into experiments/" >&2
+      fail=1
+      ;;
+  esac
+done < <(git diff --cached --raw -z -M "$AGAINST" 2>/dev/null || true)
+
+# --- (8) Merge guidance: conflicting dated notes/bugs -----------------------
+# Two sessions filing docs/notes|bugs files with the same dated name produce
+# an add/add conflict at merge. Doctrine: both versions survive — the merge
+# keeps one under the original name and refiles the other under a NEW dated
+# name; the refiled-from version may then be deleted later like any note.
+if [ -n "$MERGE_HEAD_REF" ]; then
+  staged_blobs=$(git ls-files -s -- docs/notes docs/bugs 2>/dev/null | awk '{print $2}')
+  while IFS=$'\t' read -r path; do
+    [ -n "$path" ] || continue
+    ours=$(git rev-parse -q --verify "HEAD:$path" 2>/dev/null || true)
+    theirs=$(git rev-parse -q --verify "$MERGE_HEAD_REF:$path" 2>/dev/null || true)
+    [ -n "$ours" ] && [ -n "$theirs" ] || continue
+    [ "$ours" = "$theirs" ] && continue
+    missing=""
+    printf '%s\n' "$staged_blobs" | grep -q "^$ours$"   || missing="${missing}HEAD:$path "
+    printf '%s\n' "$staged_blobs" | grep -q "^$theirs$" || missing="${missing}MERGE_HEAD:$path "
+    if [ -n "$missing" ]; then
+      echo "error: pre-commit (merge guidance): $path was filed independently on both branches" >&2
+      echo "  with different content, and this merge drops a version: $missing" >&2
+      echo "  Both are committed history — keep both. Refile the losing version under a new" >&2
+      echo "  dated name, e.g.:" >&2
+      echo "    git show ${missing%% *} > docs/notes/\$(date +%F)-<new-topic-slug>.md && git add docs/notes/" >&2
+      echo "  then re-run the merge commit. (If one version is genuinely junk, delete it in a" >&2
+      echo "  follow-up commit — notes and bugs are deletable; silent loss in a merge is not.)" >&2
+      fail=1
+    fi
+  done < <(git ls-files -- docs/notes docs/bugs 2>/dev/null)
 fi
 
 if [ "$fail" -ne 0 ]; then

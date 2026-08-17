@@ -12,6 +12,19 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; [ -f \"$root/scripts/doc-lint.sh\" ] && exec bash \"$root/scripts/doc-lint.sh\" \"$root/scripts\"; exit 0",
+            "statusMessage": "Lenore doc lint",
+            "timeout": 120
+          }
+        ]
+      }
     ]
   }
 }

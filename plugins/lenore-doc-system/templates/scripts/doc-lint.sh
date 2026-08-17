@@ -15,11 +15,13 @@
 # are NOT re-checked here — the git pre-commit hook owns those.
 #
 # Disable with LENORE_NO_LINT=1 (env, or anywhere in the command string).
-# Requires the `claude` CLI; silently no-ops without it.
+# Judge backend: `claude` (Haiku) when available, else `codex exec`
+# (gpt-5.6-terra, medium effort) — so the same hook works from either
+# harness. Silently no-ops when neither CLI exists.
 set -uo pipefail
 
 [ "${LENORE_NO_LINT:-0}" = "1" ] && exit 0
-command -v claude >/dev/null 2>&1 || exit 0
+command -v claude >/dev/null 2>&1 || command -v codex >/dev/null 2>&1 || exit 0
 
 input=$(cat)
 
@@ -101,12 +103,27 @@ fi
 # of truth — tune the agent, the hook follows). Plugin root arrives as $1
 # from hooks.json; CLAUDE_PLUGIN_ROOT is the fallback.
 plugin_root="${1:-${CLAUDE_PLUGIN_ROOT:-}}"
-agent_file="$plugin_root/agents/doc-lint-judge.md"
-[ -f "$agent_file" ] || exit 0
+agent_file=""
+for cand in "$plugin_root/agents/doc-lint-judge.md" "$plugin_root/doc-lint-judge.md" "scripts/doc-lint-judge.md"; do
+  [ -f "$cand" ] && { agent_file="$cand"; break; }
+done
+[ -n "$agent_file" ] || exit 0
 prompt=$(sed '1{/^---$/!q;};1,/^---$/d' "$agent_file")
 [ -n "$prompt" ] || exit 0
 
-verdict=$(printf '%s\n%s\n' "$prompt" "$payload" | claude -p --model claude-haiku-4-5-20251001 --max-turns 1 2>/dev/null) || exit 0
+judge_label="haiku"
+if command -v claude >/dev/null 2>&1; then
+  verdict=$(printf '%s\n%s\n' "$prompt" "$payload" | claude -p --model claude-haiku-4-5-20251001 --max-turns 1 2>/dev/null) || exit 0
+else
+  judge_label="codex/terra"
+  out=$(mktemp) || exit 0
+  printf '%s\n%s\n' "$prompt" "$payload" \
+    | codex exec --model gpt-5.6-terra -c model_reasoning_effort="medium" \
+        -s read-only --ephemeral --color never --skip-git-repo-check \
+        -o "$out" - >/dev/null 2>&1 || { rm -f "$out"; exit 0; }
+  verdict=$(cat "$out" 2>/dev/null)
+  rm -f "$out"
+fi
 
 # Tolerant OK detection: "OK", "OK.", "OK — all clear" etc. all pass. A
 # verdict whose first line is OK-ish and which contains no violation
@@ -123,7 +140,7 @@ esac
 
 printf '%s' "$payload_hash" > "$ack_file" 2>/dev/null || true
 {
-  echo "lenore doc-lint (advisory, haiku): the doc files in this commit have judgment-rule issues —"
+  echo "lenore doc-lint (advisory, $judge_label): the doc files in this commit have judgment-rule issues —"
   printf '%s\n' "$verdict"
   echo "Fix them now (they are not yet committed, and you still have the context a future reader won't),"
   echo "then re-run the commit. If you judge the lint wrong, re-running the same commit unchanged proceeds."

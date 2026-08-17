@@ -1,10 +1,15 @@
-# Lenore doc system — Codex setup + landing prompt
+---
+name: lenore-doc-setup
+description: Install, align with, or run the landing flow for the Lenore documentation-as-history system (dated immutable journal/notes/runs, git-hook enforcement, status line, filing CLI) in the current repo. Use when the user asks to set up the Lenore doc system, check a repo against it, or land a branch under it.
+---
 
-Copy this file to `~/.codex/prompts/lenore-doc-system.md` (or paste it directly
-into a Codex session) to install, align with, and run the landing flow for
-the same documentation system Claude Code uses via the `lenore-doc-system`
-plugin. This prompt is self-contained for Codex — it does not reference any
-Claude-only slash command.
+# Lenore doc system — Codex setup + landing skill
+
+Install this skill at `~/.agents/skills/lenore-doc-setup/SKILL.md` (user
+scope) or ship it in a repo at `.agents/skills/lenore-doc-setup/SKILL.md`.
+It installs, aligns with, and runs the landing flow for the same
+documentation system Claude Code uses via the `lenore-doc-system` plugin —
+self-contained for Codex, no Claude-only mechanisms referenced.
 
 ---
 
@@ -33,7 +38,9 @@ offline/no-network fallback in Codex's default sandbox):
 - lenore-docs.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/d919458dea51c7740df133c04e379ca5cfc279f7/plugins/lenore-doc-system/templates/scripts/lenore-docs.py`
 - docs/CLAUDE.md formatting details: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/d919458dea51c7740df133c04e379ca5cfc279f7/plugins/lenore-doc-system/templates/docs-CLAUDE.md`
 - .gitignore snippet: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/d919458dea51c7740df133c04e379ca5cfc279f7/plugins/lenore-doc-system/templates/gitignore-snippet`
-- Codex SessionStart hook config: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/d919458dea51c7740df133c04e379ca5cfc279f7/plugins/lenore-doc-system/templates/codex-hooks.json`
+- doc-lint.sh (commit-time judgment lint): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/d919458dea51c7740df133c04e379ca5cfc279f7/plugins/lenore-doc-system/templates/scripts/doc-lint.sh`
+- doc-lint-judge.md (the lint's judge prompt): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/d919458dea51c7740df133c04e379ca5cfc279f7/plugins/lenore-doc-system/agents/doc-lint-judge.md`
+- Codex hooks config (SessionStart status + PreToolUse lint): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/d919458dea51c7740df133c04e379ca5cfc279f7/plugins/lenore-doc-system/templates/codex-hooks.json`
 
 When you bump the pin, re-verify each template still matches what's
 described in this prompt.
@@ -70,7 +77,16 @@ described in this prompt.
    gitignore snippet to `.gitignore` (skip if already present); install
    `templates/codex-hooks.json` as `.codex/hooks.json` in this repo (merge
    into any existing hooks config, never overwrite) — it registers
-   `scripts/doc-status.sh` as the `SessionStart` hook. (Codex requires per-repo hooks to be trusted: the first interactive `codex` session in the repo prompts to trust the hook and records a `trusted_hash` in `~/.codex/config.toml`; until then, non-interactive `codex exec` runs silently skip it).
+   `scripts/doc-status.sh` on `SessionStart` and `scripts/doc-lint.sh` as a
+   `PreToolUse` hook on Bash (the commit-time judgment lint; copy
+   doc-lint.sh AND doc-lint-judge.md into `scripts/`, chmod +x the .sh —
+   the lint uses `codex exec` with gpt-5.6-terra at medium effort as its
+   judge when `claude` isn't installed). Codex requires per-repo hooks to
+   be trusted: the first interactive `codex` session prompts once and
+   records a per-hook `trusted_hash` (sha256) under `[hooks.state]` in
+   `~/.codex/config.toml`; until then non-interactive `codex exec` runs
+   skip the hooks (`--dangerously-bypass-hook-trust` exists for CI that
+   vets hook sources itself).
    For Tier 0: create `docs/log/` with a `.gitkeep` inside it (survives a
    fresh clone), symlink root `AGENTS.md -> CLAUDE.md`, and append the
    Tier 0 rules block only (idempotent, same marker check).

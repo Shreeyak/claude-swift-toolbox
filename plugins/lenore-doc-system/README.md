@@ -43,7 +43,9 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   enforcement layer: immutability, deny-filenames, prose-only docs/,
   shape of new entries, bug-fix-claim consistency, the experiment
   conclusion gate (status flip needs verdict + date + journal entry in
-  one commit), landing gate.
+  one commit), experiment isolation (no imports or symlinks into
+  experiments/ from production code), merge guidance for same-named dated
+  notes (both versions must survive; one gets refiled), landing gate.
 - Plugin-level drift lint (`hooks/hooks.json` → `doc-lint.sh`): one
   batched Haiku judgment check per `git commit` touching docs/ entries or
   experiment run records — including whether a new run contradicts its
@@ -56,8 +58,13 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   cases + runner + provenance README). Run `tests/doc-lint/run-suite.sh`
   before shipping any change to the judge prompt or the lint script.
 
-Codex users: copy `prompts/codex-lenore-doc-system.md` to
-`~/.codex/prompts/` for an equivalent setup flow.
+Codex users: copy `codex/skills/lenore-doc-setup/` to
+`~/.agents/skills/lenore-doc-setup/` — a Codex skill (the current
+mechanism; `~/.codex/prompts/` is deprecated) that drives the same
+setup/landing flow. Repos set up by Claude's `/setup` are Codex-ready out
+of the box: `.codex/hooks.json` registers the status line (SessionStart)
+and the commit-time doc lint (PreToolUse), and the lint's judge falls back
+from `claude`/Haiku to `codex exec`/gpt-5.6-terra automatically.
 
 See the `doc-system` skill (`skills/doc-system/SKILL.md`) for the full
 agent-facing rules — layout, per-doc-class conventions, journal shape,

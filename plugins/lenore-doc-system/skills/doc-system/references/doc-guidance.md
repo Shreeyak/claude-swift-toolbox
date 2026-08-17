@@ -43,6 +43,18 @@ edited, no IDs, no statuses. Triggers and shape: SKILL.md §3.
   commit, dataset, parameter) is locatable from the repo. Edited only at
   landings, with the user's confirmation on what graduates.
 
+### Same-named notes from parallel sessions
+
+Two worktrees or branches can file the same `YYYY-MM-DD-topic.md` name
+independently; the merge then hits an add/add conflict between two
+immutable files. Doctrine: **both versions survive.** Keep one under the
+original name, refile the other's exact content under a new dated name
+(`git show MERGE_HEAD:docs/notes/<f>.md > docs/notes/YYYY-MM-DD-<new-slug>.md`),
+then complete the merge — the pre-commit hook blocks a merge that silently
+drops either version and prints this recovery. If one version is genuinely
+junk, delete it in a follow-up commit (notes are deletable; silent loss in
+a merge is not).
+
 ## `docs/bugs/` — the live bug list
 
 One disposable file per bug, `YYYY-MM-DD-topic.md`: one-line symptom, then
@@ -124,7 +136,11 @@ commit-time judgment lint checks new run records for evidence anchors
 (command, commit, dataset, metrics, interpretation) and flags a run that
 contradicts the README's standing verdict while the README goes untouched
 in that commit; and the status line counts experiments with ≥2 runs newer
-than their README's last commit (`unreflected-runs`).
+than their README's last commit (`unreflected-runs`). Experiments are also
+quarantined from production: the hook rejects import-shaped references to
+`experiments/` from code outside it and symlinks pointing into it — the
+sanctioned path is lifting the code into the production tree and recording
+it in the README's "Lifted into production" section.
 
 ## `openspec/` — plans and feature truth
 
