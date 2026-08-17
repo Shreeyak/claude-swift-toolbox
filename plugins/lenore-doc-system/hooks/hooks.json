@@ -6,7 +6,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/templates/scripts/doc-lint.sh\""
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/templates/scripts/doc-lint.sh\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; [ -x \"$root/scripts/doc-status.sh\" ] && exec \"$root/scripts/doc-status.sh\"; exit 0",
+            "timeout": 15
           }
         ]
       }

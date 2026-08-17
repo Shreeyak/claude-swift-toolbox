@@ -35,8 +35,8 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   atomic task+backing-note+pointer (`task --note`). Body via heredoc.
 - `scripts/browse.py` / `scripts/doc-status.sh` — live index and the
   one-line status (journal age, stale tasks, bugs, desk, semantic-index
-  staleness, dangling pointers); status runs on every SessionStart event
-  including compaction.
+  staleness, dangling pointers); the plugin's own SessionStart hook runs
+  it on every event including compaction — no per-repo hook registration.
 - `scripts/docs-search.py` — local semantic search (Apple Silicon MLX),
   optional.
 - `.githooks/{pre-commit,commit-msg,pre-merge-commit,pre-push}` — the

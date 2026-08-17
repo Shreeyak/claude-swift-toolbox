@@ -124,13 +124,15 @@ exec this plugin's, or vice versa) rather than silently overwriting.
 - Append `templates/gitignore-snippet` to `.gitignore` (create it if
   absent) — **idempotent**: grep for the snippet's marker line first and
   skip if already present.
-- Register `scripts/doc-status.sh` as a `SessionStart` hook in
-  `.claude/settings.json` — **merge into the existing hooks array, never
-  overwrite the file**; skip if an entry for this command already exists.
-  Register it **without a matcher** so it fires on every SessionStart
-  event — startup, resume, clear, *and compact* — which means long-lived
-  auto-compacting sessions re-see the status line at every compaction,
-  not just on day one.
+- No Claude Code hook registration is needed for the status line: the
+  plugin itself ships a `SessionStart` hook (no matcher, so it fires on
+  startup, resume, clear, *and compact* — long auto-compacting sessions
+  re-see the status line at every compaction) that runs the repo's
+  committed `scripts/doc-status.sh` when present and exits silently
+  elsewhere. **Upgrade path:** if an earlier install added a
+  `doc-status.sh` `SessionStart` entry to this repo's
+  `.claude/settings.json`, propose removing it — otherwise the status
+  line prints twice per session start.
 - Nothing to install for the advisory drift lint: `doc-lint.sh` runs as a
   plugin-level PreToolUse hook on Bash (from the plugin's `hooks/hooks.json`)
   in every repo where this plugin is enabled. It acts only on `git commit`
