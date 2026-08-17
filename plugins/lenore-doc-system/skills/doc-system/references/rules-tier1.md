@@ -51,6 +51,14 @@
   the top with the summary, plus "published: <url>" if uploaded as a
   web artifact. Docs built FOR the user (reports, diagrams, artifacts)
   are notes like any other.
+- Prefer scripts/lenore-docs.py (note|bug|journal|task, body via
+  heredoc) for creating doc entries — it generates dated filenames,
+  enforces shape caps with explanatory errors, and links task + backing
+  note atomically. Plain Write stays valid.
+- Task entries in docs/tasks/project.md must be readable with none of
+  this session's context: name the files, commits, and parameters — no
+  "the fix" / "the sweep" shorthand. Context beyond 5 lines becomes a
+  dated note the entry points to ("— details: notes/...").
 - Need an index of existing docs/experiments? Run
   scripts/browse.py --plain (or --json). Never write an index file.
 - docs/reference/<topic>.md holds living how-tos for external things

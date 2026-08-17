@@ -30,8 +30,14 @@ edited, no IDs, no statuses. Triggers and shape: SKILL.md §3.
 - `project.md`: two sections. *Next* (decided, not now) and *Someday* (kept
   small — a real backlog is the signal to move to an issue tracker).
   Entries: one-line title + ≤5 lines context; longer context becomes a
-  dated note the line points to. Edited only at landings, with the user's
-  confirmation on what graduates.
+  dated note the line points to — `— details: notes/YYYY-MM-DD-topic.md`,
+  written at discovery time while the context is in-session
+  (`lenore-docs task --note` creates note + pointer atomically). The
+  pointer can't rot: notes are immutable and never renamed. Every entry
+  must pass the stranger test — a competent developer with none of the
+  writing session's context can act on it because every referent (file,
+  commit, dataset, parameter) is locatable from the repo. Edited only at
+  landings, with the user's confirmation on what graduates.
 
 ## `docs/bugs/` — the live bug list
 
@@ -54,6 +60,13 @@ diagrams, long task context, architecture snapshots — as
 drift, only age. Immutable once committed; revisiting a topic means a new
 note, not an edit. Line 1 is always a one-sentence summary — that's what
 `browse.py` shows.
+
+A note that corrects or supersedes an earlier note names it in its body
+in plain words ("Revises notes/2026-08-10-x.md"). The old note gets no
+marker and is never edited; it stays unless it's junk (human-confirmed
+delete). Succession is discoverable both ways with zero infrastructure:
+date-sorted views surface the newer note above the older, and grepping an
+old note's filename finds its successors.
 
 ## `docs/reference/` — living how-tos
 

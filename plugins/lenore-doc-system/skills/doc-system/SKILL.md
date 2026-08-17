@@ -64,8 +64,8 @@ docs/
   bugs/2026-08-15-topic.md
 experiments/                 repo ROOT, not docs/ — code+data+outputs
   <name>/README.md · runs/*.md · src/ · data/ · out/
-.githooks/                   pre-commit + pre-push — all rule enforcement
-scripts/browse.py · doc-status.sh
+.githooks/                   pre-commit · commit-msg · pre-merge-commit · pre-push — all rule enforcement
+scripts/browse.py · doc-status.sh · lenore-docs.py · docs-search.py
 tmp/                         gitignored wholesale
 ```
 
@@ -79,8 +79,11 @@ remove-vs-delete / tmp / scripts / openspec).
 
 | Trigger | Action |
 |---|---|
-| Bug noticed (by anyone, any time) | File `docs/bugs/YYYY-MM-DD-topic.md` now — one-line symptom + ≤5 lines. Don't derail current work. Delete it in the fix commit. |
+| Creating any journal entry, note, bug, or task | Prefer `scripts/lenore-docs.py note\|bug\|journal\|task "summary"` with the body as a heredoc — correct dated filename, shape caps with explanatory errors, atomic task+note+pointer (`task --note`), `--supersedes` for corrections. Plain Write stays valid; hooks backstop. |
+| Bug noticed (by anyone, any time) | File `docs/bugs/YYYY-MM-DD-topic.md` now — one-line symptom + ≤5 lines with a repro. Don't derail current work. Delete it in the fix commit (the commit-msg hook rejects a fix claim that doesn't). |
 | Openspec phase / task-group completed | Write a journal entry (shape below). |
+| A committed note turns out wrong or superseded | New dated note whose body says "Revises notes/YYYY-MM-DD-x.md" — never edit or mark the old one; grep the old filename to find successors. |
+| Filing a future task | Entry must pass the stranger test — every referent (file, commit, dataset, parameter) locatable from the repo alone; >5 lines of context → backing note + `— details: notes/...` pointer (`lenore-docs task --note` does both atomically). |
 | Experiment concluded | Flip the README's `status`/`verdict` front-matter, then a journal entry restating the verdict — same session. |
 | Direction changed | Journal entry: what we believed / learned / do now. |
 | Milestone hit, no change folder (exploratory branch) | One journal entry per concluded work-topic. |
@@ -137,12 +140,24 @@ All rule enforcement lives in committed `.githooks/` (`git config
 core.hooksPath .githooks`, once per clone): pre-commit rejects modifying
 or deleting `docs/journal/`, `docs/notes/` (modify only), and
 `experiments/*/runs/*.md`; rejects adding `state.md`/`decisions.md`/
-`STATUS.md`/`CHANGELOG.md`/`HANDOFF.md`; rejects non-prose additions under
-`docs/`. Pre-push rejects any push to `main` missing landing markers
-(leftover `docs/tasks/branch-*.md`, unarchived `openspec/changes/*/`).
-`scripts/doc-status.sh` runs at session start on both harnesses and prints
-drift — it fixes nothing, it just makes drift visible. No scheduled jobs;
-doc maintenance is event-driven only.
+`STATUS.md`/`CHANGELOG.md`/`HANDOFF.md`/`PLAN-*.md`/`REVIEW-*.md`;
+rejects non-prose additions under `docs/`; and shape-checks new
+journal/notes/bugs files (prose line-1 summary; journal ≤10 lines /
+150 words, no headers or bullets). Commit-msg rejects a message claiming
+to fix a `docs/bugs/` file without deleting it in that commit. Pre-push
+rejects any push to `main` missing landing markers (leftover
+`docs/tasks/branch-*.md`, unarchived `openspec/changes/*/`).
+
+Two informational layers sit above the git hooks: `scripts/doc-status.sh`
+prints one drift line (journal age, stale tasks, bugs, desk, semantic
+index, dangling `— details:`/`Revises` pointers) on every SessionStart
+event — startup, resume, clear, and compact, so long auto-compacting
+sessions keep seeing it — and a plugin-level PreToolUse lint runs one
+batched Haiku judgment check when a `git commit` touches
+journal/notes/bugs/tasks files (self-containedness, real summaries,
+actionable bugs): violations block that one attempt with reasons, an
+unchanged retry proceeds (warn-once), `LENORE_NO_LINT=1` disables. No
+scheduled jobs; doc maintenance is event-driven only.
 
 ## Settled decisions — do not re-litigate
 
@@ -157,7 +172,18 @@ doc maintenance is event-driven only.
 - No pin-until / frontmatter expiry on desk links — the 14-day mtime check
   covers it.
 - No obsolete-markers on notes — deletion, sinking, and "notes aren't
-  authority" cover staleness without a status field.
+  authority" cover staleness without a status field. A correcting note
+  says "Revises <file>" in its body (a forward reference in prose, not a
+  marker on the old note).
+- No structured capture format for doc bodies — structure lives in the
+  envelope (filenames, line-1 summary, shape caps, front-matter keys the
+  tools read); bodies stay free prose. No JSON/YAML schemas, no
+  format-rejection of content.
+- No task-per-file, no generated task index — `project.md` is
+  simultaneously the queue and its index; files are for things with
+  independent lifecycles (bugs), lines for things reviewed together.
+- No tool-provenance tracking — hooks enforce what files contain, never
+  which tool wrote them.
 - No monolithic JOURNAL.md/TASKS.md — one file per entry, always.
 - No standing ARCHITECTURE.md — demoted to on-demand dated snapshot.
 
@@ -167,13 +193,18 @@ doc maintenance is event-driven only.
   reference, tasks, bugs, experiments' three zones, desk incl.
   remove-vs-delete, tmp, scripts, openspec). Read when the trigger table
   above isn't enough detail.
+- `references/semantic-search-setup.md` — semantic search install,
+  chunking behavior and writing guidance, query phrasing, index
+  lifecycle, troubleshooting.
 - `references/routing.md` — the question→location table plus when to
   search notes before starting new work.
 - `references/rules-tier1.md` / `references/rules-tier0.md` — the exact
   `CLAUDE.md` rules blocks to paste into a repo (install payloads, paste
   verbatim, don't paraphrase).
-- `templates/` — working `.githooks/`, `scripts/browse.py`,
-  `scripts/doc-status.sh`, `docs/CLAUDE.md`, `.gitignore` snippet.
+- `templates/` — working `.githooks/` (all four hooks), `scripts/browse.py`,
+  `scripts/doc-status.sh`, `scripts/lenore-docs.py`, `scripts/docs-search.py`,
+  `scripts/doc-lint.sh` (plugin-level commit-time judgment lint),
+  `docs/CLAUDE.md`, `.gitignore` snippet, `codex-hooks.json`.
 - `/lenore-doc-system:setup` — propose-then-apply installer, including
   migration of legacy tracking docs.
 - `/lenore-doc-system:land` — the landing flow.
