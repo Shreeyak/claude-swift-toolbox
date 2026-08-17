@@ -59,7 +59,7 @@ docs/
   journal/2026-08-15-1432-topic.md    one immutable file per entry
   notes/2026-08-02-topic.md           dated, immutable; line 1 = summary
   reference/ferry-cli-integration.md  named, editable, living how-tos
-  desk/                      gitignored, per-worktree symlinks (see doc-classes.md)
+  desk/                      gitignored, per-worktree symlinks (see doc-guidance.md)
   tasks/project.md · branch-<name>.md
   bugs/2026-08-15-topic.md
 experiments/                 repo ROOT, not docs/ — code+data+outputs
@@ -70,7 +70,7 @@ tmp/                         gitignored wholesale
 ```
 
 `docs/` holds only prose (`.md`, `.html`, images) — a pre-commit hook
-enforces this. Full per-directory rules: `references/doc-classes.md`
+enforces this. Full per-directory rules: `references/doc-guidance.md`
 (read when you need the complete rule for journal / notes / reference /
 tasks / bugs / experiments' three zones / desk semantics incl.
 remove-vs-delete / tmp / scripts / openspec).
@@ -89,7 +89,7 @@ remove-vs-delete / tmp / scripts / openspec).
 | Milestone hit, no change folder (exploratory branch) | One journal entry per concluded work-topic. |
 | Status line shows a large gap | One catch-up journal entry (~20 lines) summarizing the arc from `git log` — don't back-fill many. |
 | You produce a doc FOR the user | Save it in its normal home (usually `docs/notes/`), symlink it into `docs/desk/` in the same message. |
-| User says "put/take X on/off my desk" or "delete X" | Do it in plain words — see `references/doc-classes.md` desk section for remove-vs-delete semantics. |
+| User says "put/take X on/off my desk" or "delete X" | Do it in plain words — see `references/doc-guidance.md` desk section for remove-vs-delete semantics. |
 | Branch is landing or being abandoned | Run `/lenore-doc-system:land`. Never a bare `git merge` into main. |
 | Repo has no doc system yet, or needs upgrading | Run `/lenore-doc-system:setup`. |
 | Before a proposal/design, or "did we try this before?" | Search `docs/notes/` + experiment READMEs (`scripts/browse.py --plain` or grep) — see `references/routing.md`. |
@@ -195,7 +195,7 @@ scheduled jobs; doc maintenance is event-driven only.
 
 ## Reference index
 
-- `references/doc-classes.md` — full per-directory rules (journal, notes,
+- `references/doc-guidance.md` — full per-directory rules (journal, notes,
   reference, tasks, bugs, experiments' three zones, desk incl.
   remove-vs-delete, tmp, scripts, openspec). Read when the trigger table
   above isn't enough detail.

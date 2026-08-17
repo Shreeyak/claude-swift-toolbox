@@ -61,7 +61,7 @@ the session.
 
 There is deliberately no "obsolete" tag, status field, or superseded
 marker on notes. Three mechanisms cover it instead: a note that turned out
-to be junk gets deleted (notes are deletable — see `doc-classes.md`'s desk
+to be junk gets deleted (notes are deletable — see `doc-guidance.md`'s desk
 section for the deletion policy); a note that's merely old sinks down the
 newest-first `browse.py` listing; a note that's *wrong* misleads nobody,
 because notes are never authority — the routing table above sends every

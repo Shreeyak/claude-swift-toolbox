@@ -1,9 +1,13 @@
-# Doc classes — full per-directory rules
+# Doc guidance — the full rules and recommendations, per directory
 
-Read when you need the complete rule for a specific directory, not just the
-trigger table in SKILL.md. Journal entry shape (line-1 rule, ≤10 lines/150
-words, overflow-to-note) lives in SKILL.md §3, not here — nothing else in
-this file repeats it.
+The single home for guidance and recommendations on writing and managing
+docs: read when you need the complete rule for a specific directory, not
+just the trigger table in SKILL.md. Journal entry shape (line-1 rule, ≤10
+lines/150 words, overflow-to-note) lives in SKILL.md §3, not here — nothing
+else in this file repeats it. Adjacent references stay specialized:
+`routing.md` (where things go / where to look), `semantic-search-setup.md`
+(search + chunking guidance), `rules-tier1.md`/`rules-tier0.md` (verbatim
+CLAUDE.md paste payloads).
 
 ## `CLAUDE.md` — the hub
 
