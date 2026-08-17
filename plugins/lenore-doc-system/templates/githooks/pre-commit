@@ -4,6 +4,7 @@
 #           (2) deny-filename for tracking docs (state.md, decisions.md, ...)
 #           (3) prose-only docs/ (additions must be .md/.html/image/.gitkeep)
 #           (4) no symlinks/gitlinks under docs/ or experiments/ (except AGENTS.md)
+#           (5) shape of new journal/notes/bugs .md files (caps, line-1 summary)
 set -euo pipefail
 
 [ "${SKIP_DOC_HOOKS:-0}" = "1" ] && exit 0
@@ -163,6 +164,53 @@ while IFS= read -r -d '' rec; do
     fail=1
   fi
 done < <(git diff --cached --raw -z -M "$AGAINST" 2>/dev/null || true)
+
+# --- (5) Shape of new journal/notes/bugs entries -------------------------
+# Checks the STAGED content (git show :path), not the worktree.
+if [ -n "$added" ]; then
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    lower_f=$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')
+    case "$lower_f" in
+      docs/journal/*.md|docs/notes/*.md|docs/bugs/*.md) ;;
+      *) continue ;;
+    esac
+    content=$(git show ":$f" 2>/dev/null) || continue
+
+    # Line 1 must be a prose summary sentence, not empty and not a heading.
+    first=$(printf '%s\n' "$content" | head -1)
+    case "$first" in
+      "" )
+        echo "error: pre-commit (shape): $f — line 1 is empty; it must be a one-sentence summary" >&2
+        echo "  (that line is what listings and search results show)." >&2
+        fail=1 ;;
+      "#"* )
+        echo "error: pre-commit (shape): $f — line 1 is a heading; it must be a plain one-sentence summary" >&2
+        echo "  (that line is what listings and search results show; drop the leading #)." >&2
+        fail=1 ;;
+    esac
+
+    # Journal entries additionally: <=10 non-blank lines, <=150 words, no headers/bullets.
+    case "$lower_f" in
+      docs/journal/*.md)
+        nlines=$(printf '%s\n' "$content" | grep -c -v '^[[:space:]]*$' || true)
+        nwords=$(printf '%s\n' "$content" | wc -w | tr -d ' ')
+        listy=$(printf '%s\n' "$content" | grep -c -E '^[[:space:]]*(#|-[[:space:]]|\*[[:space:]])' || true)
+        shape_problems=""
+        [ "$nlines" -gt 10 ] && shape_problems="${shape_problems}  ${nlines} non-blank lines (max 10)"$'\n'
+        [ "$nwords" -gt 150 ] && shape_problems="${shape_problems}  ${nwords} words (max 150)"$'\n'
+        [ "$listy" -gt 0 ] && shape_problems="${shape_problems}  ${listy} heading/bullet line(s) (journal entries are plain prose)"$'\n'
+        if [ -n "$shape_problems" ]; then
+          echo "error: pre-commit (shape): $f breaks the journal shape rules:" >&2
+          printf '%s' "$shape_problems" >&2
+          echo "  the journal records the arc, not the detail — trim, or move detail to a" >&2
+          echo "  dated note. scripts/lenore-docs.py journal enforces this at write time." >&2
+          fail=1
+        fi
+        ;;
+    esac
+  done <<< "$added"
+fi
 
 if [ "$fail" -ne 0 ]; then
   echo "" >&2
