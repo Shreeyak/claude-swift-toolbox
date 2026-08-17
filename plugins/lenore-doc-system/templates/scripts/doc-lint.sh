@@ -68,41 +68,16 @@ if [ -f "$ack_file" ] && [ "$(cat "$ack_file" 2>/dev/null)" = "$payload_hash" ];
   exit 0
 fi
 
-verdict=$(claude -p --model claude-haiku-4-5-20251001 --max-turns 1 <<EOF 2>/dev/null
-You are a documentation linter run just before a commit. Check each file
-against the rules for its path. Shape rules (length caps, line-1-not-a-heading)
-are enforced elsewhere — check only the judgment rules below. Reply with
-exactly "OK" if every file is fine or you are unsure; otherwise reply with at
-most 3 short bullet lines total, each naming the file, the rule broken, and
-the offending text. Flag only confident violations.
+# The judge prompt is the shipped doc-lint-judge agent's body (single source
+# of truth — tune the agent, the hook follows). Plugin root arrives as $1
+# from hooks.json; CLAUDE_PLUGIN_ROOT is the fallback.
+plugin_root="${1:-${CLAUDE_PLUGIN_ROOT:-}}"
+agent_file="$plugin_root/agents/doc-lint-judge.md"
+[ -f "$agent_file" ] || exit 0
+prompt=$(sed '1{/^---$/!q;};1,/^---$/d' "$agent_file")
+[ -n "$prompt" ] || exit 0
 
-Rules by path:
-- docs/journal/: plain prose telling the arc of what happened (no task lists,
-  no implementation detail dumps); line 1 states the event in one sentence.
-- docs/notes/: one topic per note; line 1 is a genuine one-sentence summary of
-  the body (not a title fragment); no status markers like "OBSOLETE"/"CURRENT"
-  (a correcting note says "Revises <file>" instead).
-- docs/bugs/: must contain enough to act on later — a repro or trigger,
-  expected vs actual; not just a restatement of the title.
-- docs/tasks/: every entry readable by someone with NONE of the writing
-  session's context. The test: could a competent developer act on it using
-  only the repo? If yes, it is OK. Flag ONLY when a critical referent (a
-  file, fix, dataset, experiment) cannot be located from what is written.
-  Naming a parameter without explaining its theory is fine when the relevant
-  file or commit is named. Entries are 1 title line + <=5 context lines or a
-  "— details: notes/..." pointer — but short self-contained entries need no
-  extra lines.
-
-Calibration for docs/tasks/:
-- VIOLATION: "re-run the sweep after the tau/mu fix (qwez1 clip may need tau
-  lowered)" — which sweep? which fix? what is qwez1? Nothing is locatable.
-- OK: "Re-run the placement sweep (scripts/sweep.py, all 3 scenarios) after
-  the tau/mu threshold fix in Matcher.swift (commit abc123); the qwez1 test
-  clip (data/clips/qwez1.mov) may need tau at 0.2." — every referent is
-  locatable; do not flag entries like this for missing purpose/theory.
-$payload
-EOF
-) || exit 0
+verdict=$(printf '%s\n%s\n' "$prompt" "$payload" | claude -p --model claude-haiku-4-5-20251001 --max-turns 1 2>/dev/null) || exit 0
 
 # Tolerant OK detection: "OK", "OK.", "OK — all clear" etc. all pass. A
 # verdict whose first line is OK-ish and which contains no violation

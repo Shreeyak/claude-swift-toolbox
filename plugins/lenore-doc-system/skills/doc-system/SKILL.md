@@ -205,6 +205,13 @@ scheduled jobs; doc maintenance is event-driven only.
   `scripts/doc-status.sh`, `scripts/lenore-docs.py`, `scripts/docs-search.py`,
   `scripts/doc-lint.sh` (plugin-level commit-time judgment lint),
   `docs/CLAUDE.md`, `.gitignore` snippet, `codex-hooks.json`.
+- `agents/doc-lint-judge.md` — the Haiku judgment prompt behind the
+  commit-time lint, shipped as an invocable agent; `doc-lint.sh` sources
+  its prompt from this file, so there is exactly one copy to tune.
+- `tests/doc-lint/` — regression suite for the judge prompt (17 cases,
+  runner, provenance README). Run it before changing the prompt or the
+  lint script; a `borderline_*` case turning BLOCK means the change is
+  wrong.
 - `/lenore-doc-system:setup` — propose-then-apply installer, including
   migration of legacy tracking docs.
 - `/lenore-doc-system:land` — the landing flow.

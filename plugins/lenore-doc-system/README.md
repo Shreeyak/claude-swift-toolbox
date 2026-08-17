@@ -45,7 +45,13 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
 - Plugin-level drift lint (`hooks/hooks.json` → `doc-lint.sh`): one
   batched Haiku judgment check per docs-touching `git commit`; blocks
   once with reasons, unchanged retry proceeds. `LENORE_NO_LINT=1`
-  disables.
+  disables. The judgment prompt ships as a real agent,
+  `agents/doc-lint-judge.md` — the lint script sources its prompt from
+  that file, and the agent can also be invoked directly ("check
+  docs/tasks/project.md against the doc rules").
+- `tests/doc-lint/` — committed regression suite for the judge (17
+  cases + runner + provenance README). Run `tests/doc-lint/run-suite.sh`
+  before shipping any change to the judge prompt or the lint script.
 
 Codex users: copy `prompts/codex-lenore-doc-system.md` to
 `~/.codex/prompts/` for an equivalent setup flow.
