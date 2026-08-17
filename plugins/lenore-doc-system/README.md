@@ -41,15 +41,18 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   optional.
 - `.githooks/{pre-commit,commit-msg,pre-merge-commit,pre-push}` — the
   enforcement layer: immutability, deny-filenames, prose-only docs/,
-  shape of new entries, bug-fix-claim consistency, landing gate.
+  shape of new entries, bug-fix-claim consistency, the experiment
+  conclusion gate (status flip needs verdict + date + journal entry in
+  one commit), landing gate.
 - Plugin-level drift lint (`hooks/hooks.json` → `doc-lint.sh`): one
-  batched Haiku judgment check per docs-touching `git commit`; blocks
-  once with reasons, unchanged retry proceeds. `LENORE_NO_LINT=1`
-  disables. The judgment prompt ships as a real agent,
+  batched Haiku judgment check per `git commit` touching docs/ entries or
+  experiment run records — including whether a new run contradicts its
+  experiment README's standing verdict; blocks once with reasons,
+  unchanged retry proceeds. `LENORE_NO_LINT=1` disables. The judgment prompt ships as a real agent,
   `agents/doc-lint-judge.md` — the lint script sources its prompt from
   that file, and the agent can also be invoked directly ("check
   docs/tasks/project.md against the doc rules").
-- `tests/doc-lint/` — committed regression suite for the judge (17
+- `tests/doc-lint/` — committed regression suite for the judge (20
   cases + runner + provenance README). Run `tests/doc-lint/run-suite.sh`
   before shipping any change to the judge prompt or the lint script.
 

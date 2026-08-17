@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Lenore doc system — advisory drift lint (PreToolUse hook on Bash).
 # Fires when the agent is about to run a `git commit`. Batches every new or
-# modified docs/{journal,notes,bugs,tasks} .md file (worktree vs HEAD — the
+# modified docs/{journal,notes,bugs,tasks} and experiments/*/runs .md file
+# (worktree vs HEAD — the
 # commit command may stage as part of the same compound command, so the staged
 # set can't be trusted yet) into ONE cheap-model call checking the JUDGMENT
 # rules the deterministic git hooks can't (does line 1 actually summarize? is
@@ -41,12 +42,13 @@ cd "$root" || exit 0
 [ -f docs/CLAUDE.md ] || exit 0   # only repos running this doc system
 
 # New/modified doc files, worktree vs HEAD (covers add-and-commit compounds).
-files=$(git status --porcelain -- 'docs/journal/*.md' 'docs/notes/*.md' 'docs/bugs/*.md' 'docs/tasks/*.md' 2>/dev/null \
+files=$(git status --porcelain -- 'docs/journal/*.md' 'docs/notes/*.md' 'docs/bugs/*.md' 'docs/tasks/*.md' 'experiments/*/runs/*.md' 2>/dev/null \
         | grep -E '^.?[AM?]' | sed 's/^...//' | sed 's/^"\(.*\)"$/\1/')
 [ -n "$files" ] || exit 0
 
 payload=""
 count=0
+run_exps=""
 while IFS= read -r f; do
   [ -f "$f" ] || continue
   count=$((count + 1))
@@ -55,8 +57,35 @@ while IFS= read -r f; do
 === FILE: $f ===
 $(cat "$f")
 "
+  case "$f" in
+    experiments/*/runs/*.md)
+      exp=${f%/runs/*}
+      case "
+$run_exps" in *"
+$exp"*) ;; *) run_exps="${run_exps}${exp}
+" ;; esac
+      ;;
+  esac
 done <<< "$files"
 [ -n "$payload" ] || exit 0
+
+# For each experiment contributing a run file, append its README as CONTEXT
+# (not linted itself) so the judge can catch a verdict the new run
+# contradicts while the README goes untouched in this commit.
+while IFS= read -r exp; do
+  [ -n "$exp" ] || continue
+  readme="$exp/README.md"
+  [ -f "$readme" ] || continue
+  if [ -n "$(git status --porcelain -- "$readme" 2>/dev/null)" ]; then
+    state="also modified in this commit"
+  else
+    state="NOT touched in this commit"
+  fi
+  payload="${payload}
+=== CONTEXT: $readme ($state) ===
+$(cat "$readme")
+"
+done <<< "$run_exps"
 
 # Warn-once: if this exact doc content was already flagged, let the retry
 # through — a disputed judgment call costs one retry, never a standoff.

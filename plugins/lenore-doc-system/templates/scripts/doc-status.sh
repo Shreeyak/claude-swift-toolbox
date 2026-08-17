@@ -143,9 +143,34 @@ if [ -n "$dang" ]; then
   dangling_ptr_part=" · dangling-pointers: ${dang_n} (${dang_first})"
 fi
 
+# --- unreflected experiment runs (>=2 runs committed after README's last commit) --
+unreflected_part=""
+unref=""
+if [ -d experiments ]; then
+  for er in experiments/*/README.md; do
+    [ -e "$er" ] || continue
+    exp=${er%/README.md}
+    readme_ct=$(git log -1 --format=%ct -- "$er" 2>/dev/null)
+    [ -n "$readme_ct" ] || continue
+    newer=0
+    for rf in "$exp"/runs/*.md; do
+      [ -e "$rf" ] || continue
+      run_ct=$(git log -1 --format=%ct -- "$rf" 2>/dev/null)
+      [ -n "$run_ct" ] || continue
+      [ "$run_ct" -gt "$readme_ct" ] && newer=$((newer + 1))
+    done
+    [ "$newer" -ge 2 ] && unref="${unref}$(basename "$exp") "
+  done
+fi
+if [ -n "$unref" ]; then
+  unref_n=$(printf '%s' "$unref" | wc -w | tr -d ' ')
+  unref_first=$(printf '%s' "$unref" | awk '{print $1}')
+  unreflected_part=" · unreflected-runs: ${unref_n} exp (${unref_first})"
+fi
+
 stale_task_part=""
 if [ -n "$stale_task_files" ]; then
   stale_task_part=" · $(printf '%s' "$stale_task_files" | sed 's/ *$//')"
 fi
 
-echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${stale_task_part}"
+echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${unreflected_part}${stale_task_part}"

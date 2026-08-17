@@ -108,11 +108,12 @@ scripts/lenore-docs.py task "Self-contained title" [--someday|--branch] [--note]
 a valid fallback (the hooks still enforce the rules); the CLI is the
 convenient path, not a gate.
 
-A commit that touches journal/notes/bugs/tasks files may be blocked once
-by an advisory judgment lint (a cheap-model check of the rules above —
-self-containedness, real summaries, actionable bugs). Fix what it names
-rather than bypassing; if you judge it wrong, re-running the same commit
-unchanged proceeds.
+A commit that touches journal/notes/bugs/tasks files or experiment run
+records may be blocked once by an advisory judgment lint (a cheap-model
+check of the rules above — self-containedness, real summaries, actionable
+bugs, evidence-grade runs, and a new run left contradicting its
+experiment's README verdict). Fix what it names rather than bypassing; if
+you judge it wrong, re-running the same commit unchanged proceeds.
 
 ## Bugs (`docs/bugs/YYYY-MM-DD-topic.md`)
 
@@ -137,6 +138,15 @@ Body sections, in order: `Question`, `What worked`, `What didn't`,
 `Lifted into production`, `Not pursued`. Rewritten in place as
 understanding sharpens — the README is deliberately mutable, unlike
 `runs/`.
+
+Concluding is atomic: the commit that flips `status` to
+`concluded`/`shelved` must carry a real `verdict:` sentence, the
+`concluded:` date, and a new journal entry restating the outcome — the
+pre-commit hook rejects the flip without all three. When later runs
+contradict the standing verdict, update the README in the same commit as
+the run; the commit lint flags a contradicting run that leaves the README
+untouched, and the status line counts experiments with ≥2 runs newer than
+their README's last commit (`unreflected-runs`).
 
 ## Experiment runs (`experiments/<name>/runs/YYYY-MM-DD-HHMM.md`)
 

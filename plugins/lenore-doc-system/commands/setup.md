@@ -136,8 +136,9 @@ exec this plugin's, or vice versa) rather than silently overwriting.
 - Nothing to install for the advisory drift lint: `doc-lint.sh` runs as a
   plugin-level PreToolUse hook on Bash (from the plugin's `hooks/hooks.json`)
   in every repo where this plugin is enabled. It acts only on `git commit`
-  commands that touch docs judgment-rule files, batching them into one cheap
-  Haiku check; violations block that one commit attempt with the reasons,
+  commands that touch docs judgment-rule files or experiment run records,
+  batching them (plus the affected experiments' READMEs as context, to catch
+  a run contradicting a stale verdict) into one cheap Haiku check; violations block that one commit attempt with the reasons,
   and re-running the same commit unchanged proceeds (warn-once). Self-gated
   on `docs/CLAUDE.md` existing; disable with `LENORE_NO_LINT=1`.
   If a Codex config exists in this repo, install `templates/codex-hooks.json`

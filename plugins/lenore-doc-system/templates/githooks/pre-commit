@@ -5,6 +5,9 @@
 #           (3) prose-only docs/ (additions must be .md/.html/image/.gitkeep)
 #           (4) no symlinks/gitlinks under docs/ or experiments/ (except AGENTS.md)
 #           (5) shape of new journal/notes/bugs .md files (caps, line-1 summary)
+#           (6) experiment conclusion gate: flipping status to concluded/shelved
+#               requires a verdict, a concluded date, and a journal entry in the
+#               same commit
 set -euo pipefail
 
 [ "${SKIP_DOC_HOOKS:-0}" = "1" ] && exit 0
@@ -210,6 +213,42 @@ if [ -n "$added" ]; then
         ;;
     esac
   done <<< "$added"
+fi
+
+# --- (6) Experiment conclusion gate --------------------------------------
+# When a commit flips an experiment README's status to concluded/shelved,
+# the same commit must carry the verdict, the concluded date, and a journal
+# entry restating the outcome — this is exactly the update agents forget.
+fm_field() {  # fm_field <content> <key> -> value (front-matter only)
+  printf '%s\n' "$1" | sed -n '/^---$/,/^---$/p' | sed -n "s/^$2:[[:space:]]*//p" | head -1
+}
+exp_readmes=$(git diff --cached --name-only -M "$AGAINST" -- 'experiments/*/README.md' 2>/dev/null || true)
+if [ -n "$exp_readmes" ]; then
+  new_journal=$(printf '%s' "$added" | grep -c '^docs/journal/.*\.md$' || true)
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    staged=$(git show ":$f" 2>/dev/null) || continue
+    new_status=$(fm_field "$staged" status | tr '[:upper:]' '[:lower:]')
+    case "$new_status" in concluded|shelved) ;; *) continue ;; esac
+    old_content=$(git show "$AGAINST:$f" 2>/dev/null || true)
+    old_status=$(fm_field "$old_content" status | tr '[:upper:]' '[:lower:]')
+    [ "$old_status" = "$new_status" ] && continue   # not flipped in this commit
+    problems=""
+    verdict=$(fm_field "$staged" verdict)
+    case "$verdict" in
+      ""|*"<"*) problems="${problems}  verdict: is empty or still a placeholder — one real sentence stating the outcome"$'\n' ;;
+    esac
+    concluded=$(fm_field "$staged" concluded)
+    [ -z "$concluded" ] && problems="${problems}  concluded: date is missing"$'\n'
+    [ "$new_journal" -eq 0 ] && problems="${problems}  no new docs/journal/ entry in this commit — the journal must restate the verdict"$'\n'
+    if [ -n "$problems" ]; then
+      echo "error: pre-commit (conclusion gate): $f flips status to '$new_status' but:" >&2
+      printf '%s' "$problems" >&2
+      echo "  concluding an experiment = verdict + concluded date + journal entry, one commit." >&2
+      echo "  scripts/lenore-docs.py journal writes the entry; then git add it and re-commit." >&2
+      fail=1
+    fi
+  done <<< "$exp_readmes"
 fi
 
 if [ "$fail" -ne 0 ]; then

@@ -113,6 +113,15 @@ project direction, a journal entry restates it. Raw evidence (frozen),
 current summary (living), narrative (frozen) — same invariant as the
 journal, no special case to remember.
 
+Enforced, because agents reliably forget the README half: the pre-commit
+hook blocks a `status: concluded`/`shelved` flip that lacks a real
+`verdict:`, a `concluded:` date, or a same-commit journal entry; the
+commit-time judgment lint checks new run records for evidence anchors
+(command, commit, dataset, metrics, interpretation) and flags a run that
+contradicts the README's standing verdict while the README goes untouched
+in that commit; and the status line counts experiments with ≥2 runs newer
+than their README's last commit (`unreflected-runs`).
+
 ## `openspec/` — plans and feature truth
 
 The OpenSpec workflow, used as-is. Specs are as-built truth, updated in the

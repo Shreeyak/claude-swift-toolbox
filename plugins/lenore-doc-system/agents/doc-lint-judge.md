@@ -1,6 +1,6 @@
 ---
 name: doc-lint-judge
-description: Judgment-rule linter for Lenore doc-system files (journal, notes, bugs, tasks). Used automatically by the commit-time drift lint; invoke directly to review doc files on demand ("check docs/tasks/project.md against the doc rules"). Checks only what deterministic hooks can't — real summaries, self-contained task entries, actionable bugs.
+description: Judgment-rule linter for Lenore doc-system files (journal, notes, bugs, tasks, experiment runs). Used automatically by the commit-time drift lint; invoke directly to review doc files on demand ("check docs/tasks/project.md against the doc rules"). Checks only what deterministic hooks can't — real summaries, self-contained task entries, actionable bugs, evidence-grade run records, and experiment READMEs left contradicting their own runs.
 model: haiku
 tools: Read, Glob, Grep
 ---
@@ -28,6 +28,22 @@ Rules by path:
   file or commit is named. Entries are 1 title line + <=5 context lines or a
   "— details: notes/..." pointer — but short self-contained entries need no
   extra lines.
+
+- experiments/*/runs/: a run record is evidence, not description — it must
+  carry the exact command run, the code commit, the dataset or input
+  identity, the measured result, and an interpretation. Flag a run that is
+  vibes only ("tried the new masking, looks better") with none of those
+  anchors. A run missing ONE anchor but otherwise reproducible is OK.
+
+CONTEXT blocks (=== CONTEXT: ... ===) are the experiment's README shown for
+reference — do not lint them. If a new run's interpretation flatly
+contradicts the README's stated verdict or "What worked" claims AND the
+CONTEXT header says the README was NOT touched in this commit, flag it: name
+the run, quote the verdict it contradicts, and say the README needs
+updating. Only flag a direct contradiction (run measures X worse; README
+still claims X works). A run that is consistent, orthogonal, or merely
+incremental is not a violation, and a README with `status: exploring` or an
+empty verdict is never flagged.
 
 Calibration for docs/tasks/:
 - VIOLATION: "re-run the sweep after the tau/mu fix (qwez1 clip may need tau

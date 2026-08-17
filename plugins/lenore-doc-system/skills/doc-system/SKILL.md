@@ -150,13 +150,19 @@ rejects any push to `main` missing landing markers (leftover
 
 Two informational layers sit above the git hooks: `scripts/doc-status.sh`
 prints one drift line (journal age, stale tasks, bugs, desk, semantic
-index, dangling `— details:`/`Revises` pointers) on every SessionStart
+index, dangling `— details:`/`Revises` pointers, experiments with ≥2 runs
+newer than their README — `unreflected-runs`) on every SessionStart
 event — startup, resume, clear, and compact, so long auto-compacting
 sessions keep seeing it — and a plugin-level PreToolUse lint runs one
 batched Haiku judgment check when a `git commit` touches
-journal/notes/bugs/tasks files (self-containedness, real summaries,
-actionable bugs): violations block that one attempt with reasons, an
-unchanged retry proceeds (warn-once), `LENORE_NO_LINT=1` disables. No
+journal/notes/bugs/tasks files or `experiments/*/runs/` (self-
+containedness, real summaries, actionable bugs, evidence-grade run
+records; a new run that contradicts its experiment README's verdict while
+the README goes untouched is flagged): violations block that one attempt
+with reasons, an unchanged retry proceeds (warn-once), `LENORE_NO_LINT=1`
+disables. The pre-commit hook additionally gates conclusions: flipping an
+experiment README's `status` to concluded/shelved requires a real verdict,
+a concluded date, and a journal entry in the same commit. No
 scheduled jobs; doc maintenance is event-driven only.
 
 ## Settled decisions — do not re-litigate
@@ -208,7 +214,7 @@ scheduled jobs; doc maintenance is event-driven only.
 - `agents/doc-lint-judge.md` — the Haiku judgment prompt behind the
   commit-time lint, shipped as an invocable agent; `doc-lint.sh` sources
   its prompt from this file, so there is exactly one copy to tune.
-- `tests/doc-lint/` — regression suite for the judge prompt (17 cases,
+- `tests/doc-lint/` — regression suite for the judge prompt (20 cases,
   runner, provenance README). Run it before changing the prompt or the
   lint script; a `borderline_*` case turning BLOCK means the change is
   wrong.
