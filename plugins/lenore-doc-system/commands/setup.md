@@ -156,6 +156,12 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   `~/.codex/config.toml`; until then non-interactive `codex exec` runs skip
   the hooks (CI can pass `--dangerously-bypass-hook-trust` if it vets
   sources itself).
+  Ask the user where the judgment lint should live: agent-harness hooks
+  (default — right when all commits are made by Claude/Codex agents; manual
+  commits never trigger a model call) or the git layer
+  (`git config lenore.commitlint true` — right when the user commits
+  manually or uses harnesses without hooks). Both may be on: the ok-hash
+  handshake prevents double-judging.
 
 **Tier 0:**
 

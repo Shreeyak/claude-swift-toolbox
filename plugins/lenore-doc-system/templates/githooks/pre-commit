@@ -13,10 +13,12 @@
 #           (8) merge guidance for conflicting dated notes/bugs: both versions
 #               should survive (one refiled under a new dated name); a repeated
 #               identical attempt proceeds — deliberate drops are allowed
-#           (9) optional (LENORE_COMMIT_LINT=1): run the judgment lint
-#               (scripts/doc-lint.sh --git-hook) for harnesses without an
-#               agent-hook layer; commits already vetted by a harness hook
-#               are not judged twice
+#           (9) judgment lint at the git layer — for users whose commits are
+#               NOT made through an agent harness with hooks (manual commits,
+#               other harnesses, CI). Persistent toggle: `git config
+#               lenore.commitlint true`; LENORE_COMMIT_LINT=1/0 overrides per
+#               command. Commits already vetted by a harness hook skip (the
+#               ok-hash handshake), so enabling this never double-judges.
 set -euo pipefail
 
 [ "${SKIP_DOC_HOOKS:-0}" = "1" ] && exit 0
@@ -363,11 +365,15 @@ if [ -n "$MERGE_HEAD_REF" ]; then
   done < <(git ls-files -- docs/notes docs/bugs 2>/dev/null)
 fi
 
-# --- (9) Optional judgment lint at the git layer -------------------------
-# For harnesses with no agent-hook layer (and CI). The harness PreToolUse
-# hook records an ok-hash after a clean judgment, so agent commits vetted
-# there are not judged twice.
-if [ "$fail" -eq 0 ] && [ "${LENORE_COMMIT_LINT:-0}" = "1" ] && [ -x scripts/doc-lint.sh ]; then
+# --- (9) Judgment lint at the git layer ----------------------------------
+# One lint, two possible homes: agent-harness hook (Claude/Codex — zero
+# latency on manual commits) or here in git (manual committers, other
+# harnesses, CI). The ok-hash handshake makes them mutually exclusive per
+# commit, so both being enabled never double-judges.
+commit_lint=$(git config --bool lenore.commitlint 2>/dev/null || echo false)
+[ "${LENORE_COMMIT_LINT:-}" = "1" ] && commit_lint=true
+[ "${LENORE_COMMIT_LINT:-}" = "0" ] && commit_lint=false
+if [ "$fail" -eq 0 ] && [ "$commit_lint" = "true" ] && [ -x scripts/doc-lint.sh ]; then
   if ! scripts/doc-lint.sh --git-hook scripts; then
     fail=1
   fi
