@@ -28,6 +28,25 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   stale branch-task disposal, stale-bug triage, optional catch-up entry —
   all as diffs the user confirms.
 
+## Tooling installed into each repo
+
+- `scripts/lenore-docs.py` — CLI for creating notes/bugs/journal/tasks:
+  dated filenames, shape caps with explanatory errors, `--supersedes`,
+  atomic task+backing-note+pointer (`task --note`). Body via heredoc.
+- `scripts/browse.py` / `scripts/doc-status.sh` — live index and the
+  one-line status (journal age, stale tasks, bugs, desk, semantic-index
+  staleness, dangling pointers); status runs on every SessionStart event
+  including compaction.
+- `scripts/docs-search.py` — local semantic search (Apple Silicon MLX),
+  optional.
+- `.githooks/{pre-commit,commit-msg,pre-merge-commit,pre-push}` — the
+  enforcement layer: immutability, deny-filenames, prose-only docs/,
+  shape of new entries, bug-fix-claim consistency, landing gate.
+- Plugin-level drift lint (`hooks/hooks.json` → `doc-lint.sh`): one
+  batched Haiku judgment check per docs-touching `git commit`; blocks
+  once with reasons, unchanged retry proceeds. `LENORE_NO_LINT=1`
+  disables.
+
 Codex users: copy `prompts/codex-lenore-doc-system.md` to
 `~/.codex/prompts/` for an equivalent setup flow.
 

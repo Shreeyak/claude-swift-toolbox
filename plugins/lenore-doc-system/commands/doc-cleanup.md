@@ -10,7 +10,7 @@ after the user confirms. If the session is operating autonomously, do not
 run this command; defer it to an interactive session.
 
 Run `scripts/doc-status.sh` first (or `uv run scripts/browse.py --plain`)
-to ground the pass in current numbers. Then work through the four areas,
+to ground the pass in current numbers. Then work through the five areas,
 skipping any with nothing to propose:
 
 ## 1. Someday prune
@@ -39,7 +39,21 @@ Still-real bugs stay; optionally refresh the repro line if the user
 confirms new info. Bug files are deletable by design; this never touches
 journal entries or run records.
 
-## 4. Catch-up journal entry
+## 4. Task-entry lint (the stranger test)
+
+Read every entry under `## Next` and `## Someday` in
+`docs/tasks/project.md` and ask of each: could a competent developer act
+on this using only the repo — are the files, commits, datasets, and
+parameters it refers to locatable from what's written? For each entry
+that fails (session shorthand like "the fix", "the sweep", bare
+codenames), propose a rewrite to the user — they are the one context
+source that persists; never invent specifics you don't actually know.
+If an entry can't be reconstructed even with the user's help, propose
+dropping it: a task nobody can decode is already lost. The commit-time
+drift lint catches most of these at write time; this pass sweeps up what
+predates it or slipped through.
+
+## 5. Catch-up journal entry
 
 If the status line shows a large gap (last entry many days / many commits
 ago), offer to write **one** catch-up entry summarizing the arc from

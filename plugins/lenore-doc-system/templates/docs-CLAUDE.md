@@ -108,6 +108,12 @@ scripts/lenore-docs.py task "Self-contained title" [--someday|--branch] [--note]
 a valid fallback (the hooks still enforce the rules); the CLI is the
 convenient path, not a gate.
 
+A commit that touches journal/notes/bugs/tasks files may be blocked once
+by an advisory judgment lint (a cheap-model check of the rules above —
+self-containedness, real summaries, actionable bugs). Fix what it names
+rather than bypassing; if you judge it wrong, re-running the same commit
+unchanged proceeds.
+
 ## Bugs (`docs/bugs/YYYY-MM-DD-topic.md`)
 
 - Line 1: one-line symptom.
