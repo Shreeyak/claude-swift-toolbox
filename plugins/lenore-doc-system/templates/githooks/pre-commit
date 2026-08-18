@@ -157,7 +157,7 @@ if [ -n "$added" ]; then
           *)
             echo "error: pre-commit (prose-only docs/): $f has a disallowed extension for docs/" >&2
             echo "  docs/ holds prose and images only (.md .html .png .jpg .jpeg .gif .svg .webp)." >&2
-            echo "  code -> scripts/ or experiments/*/src/ ; outputs -> experiments/*/out/ ;" >&2
+            echo "  code -> scripts/ or experiments/<name>/ ; run outputs -> data/experiments/<name>/out/ ;" >&2
             echo "  throwaway -> tmp/ (gitignored)." >&2
             fail=1
             ;;
