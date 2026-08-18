@@ -23,6 +23,17 @@ Usage (body is read from stdin — use a heredoc — or --body-file):
       body becomes a dated note in docs/notes/, with a pointer appended to
       the task line automatically.
 
+  lenore-docs experiment "short name" [--question "one line"]
+      Creates experiments/YYYY-MM-DD-<slug>/ with a README skeleton,
+      notebook/, the data symlink, and the store trio
+      data/experiments/<same>/{regen,keep,out}.
+
+  lenore-docs run <experiment> [slug]
+      Reserves the next run id (max across notebook/ and the store's out/,
+      +1) by creating data/experiments/<exp>/out/runNNN[-slug]/, and prints
+      the notebook entry path to write when the run means something.
+      <experiment> may be the dated dir name or a unique substring of it.
+
 Run from anywhere inside the repo; paths resolve from the git root.
 Install globally (optional): ln -s "$REPO/scripts/lenore-docs.py" ~/.local/bin/lenore-docs
 (the symlink works for every repo — the script resolves the repo from your cwd).
@@ -256,6 +267,82 @@ def cmd_task(root, args, body):
         print(f"docs/{note_rel}")
 
 
+EXPERIMENT_README = """\
+---
+status: exploring
+question: {question}
+verdict:
+---
+
+# {title}
+
+## Question
+{question}
+
+---
+History: notebook/ — catch up with `cat notebook/*.md`
+"""
+
+
+def cmd_experiment(root, args, body):
+    check_summary(args.summary)
+    dirname = f"{datetime.now():%Y-%m-%d}-{slugify(args.summary, args.topic)}"
+    exp = root / "experiments" / dirname
+    if exp.exists():
+        die(f"lenore-docs: {exp.relative_to(root)} already exists.")
+    store = root / "data" / "experiments" / dirname
+    (exp / "notebook").mkdir(parents=True)
+    for d in ("regen", "keep", "out"):
+        (store / d).mkdir(parents=True, exist_ok=True)
+    question = args.question or args.summary
+    (exp / "README.md").write_text(
+        EXPERIMENT_README.format(title=args.summary, question=question))
+    (exp / "data").symlink_to(f"../../data/experiments/{dirname}")
+    print(exp.relative_to(root))
+    print(f"data/experiments/{dirname}/{{regen,keep,out}}")
+    print("Fill README's Question (and Data once data exists); commit the dir",
+          file=sys.stderr)
+    print("and the data symlink. Templates: doc-system skill, references/experiment-templates.md.",
+          file=sys.stderr)
+
+
+def resolve_experiment(root, name):
+    exp_root = root / "experiments"
+    if (exp_root / name).is_dir():
+        return name
+    hits = [p.name for p in sorted(exp_root.glob("*/"))
+            if p.is_dir() and name in p.name]
+    if len(hits) == 1:
+        return hits[0]
+    if not hits:
+        die(f"lenore-docs: no experiments/*{name}* directory found.")
+    die(f"lenore-docs: '{name}' is ambiguous: " + ", ".join(hits))
+
+
+def cmd_run(root, args, body):
+    dirname = resolve_experiment(root, args.experiment)
+    exp = root / "experiments" / dirname
+    out_root = root / "data" / "experiments" / dirname / "out"
+    ids = [0]
+    for d in (exp / "notebook", out_root):
+        if d.exists():
+            for p in d.iterdir():
+                m = re.match(r"run(\d+)", p.name)
+                if m:
+                    ids.append(int(m.group(1)))
+    runid = f"run{max(ids) + 1:03d}"
+    if args.slug:
+        runid += "-" + slugify(args.slug, None)
+    out_dir = out_root / runid
+    out_dir.mkdir(parents=True)   # reserving the id IS the point — fail if taken
+    print(f"reserved: data/experiments/{dirname}/out/{runid}/  (write all outputs here)")
+    print(f"record:   experiments/{dirname}/notebook/{runid}.md  (when the run means something)")
+    print("Entry shape: '# {} — {:%Y-%m-%d}' header; one-sentence outcome; command:/commit:/"
+          .format(runid, datetime.now()), file=sys.stderr)
+    print("inputs:/outputs: anchors; '## What happened' + '## Interpretation' prose.",
+          file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(prog="lenore-docs", add_help=True,
                                      description=__doc__,
@@ -272,11 +359,19 @@ def main():
             p.add_argument("--someday", action="store_true", help="file under ## Someday instead of ## Next")
             p.add_argument("--branch", action="store_true", help="append to this branch's task file instead of project.md")
             p.add_argument("--note", action="store_true", help="body becomes a backing note in docs/notes/, auto-linked")
+    p = sub.add_parser("experiment")
+    p.add_argument("summary", help="short experiment name (becomes the dated dir slug and README title)")
+    p.add_argument("--question", help="one-line question for the README front-matter (defaults to the name)")
+    p.add_argument("--topic", help="dir slug override")
+    p = sub.add_parser("run")
+    p.add_argument("experiment", help="experiment dir name, or a unique substring of it")
+    p.add_argument("slug", nargs="?", help="optional run slug (runNNN-<slug>)")
     args = parser.parse_args()
 
     root = repo_root()
-    body = read_body(args)
-    {"note": cmd_note, "bug": cmd_bug, "journal": cmd_journal, "task": cmd_task}[args.cmd](root, args, body)
+    body = read_body(args) if args.cmd not in ("experiment", "run") else ""
+    {"note": cmd_note, "bug": cmd_bug, "journal": cmd_journal, "task": cmd_task,
+     "experiment": cmd_experiment, "run": cmd_run}[args.cmd](root, args, body)
 
 
 if __name__ == "__main__":

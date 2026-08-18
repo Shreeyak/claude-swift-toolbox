@@ -68,6 +68,10 @@ the plan, apply only after the user confirms.
     missing symlink.
   - `docs/desk/` and `tmp/` exist (Tier 1) — both are gitignored and so
     do not survive a clone; recreate if missing.
+  - `data/datasets/` and `data/experiments/` exist (Tier 1) — the store
+    is gitignored and vanishes on clone; recreate if missing, and for
+    each `experiments/*/data` symlink whose store dir is absent,
+    `mkdir -p` the `{regen,keep,out}` trio so the symlink isn't dangling.
   - The `SessionStart` hook registration for `scripts/doc-status.sh` is
     present in `.claude/settings.json` — re-add if missing.
   Report what was found broken and repaired, even if nothing else changed.
@@ -126,7 +130,13 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   outside the managed span.
 - Append `templates/gitignore-snippet` to `.gitignore` (create it if
   absent) — **idempotent**: grep for the snippet's marker line first and
-  skip if already present.
+  skip if already present. If the marker is present but the block's
+  entries differ from the current snippet (older installs ignored
+  `experiments/*/data` and `experiments/*/out` instead of the single
+  `/data/` store root), show the diff and propose updating the block.
+- Create the experiment store root: `mkdir -p data/datasets
+  data/experiments` (gitignored — it will not survive clones; the
+  activation check recreates it).
 - No Claude Code hook registration is needed for the status line: the
   plugin itself ships a `SessionStart` hook (no matcher, so it fires on
   startup, resume, clear, *and compact* — long auto-compacting sessions

@@ -20,16 +20,22 @@ re-drawn 3× each and held; T1b/T2b are fresh-domain rewrites added after
 noticing T1/T2 were near-verbatim to the prompt's own calibration example
 (contaminated evidence — keep both pairs).
 
-The R class (experiment run records) was added 2026-08-17 after the user
-observed agents landing runs without ever updating the experiment README's
-verdict. The runner commits a fixture README (`experiments/masked-ncc/`,
-status: concluded, verdict claiming masked NCC beats baseline) so R cases
+The R class (experiment notebook entries) was added 2026-08-17 after the
+user observed agents landing runs without ever updating the experiment
+README's verdict. The runner commits a fixture README
+(`experiments/2026-08-01-masked-ncc/`, status: concluded, verdict claiming
+masked NCC beats baseline, new-template Findings section) so R cases
 exercise the CONTEXT-append path of doc-lint.sh: R1 is a consistent
-evidence-grade run (held PASS across 3 re-draws), R2 is a vibes-only run
-with no command/commit/metrics, R3 is an evidence-grade run whose result
-contradicts the fixture verdict while the README goes untouched — the
-verdict-freshness check the class exists for. Baseline with the R rules
-added: **20/20**, all pre-existing cases unchanged.
+evidence-grade entry (held PASS across 3 re-draws), R2 is a vibes-only
+entry with no command/commit/metrics, R3 is an evidence-grade entry whose
+result contradicts the fixture verdict while the README goes untouched —
+the verdict-freshness check the class exists for. Baseline with the R
+rules added: **20/20**, all pre-existing cases unchanged. 2026-08-18: the
+R cases and fixture were rewritten into the notebook-era shapes
+(`notebook/` dir, `# runNNN — date` header + outcome line + What
+happened/Interpretation sections, README with `question:` front-matter and
+Findings) when `runs/` became `notebook/`; the suite was re-run and held
+20/20.
 
 The borderline cases encode the design priority: **false positives are
 worse than false negatives** for a commit gate. If a prompt change makes

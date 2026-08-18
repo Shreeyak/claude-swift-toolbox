@@ -9,7 +9,7 @@ when actually setting up or troubleshooting `scripts/docs-search.py`.
 
 Not before. `browse.py` + grep + asking the agent (who reads fast) covers
 small and medium repos. Install `docs-search.py` only once a project's
-`docs/` + `experiments/*/README.md` + `experiments/*/runs/*.md` corpus is big enough that scanning a
+`docs/` + `experiments/*/README.md` + `experiments/*/notebook/*.md` corpus is big enough that scanning a
 `browse.py` screen no longer finds things — there is no fixed threshold,
 it's a "grep keeps missing things" judgment call.
 

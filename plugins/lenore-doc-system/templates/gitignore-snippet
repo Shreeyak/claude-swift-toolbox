@@ -1,11 +1,17 @@
 # --- Lenore doc system ---
 tmp/
 docs/desk/
-# Data is git-ignored, never committed: it lives in the MAIN checkout's
-# data/ dirs; worktrees symlink to it (symlinks are gitignored too, so the
-# hooks never see them). Manifest/regeneration commands are recorded in the
-# experiment README instead.
-data/
-experiments/*/data/
-experiments/*/out/
+# THE STORE: all experiment bytes live under /data/ (datasets/, and per
+# experiment regen/ + keep/ + out/<runid>/), wholly gitignored. Worktrees
+# symlink their data/ to the main checkout's, so bytes exist once. Rebuild
+# commands live in each experiment README's Data section. Git-worthy
+# keepers are promoted by copy into experiments/*/notebook/.
+/data/
+# Worktree homes (each worktree gets one data -> main-repo symlink inside)
+.claude/worktrees/
+.worktrees/
+# Tool state inside experiments — regenerable, deleted when concluded
+experiments/*/.venv/
+experiments/*/vendor/
+**/__pycache__/
 .docs-embeddings

@@ -12,30 +12,35 @@ scratch="${1:-$(mktemp -d)}/doclint-suite"
 
 rm -rf "$scratch"; mkdir -p "$scratch"; cd "$scratch"
 git init -q -b main
-mkdir -p docs/{journal,notes,bugs,tasks} experiments/masked-ncc/runs
+exp=experiments/2026-08-01-masked-ncc
+mkdir -p docs/{journal,notes,bugs,tasks} "$exp/notebook"
 echo placeholder > docs/CLAUDE.md
-cat > experiments/masked-ncc/README.md <<'FIXTURE'
+cat > "$exp/README.md" <<'FIXTURE'
 ---
 status: concluded
+question: does masking the correlation window to the segmented target improve alignment accuracy?
 verdict: Masked NCC beats the unmasked baseline (2.1px vs 5.8px mean error) and is the production default at window 64.
 concluded: 2026-08-10
 ---
-# masked-ncc
+# Masked NCC vs unmasked baseline
 
 ## Question
-Does masking the correlation window to the segmented target improve alignment accuracy?
+Does masking the correlation window to the segmented target improve
+alignment accuracy enough to change the production default?
 
-## What worked
-Masked NCC at window 64 — 2.1px mean error vs 5.8px unmasked baseline on data/clips.
+## Findings
+Masked NCC at window 64 gives 2.1px mean error vs 5.8px unmasked baseline
+on data/clips (run002). The win is stable across the 12-clip set.
 
-## What didn't
-Feathered mask edges (no measurable gain over hard mask).
+## What didn't work
+Feathered mask edges — no measurable gain over a hard mask (run003).
 
-## Lifted into production
-src/align.py --mask, window 64.
+## Recommendations
+Adopt masked NCC, window 64 (src/align.py --mask); promoted, see
+experiments/PROMOTIONS.md.
 
-## Not pursued
-Learned masks.
+---
+History: notebook/ — catch up with `cat notebook/*.md`
 FIXTURE
 git add -A && git commit -qm init
 
@@ -48,7 +53,7 @@ for case_file in "$here"/cases/*.md; do
     N*) dest=docs/notes ;;
     B*) dest=docs/bugs ;;
     T*) dest=docs/tasks ;;
-    R*) dest=experiments/masked-ncc/runs ;;
+    R*) dest=$exp/notebook ;;
   esac
   case "$base" in
     *good*|*borderline*) expected=PASS ;;

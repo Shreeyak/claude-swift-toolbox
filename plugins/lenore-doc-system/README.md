@@ -33,6 +33,9 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
 - `scripts/lenore-docs.py` — CLI for creating notes/bugs/journal/tasks:
   dated filenames, shape caps with explanatory errors, `--supersedes`,
   atomic task+backing-note+pointer (`task --note`). Body via heredoc.
+  Also `experiment` (dated dir + README skeleton + notebook/ + data
+  symlink + store trio under the gitignored `/data/` root) and `run`
+  (reserves the next runNNN id by creating its store out/ dir).
 - `scripts/browse.py` / `scripts/doc-status.sh` — live index and the
   one-line status (journal age, stale tasks, bugs, desk, semantic-index
   staleness, dangling pointers); the plugin's own SessionStart hook runs
@@ -40,16 +43,20 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
 - `scripts/docs-search.py` — local semantic search (Apple Silicon MLX),
   optional.
 - `.githooks/{pre-commit,commit-msg,pre-merge-commit,pre-push}` — the
-  enforcement layer: immutability, deny-filenames, prose-only docs/,
-  shape of new entries, bug-fix-claim consistency, the experiment
-  conclusion gate (status flip needs verdict + date + journal entry in
-  one commit), experiment isolation (no imports or symlinks into
-  experiments/ from production code), merge guidance for same-named dated
-  notes (both versions must survive; one gets refiled), landing gate.
+  enforcement layer: immutability (journal, notes, experiment notebook
+  entries), deny-filenames, prose-only docs/, shape of new entries
+  (including notebook entries: runNNN names, line-1 outcome sentence),
+  the experiment conclusion gate (status flip needs verdict + date +
+  journal entry in one commit), experiment isolation (no imports or
+  symlinks into experiments/ from production code; intra-experiments
+  reuse and the committed data->store symlink are blessed), a rename
+  warning when an experiment dir moves without its store dir, merge
+  guidance for same-named dated notes (both versions must survive; one
+  gets refiled), landing gate.
 - Plugin-level drift lint (`hooks/hooks.json` → `doc-lint.sh`): one
   batched Haiku judgment check per `git commit` touching docs/ entries or
-  experiment run records — including whether a new run contradicts its
-  experiment README's standing verdict; blocks once with reasons,
+  experiment notebook entries — including whether a new run contradicts
+  its experiment README's standing verdict; blocks once with reasons,
   unchanged retry proceeds. `LENORE_NO_LINT=1` disables. The judgment prompt ships as a real agent,
   `agents/doc-lint-judge.md` — the lint script sources its prompt from
   that file, and the agent can also be invoked directly ("check

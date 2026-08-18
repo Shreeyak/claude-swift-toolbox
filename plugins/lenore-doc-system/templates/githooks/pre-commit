@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Lenore doc system — pre-commit
-# Enforces: (1) immutability of docs/journal, docs/notes, experiments/*/runs
+# Enforces: (1) immutability of docs/journal, docs/notes, experiments/*/notebook
 #           (2) deny-filename for tracking docs (state.md, decisions.md, ...)
 #           (3) prose-only docs/ (additions must be .md/.html/image/.gitkeep)
-#           (4) no symlinks/gitlinks under docs/ or experiments/ (except AGENTS.md)
+#           (4) no symlinks/gitlinks under docs/ or experiments/ (except
+#               AGENTS.md and each experiment's data -> ../../data/... symlink)
 #           (5) shape of new journal/notes/bugs .md files (caps, line-1 summary)
+#               and of new notebook entries (runNNN name, outcome sentence)
 #           (6) experiment conclusion gate: flipping status to concluded/shelved
 #               requires a verdict, a concluded date, and a journal entry in the
 #               same commit
@@ -19,6 +21,9 @@
 #               lenore.commitlint true`; LENORE_COMMIT_LINT=1/0 overrides per
 #               command. Commits already vetted by a harness hook skip (the
 #               ok-hash handshake), so enabling this never double-judges.
+#           (10) experiment rename warning (informational, never blocks):
+#               renaming experiments/<a>/ prints a reminder to also move
+#               the store dir data/experiments/<a>.
 set -euo pipefail
 
 [ "${SKIP_DOC_HOOKS:-0}" = "1" ] && exit 0
@@ -47,7 +52,7 @@ denied_names='^(state|decisions|status|changelog|handoff(-.+)?|plan(-.+)?|review
 is_immutable_path() {
   lc=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
   case "$lc" in
-    docs/journal/*|docs/notes/*|experiments/*/runs/*.md) return 0 ;;
+    docs/journal/*|docs/notes/*|experiments/*/notebook/*.md|experiments/*/runs/*.md) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -87,7 +92,7 @@ while IFS= read -r -d '' status; do
     D)
       IFS= read -r -d '' f
       case "$f" in
-        docs/journal/*|experiments/*/runs/*.md)
+        docs/journal/*|experiments/*/notebook/*.md|experiments/*/runs/*.md)
           immutable_deleted="${immutable_deleted}${f}"$'\n'
           ;;
       esac
@@ -107,13 +112,13 @@ done < <(git diff --cached --name-status -z -M "$AGAINST" 2>/dev/null || true)
 if [ -n "$immutable_modified" ]; then
   echo "error: pre-commit (immutability): the following files are immutable once committed" >&2
   printf '%s' "$immutable_modified" | sed '/^$/d;s/^/  modified: /' >&2
-  echo "  journal entries, notes, and experiment run records may not be edited or renamed after commit." >&2
+  echo "  journal entries, notes, and experiment notebook entries may not be edited or renamed after commit." >&2
   echo "  fix typos before the first commit, or write a new dated file instead." >&2
   fail=1
 fi
 
 if [ -n "$immutable_deleted" ]; then
-  echo "error: pre-commit (immutability): journal entries and run records may not be deleted" >&2
+  echo "error: pre-commit (immutability): journal entries and notebook entries may not be deleted" >&2
   printf '%s' "$immutable_deleted" | sed '/^$/d;s/^/  deleted: /' >&2
   echo "  these are history and evidence. notes/ may be deleted; these may not." >&2
   fail=1
@@ -193,6 +198,19 @@ while IFS= read -r -d '' rec; do
     if [ "$new_mode" = "120000" ] && [ "$base" = "AGENTS.md" ]; then
       continue
     fi
+    # The one blessed experiment symlink: experiments/<exp>/data pointing
+    # into the store (../../data/...). Anything else stays banned.
+    if [ "$new_mode" = "120000" ] && [ "$base" = "data" ]; then
+      case "$path" in
+        experiments/*/data)
+          target=$(git show ":$path" 2>/dev/null || true)
+          case "$target" in ../../data/*) continue ;; esac
+          echo "error: pre-commit (data symlink): $path -> $target must point into the store (../../data/experiments/<name>)" >&2
+          fail=1
+          continue
+          ;;
+      esac
+    fi
     echo "error: pre-commit (no symlinks/gitlinks): $path (mode $new_mode) may not be added under docs/ or experiments/" >&2
     fail=1
   fi
@@ -206,6 +224,33 @@ if [ -n "$added" ]; then
     lower_f=$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')
     case "$lower_f" in
       docs/journal/*.md|docs/notes/*.md|docs/bugs/*.md) ;;
+      experiments/*/notebook/*.md)
+        # Notebook entries: runNNN[-slug].md; `# runNNN — date` header; the
+        # first line below the header is a one-sentence outcome summary.
+        base=$(basename "$f")
+        if ! printf '%s' "$base" | grep -qE '^run[0-9]{3,}(-[a-z0-9][a-z0-9-]*)?\.md$'; then
+          echo "error: pre-commit (shape): $f — every .md in notebook/ is a run entry named runNNN[-slug].md" >&2
+          echo "  (zero-padded global per-experiment counter; freeform notes go to docs/notes/)." >&2
+          fail=1
+          continue
+        fi
+        content=$(git show ":$f" 2>/dev/null) || continue
+        first=$(printf '%s\n' "$content" | head -1)
+        case "$first" in
+          "# run"*) ;;
+          *)
+            echo "error: pre-commit (shape): $f — line 1 must be the entry header '# runNNN[-slug] — YYYY-MM-DD'" >&2
+            fail=1 ;;
+        esac
+        summary=$(printf '%s\n' "$content" | awk 'NR>=2 && NF {print; exit}')
+        case "$summary" in
+          ""|"#"*|"-"*|"*"*|command:*|commit:*|inputs:*|outputs:*)
+            echo "error: pre-commit (shape): $f — the first line under the header must be a one-sentence" >&2
+            echo "  outcome summary (what this run established), before the command:/commit:/... anchors." >&2
+            fail=1 ;;
+        esac
+        continue
+        ;;
       *) continue ;;
     esac
     content=$(git show ":$f" 2>/dev/null) || continue
@@ -298,9 +343,9 @@ if [ -n "$added$immutable_modified" ] || true; then
     if [ -n "$hits" ]; then
       echo "error: pre-commit (experiment isolation): $f references experiments/ from production code:" >&2
       printf '%s\n' "$hits" | sed 's/^/  /' >&2
-      echo "  experiments are quarantined. To use experiment code in production, lift it into" >&2
-      echo "  the production tree and record the promotion in the experiment README's" >&2
-      echo "  'Lifted into production' section." >&2
+      echo "  experiments are quarantined. To use experiment code in production, promote it by" >&2
+      echo "  copy into the production tree and record it in experiments/PROMOTIONS.md (and the" >&2
+      echo "  experiment README's Recommendations). Experiment-to-experiment reuse is fine." >&2
       fail=1
     fi
   done < <(git diff --cached --name-only -z --diff-filter=AM "$AGAINST" 2>/dev/null || true)
@@ -317,6 +362,10 @@ while IFS= read -r -d '' rec; do
   esac
   [ "$new_mode" = "120000" ] || continue
   target=$(git show ":$path" 2>/dev/null || true)
+  # The blessed store symlink (experiments/<exp>/data -> ../../data/...)
+  # points into the store, not into experiments/ — its target merely
+  # contains the word. Skip it here; check (4) validates its shape.
+  case "$path" in experiments/*/data) case "$target" in ../../data/*) continue ;; esac ;; esac
   case "$target" in
     *experiments/*)
       echo "error: pre-commit (experiment isolation): symlink $path -> $target points into experiments/" >&2
@@ -364,6 +413,36 @@ if [ -n "$MERGE_HEAD_REF" ]; then
     fi
   done < <(git ls-files -- docs/notes docs/bugs 2>/dev/null)
 fi
+
+# --- (10) Experiment rename warning (never blocks) -------------------------
+# The store dir is keyed by experiment name; renaming experiments/<a>/ to
+# experiments/<b>/ strands data/experiments/<a>. Git can't move the
+# gitignored store, so just say it once — the orphan check in /doc-cleanup
+# is the backstop.
+warned_renames=""
+while IFS= read -r -d '' status; do
+  case "$status" in
+    R*)
+      IFS= read -r -d '' src
+      IFS= read -r -d '' dst
+      case "$src" in experiments/*/*) ;; *) continue ;; esac
+      case "$dst" in experiments/*/*) ;; *) continue ;; esac
+      a=${src#experiments/}; a=${a%%/*}
+      b=${dst#experiments/}; b=${b%%/*}
+      [ "$a" = "$b" ] && continue
+      case " $warned_renames " in *" $a>$b "*) continue ;; esac
+      warned_renames="$warned_renames $a>$b"
+      if [ -d "data/experiments/$a" ]; then
+        echo "note: pre-commit: experiments/$a/ is being renamed to experiments/$b/ —" >&2
+        echo "  also move its store dir:  mv data/experiments/$a data/experiments/$b" >&2
+        echo "  (and re-point the data symlink). Otherwise the store dir becomes an orphan." >&2
+      fi
+      ;;
+    *)
+      IFS= read -r -d '' _f || true
+      ;;
+  esac
+done < <(git diff --cached --name-status -z -M "$AGAINST" 2>/dev/null || true)
 
 # --- (9) Judgment lint at the git layer ----------------------------------
 # One lint, two possible homes: agent-harness hook (Claude/Codex — zero

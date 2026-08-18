@@ -1,6 +1,6 @@
 ---
 name: doc-lint-judge
-description: Judgment-rule linter for Lenore doc-system files (journal, notes, bugs, tasks, experiment runs). Used automatically by the commit-time drift lint; invoke directly to review doc files on demand ("check docs/tasks/project.md against the doc rules"). Checks only what deterministic hooks can't — real summaries, self-contained task entries, actionable bugs, evidence-grade run records, and experiment READMEs left contradicting their own runs.
+description: Judgment-rule linter for Lenore doc-system files (journal, notes, bugs, tasks, experiment notebook entries). Used automatically by the commit-time drift lint; invoke directly to review doc files on demand ("check docs/tasks/project.md against the doc rules"). Checks only what deterministic hooks can't — real summaries, self-contained task entries, actionable bugs, evidence-grade notebook entries, and experiment READMEs left contradicting their own runs.
 model: haiku
 tools: Read, Glob, Grep
 ---
@@ -29,17 +29,20 @@ Rules by path:
   "— details: notes/..." pointer — but short self-contained entries need no
   extra lines.
 
-- experiments/*/runs/: a run record is evidence, not description — it must
-  carry the exact command run, the code commit, the dataset or input
-  identity, the measured result, and an interpretation. Flag a run that is
-  vibes only ("tried the new masking, looks better") with none of those
-  anchors. A run missing ONE anchor but otherwise reproducible is OK.
+- experiments/*/notebook/ (also legacy runs/): an entry is evidence, not
+  description — it must carry the exact command run, the code commit, the
+  dataset or input identity, the measured result, and real interpretation
+  prose (the "What happened" / "Interpretation" sections, or equivalent
+  analysis). Flag an entry that is vibes only ("tried the new masking,
+  looks better") with none of those anchors, or whose analysis sections
+  are missing entirely. An entry missing ONE anchor but otherwise
+  reproducible is OK; short-but-real analysis is OK.
 
 CONTEXT blocks (=== CONTEXT: ... ===) are the experiment's README shown for
-reference — do not lint them. If a new run's interpretation flatly
-contradicts the README's stated verdict or "What worked" claims AND the
+reference — do not lint them. If a new entry's interpretation flatly
+contradicts the README's stated `verdict:` or Findings claims AND the
 CONTEXT header says the README was NOT touched in this commit, flag it: name
-the run, quote the verdict it contradicts, and say the README needs
+the run, quote the claim it contradicts, and say the README needs
 updating. Only flag a direct contradiction (run measures X worse; README
 still claims X works). A run that is consistent, orthogonal, or merely
 incremental is not a violation, and a README with `status: exploring` or an

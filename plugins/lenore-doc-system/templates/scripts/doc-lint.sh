@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Lenore doc system — advisory drift lint (PreToolUse hook on Bash).
 # Fires when the agent is about to run a `git commit`. Batches every new or
-# modified docs/{journal,notes,bugs,tasks} and experiments/*/runs .md file
+# modified docs/{journal,notes,bugs,tasks} and experiments/*/notebook .md file
 # (worktree vs HEAD — the
 # commit command may stage as part of the same compound command, so the staged
 # set can't be trusted yet) into ONE cheap-model call checking the JUDGMENT
@@ -59,7 +59,7 @@ cd "$root" || exit 0
 [ -f docs/CLAUDE.md ] || exit 0   # only repos running this doc system
 
 # New/modified doc files, worktree vs HEAD (covers add-and-commit compounds).
-files=$(git status --porcelain -- 'docs/journal/*.md' 'docs/notes/*.md' 'docs/bugs/*.md' 'docs/tasks/*.md' 'experiments/*/runs/*.md' 2>/dev/null \
+files=$(git status --porcelain -- 'docs/journal/*.md' 'docs/notes/*.md' 'docs/bugs/*.md' 'docs/tasks/*.md' 'experiments/*/notebook/*.md' 'experiments/*/runs/*.md' 2>/dev/null \
         | grep -E '^.?[AM?]' | sed 's/^...//' | sed 's/^"\(.*\)"$/\1/')
 [ -n "$files" ] || exit 0
 
@@ -75,8 +75,8 @@ while IFS= read -r f; do
 $(cat "$f")
 "
   case "$f" in
-    experiments/*/runs/*.md)
-      exp=${f%/runs/*}
+    experiments/*/notebook/*.md|experiments/*/runs/*.md)
+      exp=${f%/notebook/*}; exp=${exp%/runs/*}
       case "
 $run_exps" in *"
 $exp"*) ;; *) run_exps="${run_exps}${exp}

@@ -1,6 +1,6 @@
 ---
 description: Doc-hygiene review — propose prunes for Someday, stale branch-task files, and stale bugs as diffs to confirm; catch-up journal entry if the gap warrants
-allowed-tools: Bash(git:*), Bash(ls:*), Bash(rm:*), Bash(find:*), Read, Write, Edit, Glob, Grep
+allowed-tools: Bash(git:*), Bash(ls:*), Bash(rm:*), Bash(find:*), Bash(du:*), Bash(touch:*), Bash(mv:*), Bash(cp:*), Read, Write, Edit, Glob, Grep
 ---
 
 Run a documentation-hygiene pass. This is judgment work batched for when
@@ -53,16 +53,44 @@ dropping it: a task nobody can decode is already lost. The commit-time
 drift lint catches most of these at write time; this pass sweeps up what
 predates it or slipped through.
 
-## 5. Experiment data hygiene
+## 5. Experiment store triage
 
-For each `experiments/*/`, report the disk size of `data/` and `out/`
-(`du -sh`). For experiments whose README `status:` is concluded or
-shelved, propose deleting regenerable data — anything whose README
-records a regeneration command or download source. Never propose deleting
-data with no recorded way back; instead flag it ("no regeneration command
-recorded — add one to the README or keep the data"). Deletions are `rm`
-of gitignored files (no git surface), applied only after the user
-confirms each experiment.
+Work the store (`data/experiments/`), experiment by experiment, sizes
+first (`du -sh data/experiments/*/`). The default path is safe — nothing
+here was ever auto-deleted — so this pass is where judgment happens:
+
+- **Per-run triage.** For each `out/<runid>/` dir not yet triaged (newer
+  than the experiment's `.lenore-triaged` marker, or all if no marker),
+  read the matching `notebook/<runid>.md` entry and decide with the user:
+  **delete** (question answered, bytes worthless), **keep** (still
+  comparing against it), or **promote** (copy the few files that matter
+  into `notebook/`, named after the run — `runNNN-slug-grid.csv` — then
+  delete or keep the rest). An out/ dir with **no** notebook entry gets
+  flagged: either it was noise (delete) or the record was never written
+  (write it now if the context survives). After the walk, `touch
+  data/experiments/<exp>/.lenore-triaged` — that resets the status line's
+  `untriaged-runs` counter.
+- **Concluded experiments.** Delete their `regen/` outright (rebuildable
+  by definition — verify the README's Data section records the rebuild
+  command first; if it doesn't, flag instead of deleting) and their
+  `.venv/` / `vendor/` / `__pycache__` dirs. *Suggest* stale `keep/`
+  deletions — never delete `keep/` without explicit per-item confirmation.
+- **Orphans.** A `data/experiments/<name>` with no `experiments/<name>`
+  in git. Before proposing deletion, check for a rename (a similarly
+  named experiment dir) — if found, propose `mv` instead. Also grep
+  `uses:` lines and `../<name>` references across `experiments/*` before
+  suggesting deletion of any experiment dir itself — a dir someone
+  depends on is flagged, not removed.
+- **Misfiled workspaces.** An `experiments/*/` whose README carries no
+  question/status shape is not an experiment — suggest relocation to the
+  normal repo structure.
+- **Over-promoted notebooks.** A `notebook/` ballooning with artifacts
+  (dozens of files, images dominating) signals promotion doing the
+  store's job — propose demoting the excess.
+
+Deletions inside the store are `rm` of gitignored files (no git surface)
+but still shown and confirmed per experiment. Promoted artifacts are
+ordinary committed files — they go into the cleanup commit.
 
 ## 6. Catch-up journal entry
 
@@ -74,8 +102,9 @@ first line still one sentence. Never back-fill multiple entries.
 ## Notes
 
 - This command deletes only what the doctrine already marks disposable:
-  task files, bug files, Someday lines. Notes are deleted only if the
-  user names them; journal and runs, never.
+  task files, bug files, Someday lines, and store bytes after triage.
+  Notes are deleted only if the user names them; journal and notebook
+  entries, never.
 - Commit the confirmed changes as one cleanup commit (the pre-commit
   hook will reject anything that oversteps).
 - Skippable for months without damage — say so if the user asks whether

@@ -1,6 +1,6 @@
 ---
 name: lenore-doc-setup
-description: Install, align with, or run the landing flow for the Lenore documentation-as-history system (dated immutable journal/notes/runs, git-hook enforcement, status line, filing CLI) in the current repo. Use when the user asks to set up the Lenore doc system, check a repo against it, or land a branch under it.
+description: Install, align with, or run the landing flow for the Lenore documentation-as-history system (dated immutable journal/notes/notebook entries, git-hook enforcement, status line, filing CLI) in the current repo. Use when the user asks to set up the Lenore doc system, check a repo against it, or land a branch under it.
 ---
 
 # Lenore doc system — Codex setup + landing skill

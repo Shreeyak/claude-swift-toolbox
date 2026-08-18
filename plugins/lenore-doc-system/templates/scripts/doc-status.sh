@@ -2,7 +2,8 @@
 # usage: scripts/doc-status.sh
 # what it does: prints one status line summarizing doc-system drift
 # (last journal age, commit gap, stale branch-task files, bug count,
-# Someday count, stale/dangling desk links, semantic-index staleness).
+# Someday count, stale/dangling desk links, semantic-index staleness,
+# unreflected experiment runs, untriaged run outputs, orphan store dirs).
 # Silent (exit 0) when not in a repo with docs/. Fast — meant to run on
 # every session start.
 set -uo pipefail
@@ -95,7 +96,7 @@ docs_index_part=""
 if [ -f .docs-embeddings/meta.json ]; then
   stale_docs=$(find docs -type f \( -name "*.md" -o -name "*.html" \) -newer .docs-embeddings/meta.json 2>/dev/null | grep -v '^docs/desk/' | wc -l | tr -d ' ')
   stale_exp=0
-  [ -d experiments ] && stale_exp=$(find experiments -maxdepth 3 -type f \( -name "README.md" -o -path "*/runs/*.md" \) -newer .docs-embeddings/meta.json 2>/dev/null | wc -l | tr -d ' ')
+  [ -d experiments ] && stale_exp=$(find experiments -maxdepth 3 -type f \( -name "README.md" -o -path "*/notebook/*.md" -o -path "*/runs/*.md" \) -newer .docs-embeddings/meta.json 2>/dev/null | wc -l | tr -d ' ')
   stale_spec=0
   [ -d openspec ] && stale_spec=$(find openspec -type f -name "*.md" ! -name "tasks.md" -newer .docs-embeddings/meta.json 2>/dev/null | wc -l | tr -d ' ')
   stale_total=$((stale_docs + stale_exp + stale_spec))
@@ -153,7 +154,7 @@ if [ -d experiments ]; then
     readme_ct=$(git log -1 --format=%ct -- "$er" 2>/dev/null)
     [ -n "$readme_ct" ] || continue
     newer=0
-    for rf in "$exp"/runs/*.md; do
+    for rf in "$exp"/notebook/*.md "$exp"/runs/*.md; do
       [ -e "$rf" ] || continue
       run_ct=$(git log -1 --format=%ct -- "$rf" 2>/dev/null)
       [ -n "$run_ct" ] || continue
@@ -168,9 +169,39 @@ if [ -n "$unref" ]; then
   unreflected_part=" · unreflected-runs: ${unref_n} exp (${unref_first})"
 fi
 
+# --- experiment store health (untriaged run outputs + orphaned store dirs) --
+# Untriaged: out/<run>/ dirs newer than the experiment's .lenore-triaged
+# marker (touched by /doc-cleanup's triage pass); all of them if no marker.
+# Orphan: a data/experiments/<name> with no experiments/<name> in the repo.
+store_part=""
+if [ -d data/experiments ]; then
+  untriaged=0
+  orphans=0
+  orphan_first=""
+  for sd in data/experiments/*/; do
+    [ -d "$sd" ] || continue
+    name=$(basename "$sd")
+    if [ ! -d "experiments/$name" ]; then
+      orphans=$((orphans + 1))
+      [ -z "$orphan_first" ] && orphan_first="$name"
+      continue
+    fi
+    if [ -d "$sd/out" ]; then
+      if [ -f "$sd/.lenore-triaged" ]; then
+        n=$(find "$sd/out" -mindepth 1 -maxdepth 1 -type d -newer "$sd/.lenore-triaged" 2>/dev/null | wc -l | tr -d ' ')
+      else
+        n=$(find "$sd/out" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+      fi
+      untriaged=$((untriaged + n))
+    fi
+  done
+  [ "$untriaged" -gt 0 ] && store_part="${store_part} · untriaged-runs: ${untriaged}"
+  [ "$orphans" -gt 0 ] && store_part="${store_part} · orphan-store-dirs: ${orphans} (${orphan_first})"
+fi
+
 stale_task_part=""
 if [ -n "$stale_task_files" ]; then
   stale_task_part=" · $(printf '%s' "$stale_task_files" | sed 's/ *$//')"
 fi
 
-echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${unreflected_part}${stale_task_part}"
+echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${unreflected_part}${store_part}${stale_task_part}"

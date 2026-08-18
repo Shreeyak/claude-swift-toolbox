@@ -100,62 +100,137 @@ its drift risk is low-damage.
 
 ## `experiments/` — trials (repo root, not under `docs/`)
 
-`README.md` per experiment: front-matter (`status`, `verdict`, `concluded`)
-+ four sections — Question / What worked / What didn't / Lifted into
-production / Not pursued. `runs/`: one immutable file per run — exact
-command, config, dataset identity, code commit, metrics, one-paragraph
-interpretation. Dead ends included, never cleaned up.
+One experiment = one dated dir `experiments/YYYY-MM-DD-kebab-name/`
+holding exactly four committed things plus one symlink:
 
-### The three zones of an experiment folder
+```
+experiments/2026-08-18-masked-ncc/
+├── README.md          current truth: question, status, verdict, findings
+├── match.py  run.sh   the experiment's code, root-flat (subdirs when earned)
+├── notebook/          the narrative: one immutable entry per run + promoted
+│   ├── run001-baseline.md            artifacts named after their run
+│   ├── run002-tau-sweep.md
+│   └── run002-tau-sweep-grid.csv
+├── data -> ../../data/experiments/2026-08-18-masked-ncc
+└── .venv/  vendor/    tool state — gitignored in place, never in the store
+```
 
-An experiment mixes three disciplines; keeping them straight is what the
-hooks encode:
+All bytes live in the store, one gitignored root `/data/`:
 
-- **`src/`, `out/`, `data/` — freely mutable, always.** Experiments
-  iterate; this is just code. Heavy artifacts gitignored.
-- **`README.md` — mutable, deliberately.** The *current* scannable face:
-  status front-matter flips, the What worked / Lifted sections get
-  rewritten as understanding sharpens. One of the homes of current truth,
-  and current truth must be editable.
-- **`runs/*.md` — immutable once committed.** Each run's record is
-  *evidence*, not description: "at commit `abc1234`, with these
-  parameters, we measured 5.8px." Nobody can quietly revise it later —
-  immutability makes tidying (deleting "unimportant" runs, summarizing ten
-  into one) impossible at the layer where it would destroy information.
-  The tidy summary is the README's job, layered on top.
+```
+data/
+├── datasets/                          shared cross-experiment source data
+└── experiments/2026-08-18-masked-ncc/
+    ├── regen/    regenerable inputs — delete freely; README records the rebuild command
+    ├── keep/     custom non-regenerable inputs — deletion only ever suggested
+    └── out/      ALL raw run outputs, heavy+small together, one dir per run
+        └── run002-tau-sweep/          a sweep is ONE run; points are subdirs
+```
 
-In practice: run 14 lands as `runs/2026-08-15-1102.md` and never changes;
-the README's verdict line is rewritten to reflect it; if it changed
-project direction, a journal entry restates it. Raw evidence (frozen),
-current summary (living), narrative (frozen) — same invariant as the
-journal, no special case to remember.
+There is no fifth place anything can live. Dates go on experiment dirs
+(lineages need at-a-glance chronology), never on run names.
 
-Enforced, because agents reliably forget the README half: the pre-commit
-hook blocks a `status: concluded`/`shelved` flip that lacks a real
-`verdict:`, a `concluded:` date, or a same-commit journal entry; the
-commit-time judgment lint checks new run records for evidence anchors
-(command, commit, dataset, metrics, interpretation) and flags a run that
-contradicts the README's standing verdict while the README goes untouched
-in that commit; and the status line counts experiments with ≥2 runs newer
-than their README's last commit (`unreflected-runs`). Experiments are also
-quarantined from production: the hook rejects import-shaped references to
-`experiments/` from code outside it and symlinks pointing into it — the
-sanctioned path is lifting the code into the production tree and recording
-it in the README's "Lifted into production" section.
+### README.md — current truth, zero narrative
 
-### Experiment data — gitignored in the main checkout, symlinked in worktrees
+Front-matter one-liners are the envelope machines scan: `status:`
+(exploring | concluded | shelved), `question:`, `verdict:` + `concluded:`
+(gate-checked at conclusion), optional `success:` (what result would
+settle it), `uses:` (experiments whose code this reuses), `extends:`.
+Headings are the letter, in fixed order — Question (required: the full
+framing), Approach (how to operate the experiment cold), Data (required
+once data exists — what `keep/` holds and why it's irreplaceable, plus
+the exact `regen/` rebuild command; this section IS the regen manifest),
+Findings (required once runs exist — current understanding, every claim
+citing run ids), What didn't work (dead ends with the run that killed
+each), Recommendations (conclusion-time: what production should adopt),
+Caveats, Open questions. Omitted sections are omitted, never left as
+empty headings. Closing line, fixed: `History: notebook/ — catch up with
+`cat notebook/*.md``. Rewritten freely as understanding changes — no
+run-by-run story here, ever. Full template with rationale + a filled
+example: this skill's `references/experiment-templates.md`.
 
-Data is never committed (`data/`, `experiments/*/data/`, and
-`experiments/*/out/` are gitignored by the installed snippet — committed
-data bloats every clone permanently and gets physically duplicated per
-worktree). It lives in the MAIN checkout's data directories; a worktree
-that needs it symlinks to the main checkout's copy (`ln -s
-<main>/experiments/<name>/data experiments/<name>/data`) — the symlink is
-inside a gitignored path, so no hook ever sees it and nothing is
-duplicated. Every dataset's regeneration command (or download source +
-content hash) is recorded in the experiment README so the data is always
-rebuildable; regenerable data of concluded/shelved experiments is the
-first thing `/doc-cleanup`'s data-hygiene pass proposes deleting.
+### notebook/ — the narrative, one entry per run
+
+The notebook is a directory, not a file: run entries sort by name, so
+`cat notebook/*.md` is the journal in chronological order — that command
+is the standing catch-up move when picking an experiment back up. Naming:
+`runNNN[-slug].md`, zero-padded global per-experiment counter, no dates
+(the entry's own date line and git answer "when"). Next id =
+max(NNN across `notebook/` and the store's `out/`) + 1, so an uncommitted
+run still claims its number; **`mkdir data/out/runNNN-slug/` before
+anything else** — creating the out dir first reserves the id atomically
+across concurrent worktrees.
+
+Entry shape: `# runNNN[-slug] — YYYY-MM-DD` header; line 1 below it is a
+one-sentence outcome summary (same envelope rule as notes); then the
+anchor lines `command:` / `commit:` / `inputs:` / `outputs:`; then two
+required prose sections — `## What happened` (the narrative, surprises
+included; for a sweep, the shape of the result, not just the best point)
+and `## Interpretation` (what it means for the question, what the next
+run should be). Short is fine; absence is not. A code-free analysis entry
+uses the same shape. Entries are immutable on commit — a wrong entry is
+corrected by a later entry, never edited; dead ends stay on record.
+
+Vault rules, two clauses: every `.md` in `notebook/` is an immutable run
+entry; anything else is a **promoted artifact** named after its run
+(`run002-tau-sweep-grid.csv`) — small result CSVs and hand-picked
+figures, committed beside the entry they support. Artifacts are
+replaceable/deletable at cleanups (deletes are legal, rewrites of entries
+aren't). Raw outputs never land here — they go to the store; git-worthy
+keepers arrive only by deliberate promotion (at write time when you
+already know, at the cleanup round as the backstop).
+
+### The store, worktrees, and cleanup
+
+The run id joins the two roots by name: `notebook/run002-tau-sweep.md` ↔
+`data/.../out/run002-tau-sweep/`. Worktrees (`.claude/worktrees/`,
+`.worktrees/` — both gitignored) get ONE relative symlink at worktree
+root, `data -> <main repo>/data`, so bytes only ever live in the main
+repo's store: deleting a worktree loses nothing, and entries/artifacts
+merge as ordinary committed files.
+
+Curation is retrospective and batched — at write time nobody reliably
+knows which outputs will matter, so the system never asks. Everything
+lands in `out/<runid>/` unsorted; the fortnightly `/doc-cleanup` pass
+walks untriaged run dirs and decides per run: **delete** (question
+answered, bytes worthless), **keep** (still comparing against it), or
+**promote** (copy the few files that matter into `notebook/`). It also
+deletes `regen/` and `.venv`/`vendor` of concluded experiments, suggests
+stale `keep/` deletions, and flags orphans — a `data/experiments/<name>`
+with no matching `experiments/<name>` in git (the one orphan definition;
+often a rename that forgot to `mv` the store dir — the pre-commit hook
+warns at rename time). Forgetting to curate costs disk, never data.
+
+### Lifecycle and enforcement
+
+Start: `scripts/lenore-docs.py experiment <name>` creates dir + README +
+symlink + store trio (by hand also fine — the shape is checkable, the
+tool is a convenience). Conclude: flip `status:` — the pre-commit hook
+requires a real `verdict:`, a `concluded:` date, and a same-commit
+journal entry. Concluded ≠ deleted: the dir, notebook, and artifacts stay
+in git forever. Code graduating to production is promoted **by copy**,
+recorded as one line in `experiments/PROMOTIONS.md` (append-only ledger:
+date, source, destination, copied vs cited).
+
+Cross-experiment reuse is first-class: experiment B may use A's code by
+relative path (`-I ../<exp-A>`, path imports) — the entire dependency
+system is one README front-matter line, `uses: [<exp-A>]`. Cleanup greps
+`uses:` and `../<name>` before suggesting any experiment dir's deletion.
+Reuse converts to promotion when a third consumer appears or A's code
+starts being edited to serve its consumers. No `experiments/_shared/` —
+a shared dir inside experiments/ is a library with no owner.
+
+Isolation stays one-way: production never imports from or symlinks into
+`experiments/` (pre-commit rejects both; intra-experiments references are
+exempt). If a dir in `experiments/` has no question, it is not an
+experiment and gets flagged for relocation — integration workspaces and
+demo apps live in the normal repo structure.
+
+The judgment lint checks new notebook entries for evidence anchors and
+flags an entry contradicting the README's `verdict:`/Findings while the
+README goes untouched; the status line counts experiments with ≥2 entries
+newer than their README's last commit (`unreflected-runs`), plus
+untriaged out/ dirs and orphaned store dirs.
 
 ## `openspec/` — plans and feature truth
 

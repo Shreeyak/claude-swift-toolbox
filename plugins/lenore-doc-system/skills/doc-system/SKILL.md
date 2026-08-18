@@ -62,8 +62,13 @@ docs/
   desk/                      gitignored, per-worktree symlinks (see doc-guidance.md)
   tasks/project.md · branch-<name>.md
   bugs/2026-08-15-topic.md
-experiments/                 repo ROOT, not docs/ — code+data+outputs
-  <name>/README.md · runs/*.md · src/ · data/ · out/
+experiments/                 repo ROOT, not docs/ — one dated dir per experiment
+  PROMOTIONS.md              append-only ledger of code promoted to production
+  YYYY-MM-DD-<name>/         README.md (current truth) · code at root ·
+                             notebook/runNNN[-slug].md entries + promoted
+                             artifacts · data -> ../../data/experiments/<same>
+data/                        THE STORE, gitignored: datasets/ + per-experiment
+                             regen/ · keep/ · out/<runid>/ (all raw run bytes)
 .githooks/                   pre-commit · commit-msg · pre-merge-commit · pre-push — all rule enforcement
 scripts/browse.py · doc-status.sh · lenore-docs.py · docs-search.py
 tmp/                         gitignored wholesale
@@ -84,7 +89,11 @@ remove-vs-delete / tmp / scripts / openspec).
 | Openspec phase / task-group completed | Write a journal entry (shape below). |
 | A committed note turns out wrong or superseded | New dated note whose body says "Revises notes/YYYY-MM-DD-x.md" — never edit or mark the old one; grep the old filename to find successors. |
 | Filing a future task | Entry must pass the stranger test — every referent (file, commit, dataset, parameter) locatable from the repo alone; >5 lines of context → backing note + `— details: notes/...` pointer (`lenore-docs task --note` does both atomically). |
-| Experiment concluded | Flip the README's `status`/`verdict` front-matter, then a journal entry restating the verdict — same session. |
+| Starting an experiment | `scripts/lenore-docs.py experiment "<name>"` — dated dir + README skeleton + notebook/ + data symlink + store trio. Templates: `references/experiment-templates.md`. |
+| Launching an experiment run | `scripts/lenore-docs.py run <exp> [slug]` (or `mkdir data/out/runNNN-slug/` by hand) FIRST — reserves the id; all outputs go there. When the run means something, write `notebook/runNNN[-slug].md` (outcome sentence, command/commit/inputs/outputs, What happened + Interpretation). |
+| Picking an experiment back up | Read its README, then `cat notebook/*.md` — the entries sort chronologically; that IS the journal. |
+| Experiment concluded | Flip the README's `status`/`verdict` front-matter, then a journal entry restating the verdict — same session. Concluded ≠ deleted; code promoted to production goes by copy + a `PROMOTIONS.md` line. |
+| Reusing another experiment's code | Relative-path import + `uses: [<exp>]` in your README front-matter. One line, that's the whole dependency system. |
 | Direction changed | Journal entry: what we believed / learned / do now. |
 | Milestone hit, no change folder (exploratory branch) | One journal entry per concluded work-topic. |
 | Status line shows a large gap | One catch-up journal entry (~20 lines) summarizing the arc from `git log` — don't back-fill many. |
@@ -139,7 +148,7 @@ landing / cherry-pick (journal entry only, branch continues).
 All rule enforcement lives in committed `.githooks/` (`git config
 core.hooksPath .githooks`, once per clone): pre-commit rejects modifying
 or deleting `docs/journal/`, `docs/notes/` (modify only), and
-`experiments/*/runs/*.md`; rejects adding `state.md`/`decisions.md`/
+`experiments/*/notebook/*.md`; rejects adding `state.md`/`decisions.md`/
 `STATUS.md`/`CHANGELOG.md`/`HANDOFF.md`/`PLAN-*.md`/`REVIEW-*.md`;
 rejects non-prose additions under `docs/`; and shape-checks new
 journal/notes/bugs files (prose line-1 summary; journal ≤10 lines /
@@ -151,20 +160,23 @@ rejects any push to `main` missing landing markers (leftover
 Two informational layers sit above the git hooks: `scripts/doc-status.sh`
 prints one drift line (journal age, stale tasks, bugs, desk, semantic
 index, dangling `— details:`/`Revises` pointers, experiments with ≥2 runs
-newer than their README — `unreflected-runs`) on every SessionStart
+newer than their README — `unreflected-runs`, untriaged run outputs in
+the store, orphaned store dirs) on every SessionStart
 event — startup, resume, clear, and compact, so long auto-compacting
 sessions keep seeing it — and a plugin-level PreToolUse lint runs one
 batched Haiku judgment check when a `git commit` touches
-journal/notes/bugs/tasks files or `experiments/*/runs/` (self-
-containedness, real summaries, actionable bugs, evidence-grade run
-records; a new run that contradicts its experiment README's verdict while
+journal/notes/bugs/tasks files or `experiments/*/notebook/` (self-
+containedness, real summaries, actionable bugs, evidence-grade notebook
+entries; a new run that contradicts its experiment README's verdict while
 the README goes untouched is flagged): violations block that one attempt
 with reasons, an unchanged retry proceeds (warn-once), `LENORE_NO_LINT=1`
 disables. The pre-commit hook additionally gates conclusions (flipping an
 experiment README's `status` to concluded/shelved requires a real verdict,
 a concluded date, and a journal entry in the same commit), quarantines
 experiments (no import-shaped references or symlinks into `experiments/`
-from production code — promotion goes through "Lifted into production"),
+from production code — promotion goes by copy + a `PROMOTIONS.md` entry;
+intra-experiments reuse via `uses:` is exempt; the hook also warns on an
+experiment-dir rename that would strand its store dir),
 and guides merge conflicts on same-named dated notes/bugs: default is
 both committed versions survive (one refiled under a new dated name — the
 hook prints the exact command); a deliberate drop of a read-and-judged
@@ -204,6 +216,17 @@ scheduled jobs; doc maintenance is event-driven only.
   which tool wrote them.
 - No monolithic JOURNAL.md/TASKS.md — one file per entry, always.
 - No standing ARCHITECTURE.md — demoted to on-demand dated snapshot.
+- Experiments: no notebook.md file (the notebook is the `notebook/` dir —
+  `cat notebook/*.md` is the derived single-scroll view); no `results/`
+  or `artifacts/` dirs (keepers are promoted into `notebook/`, named
+  after their run); no run-index table in the README (derived, never
+  hand-kept); no narrative in the README (truth only); no dates or HHMM
+  in run names (dates stay on experiment dirs); a sweep is ONE run with
+  per-point subdirs; outputs never split by size/extension at write time
+  — everything to the store's `out/<runid>/`, curation only at cleanup
+  rounds; store inside the repo at `/data/` (no external per-project
+  dir, no `data/data/` nesting); no DVC/MLflow/W&B; no
+  `experiments/_shared/` — third consumer means promote.
 
 ## Reference index
 
@@ -211,6 +234,9 @@ scheduled jobs; doc maintenance is event-driven only.
   reference, tasks, bugs, experiments' three zones, desk incl.
   remove-vs-delete, tmp, scripts, openspec). Read when the trigger table
   above isn't enough detail.
+- `references/experiment-templates.md` — the experiment README and
+  notebook-entry templates with per-section rationale, filled examples,
+  and the rejected-alternatives list.
 - `references/semantic-search-setup.md` — semantic search install,
   chunking behavior and writing guidance, query phrasing, index
   lifecycle, troubleshooting.

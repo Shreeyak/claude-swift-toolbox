@@ -12,7 +12,7 @@ or deciding whether to search `docs/notes/` before starting new work.
 | "What's the overall architecture?" | Newest architecture note in `docs/notes/` — or generate a fresh one, stamped with the source commit |
 | "What was I going to do next?" | `docs/tasks/` + open `openspec/changes/` folders |
 | "What's broken right now?" | `ls docs/bugs/` — always the live list; fixed bugs are gone (their record is the fix commit) |
-| "Did we ever try Y? What happened?" | `grep verdict: experiments/*/README.md`, then that README; `runs/` to reproduce |
+| "Did we ever try Y? What happened?" | `grep verdict: experiments/*/README.md`, then that README; `cat notebook/*.md` for the story, an entry's anchors to reproduce |
 | "What's happening on the other branches?" | Other `tasks/branch-*.md` files (sibling worktrees / `git show`) + newest journal entries |
 | "How has this project evolved?" | `docs/journal/` in date order — the narrative by construction; experiments appear inline with verdicts |
 | "What changed in the code last week?" | `git log` — commits are the changelog |

@@ -101,6 +101,8 @@ scripts/lenore-docs.py note "..." --supersedes notes/2026-08-10-x.md <<'EOF' ...
 scripts/lenore-docs.py bug "..." <<'EOF' repro, expected vs actual ... EOF
 scripts/lenore-docs.py journal "One-sentence event" [body ≤10 lines/150 words total]
 scripts/lenore-docs.py task "Self-contained title" [--someday|--branch] [--note] [context]
+scripts/lenore-docs.py experiment "short name"   # dated dir + README + data symlink + store dirs
+scripts/lenore-docs.py run <experiment> [slug]   # reserve next run id, mkdir its out/ dir
 ```
 
 `task --note` files the body as a dated note and appends the
@@ -122,44 +124,110 @@ you judge it wrong, re-running the same commit unchanged proceeds.
 - Deleted in the commit that fixes the bug. A journal entry only if the
   bug or its fix was itself notable.
 
-## Experiment READMEs (`experiments/<name>/README.md`)
+## Experiments (`experiments/YYYY-MM-DD-<name>/`)
 
-Front matter:
+One dated dir per experiment: `README.md` (current truth), code at the
+root, `notebook/` (the narrative), and a committed symlink
+`data -> ../../data/experiments/<same-name>` into the store. Create with
+`scripts/lenore-docs.py experiment "<name>"` (makes all of it, including
+the store dirs). Picking an experiment back up: read its README, then
+`cat notebook/*.md` for the full story.
+
+**README.md** — front matter (machine-scanned one-liners):
 
 ```yaml
 ---
-status: exploring | concluded | shelved
-verdict: <one sentence, filled in at conclusion>
-concluded: YYYY-MM-DD  # only once status leaves "exploring"
+status: exploring | concluded | shelved     # REQUIRED
+question: <one line — what this experiment decides>   # REQUIRED
+verdict: <one sentence answer>    # REQUIRED at conclusion (gate-checked)
+concluded: YYYY-MM-DD             # REQUIRED at conclusion (gate-checked)
+success: <one line — what result would settle it>     # optional
+uses: [2026-06-01-gpu-pc]         # optional — experiments whose code this reuses
+extends: 2026-05-12-plain-ncc     # optional — prior experiment this builds on
 ---
 ```
 
-Body sections, in order: `Question`, `What worked`, `What didn't`,
-`Lifted into production`, `Not pursued`. Rewritten in place as
-understanding sharpens — the README is deliberately mutable, unlike
-`runs/`.
+Headings, fixed order, omitted when empty (never left blank): `Question`
+(required — full framing), `Approach`, `Data` (required once data exists —
+what `keep/` holds and why, plus the exact `regen/` rebuild command; this
+IS the regen manifest), `Findings` (required once runs exist — every
+claim cites run ids), `What didn't work`, `Recommendations`
+(conclusion-time), `Caveats`, `Open questions`. Closing line:
+`History: notebook/ — catch up with `cat notebook/*.md``. No run-by-run
+narrative here — the README is rewritten freely; narrative is notebook/'s
+job. Full templates + filled examples: the doc-system skill's
+`references/experiment-templates.md`.
 
-Concluding is atomic: the commit that flips `status` to
-`concluded`/`shelved` must carry a real `verdict:` sentence, the
-`concluded:` date, and a new journal entry restating the outcome — the
+Concluding is atomic: the commit that flips `status` must carry a real
+`verdict:`, the `concluded:` date, and a new journal entry — the
 pre-commit hook rejects the flip without all three. When later runs
 contradict the standing verdict, update the README in the same commit as
-the run; the commit lint flags a contradicting run that leaves the README
-untouched, and the status line counts experiments with ≥2 runs newer than
-their README's last commit (`unreflected-runs`).
+the entry; the commit lint flags a contradicting entry that leaves the
+README untouched, and the status line counts experiments with ≥2 entries
+newer than their README's last commit (`unreflected-runs`).
 
-## Experiment runs (`experiments/<name>/runs/YYYY-MM-DD-HHMM.md`)
+## Notebook entries (`experiments/<name>/notebook/runNNN[-slug].md`)
 
-Immutable once committed. Contents: exact command run, config, dataset
-identity, code commit hash, metrics, one paragraph of interpretation. Never
-edited or deleted after commit — dead ends stay on record.
+One immutable entry per run; entries sort by name so `cat notebook/*.md`
+is the journal in order. Run ids: zero-padded global per-experiment
+counter, no dates; next id = max(NNN across `notebook/` and the store's
+`out/`) + 1. **Reserve the id first**: `mkdir data/out/runNNN-slug/`
+before the run writes anything (atomic across worktrees;
+`scripts/lenore-docs.py run <experiment> [slug]` does it and prints the
+paths). Shape:
 
-## Experiment isolation
+```markdown
+# run002-tau-sweep — 2026-08-20
+<one-sentence outcome summary — what this run established>
+
+command: <exact invocation>
+commit:  <hash, or "uncommitted — see date">
+inputs:  <dataset / keep / regen identity, precise enough to re-run>
+outputs: data/out/run002-tau-sweep/
+
+## What happened
+<prose — what was done and observed, surprises included; for a sweep,
+the shape of the result across points>
+
+## Interpretation
+<prose — what it means for the question, confidence, what's next>
+```
+
+Both prose sections required; 2–3 sentences each is legitimate. A sweep
+is ONE run (points as subdirs of its out/ dir); a code-free analysis
+entry uses the same shape. Never edited or deleted after commit — a
+wrong entry is corrected by a later entry; dead ends stay on record.
+
+Non-`.md` files in `notebook/` are **promoted artifacts** — small result
+CSVs and hand-picked figures, named after their run
+(`run002-tau-sweep-grid.csv`), committed beside the entry. Raw outputs
+never go here (they live in the store); artifacts arrive only by
+deliberate promotion and may be replaced/deleted at later cleanups.
+
+## Experiment data — the store (`/data/`, gitignored)
+
+All bytes live under `/data/`: `datasets/` (shared inputs) and per
+experiment `regen/` (regenerable — delete freely, README records the
+rebuild), `keep/` (custom non-regenerable — deletion only suggested), and
+`out/<runid>/` (ALL raw run outputs, heavy and small together, never
+split by size). Worktrees carry one symlink to the main checkout's
+`data/` — bytes exist once; deleting a worktree loses nothing. Triage
+happens at `/doc-cleanup` rounds (delete / keep / promote per run dir),
+never automatically. A `data/experiments/<name>` with no matching
+`experiments/<name>` in git is an orphan — usually a rename that forgot
+`mv data/experiments/<old> data/experiments/<new>` (the pre-commit hook
+warns at rename time).
+
+## Experiment isolation and reuse
 
 Production code never imports from `experiments/` and never symlinks into
-it (pre-commit enforces both). To use experiment code for real, lift it
-into the production tree and record the promotion in the experiment
-README's "Lifted into production" section.
+it (pre-commit enforces both). Promotion is by copy into the production
+tree + one line in `experiments/PROMOTIONS.md` (append-only: date,
+source, destination). Experiment-to-experiment reuse is fine and
+first-class: relative-path imports plus a `uses: [<exp>]` line in the
+consumer's README front matter. Concluded ≠ deleted — `uses:` keeps
+working; promotion is due when a third consumer appears or the code
+starts being edited for its consumers.
 
 ## Merged twins (same-named notes from parallel sessions)
 
@@ -187,7 +255,7 @@ afterward — renaming the symlink never touches the target.
 ## Semantic index (`.docs-embeddings/`, optional)
 
 If present, this whole tree (docs/**/*.md, docs/**/*.html,
-experiments/*/README.md, experiments/*/runs/*.md, and openspec/**/*.md
+experiments/*/README.md, experiments/*/notebook/*.md, and openspec/**/*.md
 except tasks.md) is semantically indexed for
 `scripts/docs-search.py`. The index is gitignored and content-hash keyed
 per chunk, so new or changed docs are picked up automatically by the next

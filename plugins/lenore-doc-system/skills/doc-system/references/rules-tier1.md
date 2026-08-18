@@ -36,16 +36,22 @@
   derail the current task to fix it. The session that fixes a bug
   deletes its file in the fix commit; journal entry only if notable.
   ls docs/bugs/ is the live bug list.
-- Experiment runs: immutable files in runs/ with command, config,
-  dataset, code commit, metrics, one-paragraph interpretation. README
-  front-matter (status/verdict) updated at conclusion, same session,
-  with a journal entry.
+- Experiments: one dated dir experiments/YYYY-MM-DD-<name>/ — README
+  (current truth: question/status/verdict front-matter + Findings etc.,
+  no narrative), code at the root, notebook/ (one immutable runNNN entry
+  per run: outcome sentence, command/commit/inputs/outputs anchors, What
+  happened + Interpretation prose; promoted artifacts named after their
+  run), and a committed data symlink into the gitignored /data/ store
+  (regen/ keep/ out/<runid>/). Raw outputs go ONLY to data/out/<runid>/
+  (mkdir it first — that reserves the run id); git-worthy keepers are
+  promoted by copy into notebook/. README front-matter (status/verdict)
+  updated at conclusion, same session, with a journal entry. Catch-up:
+  read the README, then cat notebook/*.md. Shapes: docs/CLAUDE.md.
 - For experiment outcomes, query live:
   grep -H "^verdict:" experiments/*/README.md
 - docs/ contains prose and images only: .md, .html, images (a
-  pre-commit hook enforces this). Experiments live at repo root: code
-  and outputs in the experiment folder (heavy artifacts gitignored),
-  run records and README as .md alongside them.
+  pre-commit hook enforces this). Experiments live at repo root; their
+  bytes live in the /data/ store, joined to notebook entries by run id.
 - The first line of every note and journal entry is a one-sentence
   summary — browse.py displays these. HTML notes: an HTML comment at
   the top with the summary, plus "published: <url>" if uploaded as a
@@ -75,7 +81,7 @@
   docs/desk/ under a short descriptive name, in the same message.
   "Put on / take off my desk" in the user's words does the same.
   "Delete it" also git rm's the original — allowed for notes,
-  reference, bugs, tmp; never journal or runs. Never delete or prune
+  reference, bugs, tmp; never journal or notebook entries. Never delete or prune
   the desk unprompted; when working autonomously, defer desk and
   pruning decisions to the next interactive session instead of
   guessing.
