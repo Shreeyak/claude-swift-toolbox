@@ -157,9 +157,15 @@ is the standing catch-up move when picking an experiment back up. Naming:
 `runNNN[-slug].md`, zero-padded global per-experiment counter, no dates
 (the entry's own date line and git answer "when"). Next id =
 max(NNN across `notebook/` and the store's `out/`) + 1, so an uncommitted
-run still claims its number; **`mkdir data/out/runNNN-slug/` before
-anything else** — creating the out dir first reserves the id atomically
+run still claims its number; **`mkdir experiments/<name>/data/out/runNNN-slug/`
+before anything else** — creating the out dir first reserves the id atomically
 across concurrent worktrees.
+
+When is an entry required? Every completed run whose outputs you actually
+looked at gets one — failures included (a refuted hypothesis is evidence).
+A reservation abandoned before producing anything interpretable (crashed
+setup, wrong command) needs no entry; its out dir is deleted at triage.
+An out dir with no entry is therefore a triage flag, not proof of noise.
 
 Entry shape: `# runNNN[-slug] — YYYY-MM-DD` header; line 1 below it is a
 one-sentence outcome summary (same envelope rule as notes); then the
@@ -191,7 +197,9 @@ merge as ordinary committed files.
 
 Curation is retrospective and batched — at write time nobody reliably
 knows which outputs will matter, so the system never asks. Everything
-lands in `out/<runid>/` unsorted; the fortnightly `/doc-cleanup` pass
+lands in `out/<runid>/` unsorted; the `/doc-cleanup` triage pass (run it
+when the status line's untriaged-runs counter says so — it is interactive,
+never scheduled)
 walks untriaged run dirs and decides per run: **delete** (question
 answered, bytes worthless), **keep** (still comparing against it), or
 **promote** (copy the few files that matter into `notebook/`). It also

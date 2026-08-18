@@ -285,6 +285,7 @@ History: notebook/ — catch up with `cat notebook/*.md`
 
 
 def cmd_experiment(root, args, body):
+    check_worktree_store(root)
     check_summary(args.summary)
     dirname = f"{datetime.now():%Y-%m-%d}-{slugify(args.summary, args.topic)}"
     exp = root / "experiments" / dirname
@@ -292,6 +293,9 @@ def cmd_experiment(root, args, body):
         die(f"lenore-docs: {exp.relative_to(root)} already exists.")
     store = root / "data" / "experiments" / dirname
     (exp / "notebook").mkdir(parents=True)
+    # .gitkeep so the empty notebook/ survives clone — the first run entry
+    # then has its directory waiting.
+    (exp / "notebook" / ".gitkeep").write_text("")
     for d in ("regen", "keep", "out"):
         (store / d).mkdir(parents=True, exist_ok=True)
     question = args.question or args.summary
@@ -306,8 +310,28 @@ def cmd_experiment(root, args, body):
           file=sys.stderr)
 
 
+def check_worktree_store(root):
+    """In a linked worktree, data/ must be a symlink to the main worktree's
+    store — otherwise each worktree grows its own store and run-id
+    reservation is no longer atomic across them."""
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--git-dir", "--git-common-dir"],
+            cwd=root, capture_output=True, text=True, check=True).stdout.splitlines()
+    except subprocess.CalledProcessError:
+        return
+    if len(out) == 2 and out[0] != out[1] and not (root / "data").is_symlink():
+        main_root = (root / out[1]).resolve().parent
+        die(f"lenore-docs: this is a linked worktree but data/ is not a symlink to the\n"
+            f"main worktree's store. Runs reserved here would collide with other worktrees.\n"
+            f"Fix:  ln -s {main_root}/data {root}/data")
+
+
 def resolve_experiment(root, name):
     exp_root = root / "experiments"
+    if not name or "/" in name or name in (".", "..") or name.startswith("~"):
+        die("lenore-docs: experiment must be a bare directory name under experiments/ "
+            "(or a unique substring of one).")
     if (exp_root / name).is_dir():
         return name
     hits = [p.name for p in sorted(exp_root.glob("*/"))
@@ -320,17 +344,31 @@ def resolve_experiment(root, name):
 
 
 def cmd_run(root, args, body):
+    check_worktree_store(root)
     dirname = resolve_experiment(root, args.experiment)
     exp = root / "experiments" / dirname
     out_root = root / "data" / "experiments" / dirname / "out"
+    out_root.mkdir(parents=True, exist_ok=True)
     ids = [0]
     for d in (exp / "notebook", out_root):
         if d.exists():
             for p in d.iterdir():
-                m = re.match(r"run(\d+)", p.name)
+                m = re.match(r"\.?run(\d+)", p.name)
                 if m:
                     ids.append(int(m.group(1)))
-    runid = f"run{max(ids) + 1:03d}"
+    # Reserve the NUMBER first with a slug-independent lock dir — two
+    # concurrent calls with different slugs would otherwise both scan the
+    # same max and mkdir two different run001-* dirs. Lock dirs are hidden,
+    # permanent, and live in the gitignored store; a crashed run just leaves
+    # a skipped number.
+    while True:
+        num = max(ids) + 1
+        try:
+            (out_root / f".run{num:03d}.lock").mkdir()
+            break
+        except FileExistsError:
+            ids.append(num)
+    runid = f"run{num:03d}"
     if args.slug:
         runid += "-" + slugify(args.slug, None)
     out_dir = out_root / runid

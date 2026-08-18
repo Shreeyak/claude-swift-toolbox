@@ -171,8 +171,10 @@ newer than their README's last commit (`unreflected-runs`).
 One immutable entry per run; entries sort by name so `cat notebook/*.md`
 is the journal in order. Run ids: zero-padded global per-experiment
 counter, no dates; next id = max(NNN across `notebook/` and the store's
-`out/`) + 1. **Reserve the id first**: `mkdir data/out/runNNN-slug/`
-before the run writes anything (atomic across worktrees;
+`out/`) + 1. **Reserve the id first**: `mkdir
+experiments/<name>/data/out/runNNN-slug/` (the store path
+`data/experiments/<name>/out/…` via the committed symlink) before the run
+writes anything (atomic across worktrees;
 `scripts/lenore-docs.py run <experiment> [slug]` does it and prints the
 paths). Shape:
 
@@ -183,7 +185,7 @@ paths). Shape:
 command: <exact invocation>
 commit:  <hash, or "uncommitted — see date">
 inputs:  <dataset / keep / regen identity, precise enough to re-run>
-outputs: data/out/run002-tau-sweep/
+outputs: data/out/run002-tau-sweep/   (anchors are experiment-relative, via the data symlink)
 
 ## What happened
 <prose — what was done and observed, surprises included; for a sweep,

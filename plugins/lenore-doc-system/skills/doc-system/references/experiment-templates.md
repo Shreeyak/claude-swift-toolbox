@@ -148,7 +148,7 @@ History: notebook/ — catch up with `cat notebook/*.md`
 command: <exact invocation>
 commit:  <hash, or "uncommitted — see date">
 inputs:  <dataset / keep / regen identity, precise enough to re-run>
-outputs: data/out/runNNN[-slug]/
+outputs: data/out/runNNN[-slug]/   <- experiment-relative, via the committed data symlink
 
 ## What happened
 REQUIRED (prose). The narrative of the run: what was actually done and observed —
@@ -235,7 +235,7 @@ mean_ncc_at_0.4: 0.61
 
 - Conclusion gate keeps reading frontmatter `verdict:` + `concluded:` — unchanged.
 - The judge's contradiction check targets frontmatter `verdict:` and the `## Findings`
-  section (was "What worked" in older prompt text — update wording when implementing).
+  section.
 - Shape check gains: notebook entry line 1 (after the `# ` header) must be a sentence,
   not a heading or an anchor line.
 - `question:` frontmatter feeds browse/status listings so unconcluded experiments are

@@ -90,7 +90,7 @@ remove-vs-delete / tmp / scripts / openspec).
 | A committed note turns out wrong or superseded | New dated note whose body says "Revises notes/YYYY-MM-DD-x.md" — never edit or mark the old one; grep the old filename to find successors. |
 | Filing a future task | Entry must pass the stranger test — every referent (file, commit, dataset, parameter) locatable from the repo alone; >5 lines of context → backing note + `— details: notes/...` pointer (`lenore-docs task --note` does both atomically). |
 | Starting an experiment | `scripts/lenore-docs.py experiment "<name>"` — dated dir + README skeleton + notebook/ + data symlink + store trio. Templates: `references/experiment-templates.md`. |
-| Launching an experiment run | `scripts/lenore-docs.py run <exp> [slug]` (or `mkdir data/out/runNNN-slug/` by hand) FIRST — reserves the id; all outputs go there. When the run means something, write `notebook/runNNN[-slug].md` (outcome sentence, command/commit/inputs/outputs, What happened + Interpretation). |
+| Launching an experiment run | `scripts/lenore-docs.py run <exp> [slug]` (or `mkdir experiments/<exp>/data/out/runNNN-slug/` by hand) FIRST — reserves the id; all outputs go there. When the run means something, write `notebook/runNNN[-slug].md` (outcome sentence, command/commit/inputs/outputs, What happened + Interpretation). |
 | Picking an experiment back up | Read its README, then `cat notebook/*.md` — the entries sort chronologically; that IS the journal. |
 | Experiment concluded | Flip the README's `status`/`verdict` front-matter, then a journal entry restating the verdict — same session. Concluded ≠ deleted; code promoted to production goes by copy + a `PROMOTIONS.md` line. |
 | Reusing another experiment's code | Relative-path import + `uses: [<exp>]` in your README front-matter. One line, that's the whole dependency system. |
@@ -175,8 +175,10 @@ experiment README's `status` to concluded/shelved requires a real verdict,
 a concluded date, and a journal entry in the same commit), quarantines
 experiments (no import-shaped references or symlinks into `experiments/`
 from production code — promotion goes by copy + a `PROMOTIONS.md` entry;
-intra-experiments reuse via `uses:` is exempt; the hook also warns on an
-experiment-dir rename that would strand its store dir),
+intra-experiments reuse via `uses:` is exempt; the data symlink is
+blessed only when it points exactly at its own store dir; the hook also
+warns on an experiment-dir rename that would strand its store dir),
+keeps `experiments/PROMOTIONS.md` append-only,
 and guides merge conflicts on same-named dated notes/bugs: default is
 both committed versions survive (one refiled under a new dated name — the
 hook prints the exact command); a deliberate drop of a read-and-judged

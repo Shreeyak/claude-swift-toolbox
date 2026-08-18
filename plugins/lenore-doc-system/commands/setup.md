@@ -72,8 +72,16 @@ the plan, apply only after the user confirms.
     is gitignored and vanishes on clone; recreate if missing, and for
     each `experiments/*/data` symlink whose store dir is absent,
     `mkdir -p` the `{regen,keep,out}` trio so the symlink isn't dangling.
-  - The `SessionStart` hook registration for `scripts/doc-status.sh` is
-    present in `.claude/settings.json` — re-add if missing.
+    **In a linked worktree** (`git rev-parse --git-dir` ≠
+    `--git-common-dir`): do NOT create real store dirs — create/repair the
+    single symlink `data -> <main worktree>/data` instead, so run-id
+    reservation stays atomic across worktrees.
+  - `experiments/PROMOTIONS.md` exists once any experiment does —
+    scaffold it if missing (see the fresh-install step).
+  - No repo-local `SessionStart` registration for `scripts/doc-status.sh`
+    remains in `.claude/settings.json` — the plugin's own SessionStart
+    hook covers it; a leftover repo entry prints the status line twice,
+    so propose removing it.
   Report what was found broken and repaired, even if nothing else changed.
 
 ## 2. Ask the tier (fresh install only)
@@ -136,7 +144,15 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   `/data/` store root), show the diff and propose updating the block.
 - Create the experiment store root: `mkdir -p data/datasets
   data/experiments` (gitignored — it will not survive clones; the
-  activation check recreates it).
+  activation check recreates it). In a linked worktree, symlink
+  `data -> <main worktree>/data` instead of creating real dirs.
+- Create `experiments/PROMOTIONS.md` (committed, append-only — the
+  pre-commit hook enforces that) with the header:
+
+  ```markdown
+  # Promotions ledger — append-only
+  <!-- date | from (experiment path) | to (production path or notebook/) | why -->
+  ```
 - No Claude Code hook registration is needed for the status line: the
   plugin itself ships a `SessionStart` hook (no matcher, so it fires on
   startup, resume, clear, *and compact* — long auto-compacting sessions
@@ -211,7 +227,11 @@ diffs — the migration steps:
 - Old reports/explorations/handoffs → `docs/notes/`, date-prefixed from
   git history.
 - `experiments/*/README.md` missing front-matter → propose adding
-  `status`/`verdict`/`concluded` fields.
+  `status`/`question`/`verdict`/`concluded` fields (question is required
+  by the template). Legacy layout: propose renaming `runs/` to
+  `notebook/`, creating the `data -> ../../data/experiments/<name>`
+  symlink plus the store `{regen,keep,out}` trio, and moving loose
+  output files into the store.
 
 Never delete the legacy file until its replacement is written and the user
 has confirmed the diff. This mirrors the standing rule that "deleting or pruning requires

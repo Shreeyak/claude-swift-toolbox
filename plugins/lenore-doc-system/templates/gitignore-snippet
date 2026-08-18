@@ -10,6 +10,11 @@ docs/desk/
 # Worktree homes (each worktree gets one data -> main-repo symlink inside)
 .claude/worktrees/
 .worktrees/
+# Defense in depth: run outputs never live inside experiments/ — the data
+# symlink handles the join. These only match REAL directories (a stray local
+# out/ or data/ dir), never the committed data symlink.
+experiments/*/out/
+experiments/*/data/
 # Tool state inside experiments — regenerable, deleted when concluded
 experiments/*/.venv/
 experiments/*/vendor/

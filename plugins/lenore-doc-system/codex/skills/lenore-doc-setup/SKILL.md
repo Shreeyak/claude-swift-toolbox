@@ -53,10 +53,15 @@ described in this prompt.
    and scripts against the templates above and propose replacing any that
    differ. If not, this is a fresh install. Either way, also run an
    **activation check**: verify `git config core.hooksPath` is
-   `.githooks`, the three hook files exist and are executable, root
+   `.githooks`, all four hook files (pre-commit, pre-push,
+   pre-merge-commit, commit-msg) exist and are executable, root
    `AGENTS.md -> CLAUDE.md` and `docs/AGENTS.md -> CLAUDE.md` symlinks
    exist, `docs/desk/` and `tmp/` exist (Tier 1; both are gitignored and
-   so vanish on a fresh clone), and `.codex/hooks.json` registers
+   so vanish on a fresh clone), the store root `data/datasets/` +
+   `data/experiments/` exists (recreate; also `mkdir -p` each
+   `experiments/*/data` symlink's missing `{regen,keep,out}` trio — in a
+   linked worktree, symlink `data -> <main worktree>/data` instead), and
+   `.codex/hooks.json` registers
    `scripts/doc-status.sh` — repair anything missing, since a fresh clone
    with the marker in `CLAUDE.md` still needs this repaired locally.
 2. Ask which tier: Tier 1 (full layout — journal/notes/reference/tasks/
@@ -64,11 +69,16 @@ described in this prompt.
    only). Default to Tier 1 unless this is clearly a small/experiment repo.
 3. For Tier 1: create `docs/{journal,notes,reference,tasks,bugs}/`,
    `docs/desk/`, and `tmp/`; create `docs/tasks/project.md` with `## Next`
-   and `## Someday` headings if absent; fetch the three hook templates
-   (pre-commit, pre-push, pre-merge-commit) into `.githooks/` and make
-   them executable; fetch `browse.py`, `doc-status.sh`, and
-   `docs-search.py` into `scripts/` (executable); fetch `docs-CLAUDE.md`
-   into `docs/CLAUDE.md`; run `git config core.hooksPath .githooks` (stop
+   and `## Someday` headings if absent; fetch the four hook templates
+   (pre-commit, pre-push, pre-merge-commit, commit-msg) into `.githooks/`
+   and make them executable; fetch `browse.py`, `doc-status.sh`,
+   `docs-search.py`, `lenore-docs.py`, and `doc-lint.sh` (plus
+   `doc-lint-judge.md` into `scripts/`) into `scripts/` (executable);
+   fetch `docs-CLAUDE.md`
+   into `docs/CLAUDE.md`; append the `.gitignore` snippet (idempotent —
+   check its marker line); `mkdir -p data/datasets data/experiments`;
+   create `experiments/PROMOTIONS.md` (append-only ledger, header +
+   comment row); run `git config core.hooksPath .githooks` (stop
    and ask first if it's already set to something else, or `.githooks/`
    already has other hooks — propose chaining, don't overwrite); symlink
    `AGENTS.md -> CLAUDE.md` at repo root and beside `docs/CLAUDE.md`;

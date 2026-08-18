@@ -50,8 +50,10 @@ except Exception:
 
   # Only act on git commit commands (compound commands included).
   printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])git[[:space:]]+([^[:space:]]+[[:space:]]+)*commit([[:space:]]|$)' || exit 0
-  # Respect an explicit skip in the command itself.
-  printf '%s' "$cmd" | grep -q 'LENORE_NO_LINT=1' && exit 0
+  # Respect an explicit skip in the command itself — but only as an env
+  # assignment lexically before a `git` word in the same command segment,
+  # so the string appearing in e.g. a commit message doesn't disable lint.
+  printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])LENORE_NO_LINT=1[[:space:]][^;&|]*git([[:space:]]|$)' && exit 0
 fi
 
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
@@ -77,9 +79,12 @@ $(cat "$f")
   case "$f" in
     experiments/*/notebook/*.md|experiments/*/runs/*.md)
       exp=${f%/notebook/*}; exp=${exp%/runs/*}
+      # exact-line dedup: experiments/foo must not be suppressed by a
+      # previously seen experiments/foo-bar
       case "
 $run_exps" in *"
-$exp"*) ;; *) run_exps="${run_exps}${exp}
+$exp
+"*) ;; *) run_exps="${run_exps}${exp}
 " ;; esac
       ;;
   esac

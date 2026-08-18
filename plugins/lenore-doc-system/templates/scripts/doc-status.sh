@@ -187,10 +187,11 @@ if [ -d data/experiments ]; then
       continue
     fi
     if [ -d "$sd/out" ]; then
+      # ! -name '.*' skips the CLI's hidden .runNNN.lock reservation dirs
       if [ -f "$sd/.lenore-triaged" ]; then
-        n=$(find "$sd/out" -mindepth 1 -maxdepth 1 -type d -newer "$sd/.lenore-triaged" 2>/dev/null | wc -l | tr -d ' ')
+        n=$(find "$sd/out" -mindepth 1 -maxdepth 1 -type d ! -name '.*' -newer "$sd/.lenore-triaged" 2>/dev/null | wc -l | tr -d ' ')
       else
-        n=$(find "$sd/out" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+        n=$(find "$sd/out" -mindepth 1 -maxdepth 1 -type d ! -name '.*' 2>/dev/null | wc -l | tr -d ' ')
       fi
       untriaged=$((untriaged + n))
     fi

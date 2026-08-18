@@ -1,5 +1,5 @@
 ---
-description: Doc-hygiene review — propose prunes for Someday, stale branch-task files, and stale bugs as diffs to confirm; catch-up journal entry if the gap warrants
+description: Doc-hygiene review — propose prunes for Someday, stale branch-task files, and stale bugs as diffs to confirm; experiment-store triage (delete/keep/promote run outputs, orphan repair); catch-up journal entry if the gap warrants
 allowed-tools: Bash(git:*), Bash(ls:*), Bash(rm:*), Bash(find:*), Bash(du:*), Bash(touch:*), Bash(mv:*), Bash(cp:*), Read, Write, Edit, Glob, Grep
 ---
 

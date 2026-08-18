@@ -25,8 +25,9 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
 - `/lenore-doc-system:desk` — review the desk: list pins with summaries
   and ages, renew-or-drop the stale ones, suggest unpinned docs.
 - `/lenore-doc-system:doc-cleanup` — doc-hygiene pass: Someday prunes,
-  stale branch-task disposal, stale-bug triage, optional catch-up entry —
-  all as diffs the user confirms.
+  stale branch-task disposal, stale-bug triage, experiment-store triage
+  (delete/keep/promote run outputs, orphaned-store repair), optional
+  catch-up entry — all as diffs the user confirms.
 
 ## Tooling installed into each repo
 
@@ -45,11 +46,14 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
 - `.githooks/{pre-commit,commit-msg,pre-merge-commit,pre-push}` — the
   enforcement layer: immutability (journal, notes, experiment notebook
   entries), deny-filenames, prose-only docs/, shape of new entries
-  (including notebook entries: runNNN names, line-1 outcome sentence),
+  (including notebook entries: runNNN names, a header naming its own
+  file, line-1 outcome sentence, unique numeric run ids per experiment),
+  the append-only PROMOTIONS.md ledger,
   the experiment conclusion gate (status flip needs verdict + date +
   journal entry in one commit), experiment isolation (no imports or
   symlinks into experiments/ from production code; intra-experiments
-  reuse and the committed data->store symlink are blessed), a rename
+  reuse is fine and each experiment's data symlink is blessed only when
+  it points exactly at its own store dir), a rename
   warning when an experiment dir moves without its store dir, merge
   guidance for same-named dated notes (both versions must survive; one
   gets refiled), landing gate.

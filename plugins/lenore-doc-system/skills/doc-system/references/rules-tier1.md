@@ -42,8 +42,8 @@
   per run: outcome sentence, command/commit/inputs/outputs anchors, What
   happened + Interpretation prose; promoted artifacts named after their
   run), and a committed data symlink into the gitignored /data/ store
-  (regen/ keep/ out/<runid>/). Raw outputs go ONLY to data/out/<runid>/
-  (mkdir it first — that reserves the run id); git-worthy keepers are
+  (regen/ keep/ out/<runid>/). Raw outputs go ONLY to the store:
+  experiments/<name>/data/out/<runid>/ (mkdir it first — that reserves the run id); git-worthy keepers are
   promoted by copy into notebook/. README front-matter (status/verdict)
   updated at conclusion, same session, with a journal entry. Catch-up:
   read the README, then cat notebook/*.md. Shapes: docs/CLAUDE.md.

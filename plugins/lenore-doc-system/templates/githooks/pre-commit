@@ -24,6 +24,8 @@
 #           (10) experiment rename warning (informational, never blocks):
 #               renaming experiments/<a>/ prints a reminder to also move
 #               the store dir data/experiments/<a>.
+#           (11) experiments/PROMOTIONS.md is append-only: modifications must
+#               keep the old content as a prefix; deletion is blocked.
 set -euo pipefail
 
 [ "${SKIP_DOC_HOOKS:-0}" = "1" ] && exit 0
@@ -37,8 +39,10 @@ fi
 fail=0
 
 MERGE_HEAD_REF=""
+MERGE_BASE=""
 if git rev-parse --verify -q MERGE_HEAD >/dev/null 2>&1; then
   MERGE_HEAD_REF=MERGE_HEAD
+  MERGE_BASE=$(git merge-base HEAD MERGE_HEAD 2>/dev/null || true)
 fi
 
 # Parse the staged diff with -z so renames/copies and odd filenames are safe.
@@ -49,12 +53,31 @@ immutable_deleted=""
 added=""
 denied_names='^(state|decisions|status|changelog|handoff(-.+)?|plan(-.+)?|review(-.+)?)\.md$'
 
+# experiments/<one segment>/notebook/<one segment>.md (also legacy runs/).
+# Bash case-glob * crosses /, so parse components explicitly — a nested
+# experiments/foo/src/notebook/x.md is ordinary experiment code, not an entry.
+is_notebook_entry() {
+  ne_rest=${1#experiments/}
+  [ "$ne_rest" = "$1" ] && return 1
+  ne_exp=${ne_rest%%/*}
+  ne_sub=${ne_rest#*/}
+  [ -z "$ne_exp" ] && return 1
+  [ "$ne_sub" = "$ne_rest" ] && return 1
+  case "$ne_sub" in
+    notebook/*.md) ne_file=${ne_sub#notebook/} ;;
+    runs/*.md)     ne_file=${ne_sub#runs/} ;;
+    *) return 1 ;;
+  esac
+  case "$ne_file" in */*) return 1 ;; esac
+  return 0
+}
+
 is_immutable_path() {
   lc=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
   case "$lc" in
-    docs/journal/*|docs/notes/*|experiments/*/notebook/*.md|experiments/*/runs/*.md) return 0 ;;
-    *) return 1 ;;
+    docs/journal/*|docs/notes/*) return 0 ;;
   esac
+  is_notebook_entry "$lc"
 }
 
 while IFS= read -r -d '' status; do
@@ -75,11 +98,15 @@ while IFS= read -r -d '' status; do
         # During a merge commit, resolving an add/add conflict to the OTHER
         # branch's committed version is not a rewrite — both blobs were
         # committed immutably on their own branches. Check (8) ensures the
-        # losing version survives under a new name.
+        # losing version survives under a new name. Only a true add/add
+        # qualifies: if the file already existed at the merge base, taking
+        # the incoming blob IS a rewrite of committed history.
         if [ -n "$MERGE_HEAD_REF" ]; then
           staged_blob=$(git rev-parse -q --verify ":$f" 2>/dev/null || true)
           theirs_blob=$(git rev-parse -q --verify "$MERGE_HEAD_REF:$f" 2>/dev/null || true)
-          if [ -n "$staged_blob" ] && [ "$staged_blob" = "$theirs_blob" ]; then
+          base_blob=""
+          [ -n "$MERGE_BASE" ] && base_blob=$(git rev-parse -q --verify "$MERGE_BASE:$f" 2>/dev/null || true)
+          if [ -z "$base_blob" ] && [ -n "$staged_blob" ] && [ "$staged_blob" = "$theirs_blob" ]; then
             :
           else
             immutable_modified="${immutable_modified}${f}"$'\n'
@@ -91,11 +118,12 @@ while IFS= read -r -d '' status; do
       ;;
     D)
       IFS= read -r -d '' f
-      case "$f" in
-        docs/journal/*|experiments/*/notebook/*.md|experiments/*/runs/*.md)
-          immutable_deleted="${immutable_deleted}${f}"$'\n'
-          ;;
-      esac
+      # Case-folded like adds/modifies, so NOTEBOOK/ can't dodge the check.
+      # docs/notes stays deletable; journal and notebook entries do not.
+      lc_d=$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')
+      if { case "$lc_d" in docs/journal/*) true ;; *) false ;; esac; } || is_notebook_entry "$lc_d"; then
+        immutable_deleted="${immutable_deleted}${f}"$'\n'
+      fi
       ;;
     A)
       IFS= read -r -d '' f
@@ -198,18 +226,28 @@ while IFS= read -r -d '' rec; do
     if [ "$new_mode" = "120000" ] && [ "$base" = "AGENTS.md" ]; then
       continue
     fi
-    # The one blessed experiment symlink: experiments/<exp>/data pointing
-    # into the store (../../data/...). Anything else stays banned.
+    # The one blessed experiment symlink: experiments/<exp>/data pointing at
+    # exactly its own store dir, ../../data/experiments/<exp>. Anything else
+    # stays banned: prefix-only matching would accept traversal
+    # (../../data/../../src) or another experiment's store.
     if [ "$new_mode" = "120000" ] && [ "$base" = "data" ]; then
-      case "$path" in
-        experiments/*/data)
-          target=$(git show ":$path" 2>/dev/null || true)
-          case "$target" in ../../data/*) continue ;; esac
-          echo "error: pre-commit (data symlink): $path -> $target must point into the store (../../data/experiments/<name>)" >&2
-          fail=1
-          continue
-          ;;
-      esac
+      expseg=${path#experiments/}
+      expseg=${expseg%/data}
+      if [ "$path" = "experiments/$expseg/data" ]; then
+        case "$expseg" in
+          ""|*/*) ;;   # nested or empty — not the blessed location
+          *)
+            target=$(git show ":$path" 2>/dev/null || true)
+            if [ "$target" = "../../data/experiments/$expseg" ]; then
+              continue
+            fi
+            echo "error: pre-commit (data symlink): $path -> $target" >&2
+            echo "  the target must be exactly ../../data/experiments/$expseg (its own store dir)." >&2
+            fail=1
+            continue
+            ;;
+        esac
+      fi
     fi
     echo "error: pre-commit (no symlinks/gitlinks): $path (mode $new_mode) may not be added under docs/ or experiments/" >&2
     fail=1
@@ -224,9 +262,12 @@ if [ -n "$added" ]; then
     lower_f=$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')
     case "$lower_f" in
       docs/journal/*.md|docs/notes/*.md|docs/bugs/*.md) ;;
-      experiments/*/notebook/*.md)
-        # Notebook entries: runNNN[-slug].md; `# runNNN — date` header; the
-        # first line below the header is a one-sentence outcome summary.
+      *)
+        is_notebook_entry "$lower_f" || continue
+        # Notebook entries: runNNN[-slug].md; `# runNNN[-slug] — date` header
+        # naming its own file; the first line below the header is a
+        # one-sentence outcome summary; the numeric id is unique per
+        # experiment.
         base=$(basename "$f")
         if ! printf '%s' "$base" | grep -qE '^run[0-9]{3,}(-[a-z0-9][a-z0-9-]*)?\.md$'; then
           echo "error: pre-commit (shape): $f — every .md in notebook/ is a run entry named runNNN[-slug].md" >&2
@@ -234,12 +275,15 @@ if [ -n "$added" ]; then
           fail=1
           continue
         fi
+        stem=${base%.md}
+        num=$(printf '%s' "$stem" | grep -oE '^run[0-9]+')
         content=$(git show ":$f" 2>/dev/null) || continue
         first=$(printf '%s\n' "$content" | head -1)
         case "$first" in
-          "# run"*) ;;
+          "# $stem"|"# $stem "*) ;;
           *)
-            echo "error: pre-commit (shape): $f — line 1 must be the entry header '# runNNN[-slug] — YYYY-MM-DD'" >&2
+            echo "error: pre-commit (shape): $f — line 1 must be '# $stem — YYYY-MM-DD'" >&2
+            echo "  (the header names its own file; a mismatched id breaks the store join)." >&2
             fail=1 ;;
         esac
         summary=$(printf '%s\n' "$content" | awk 'NR>=2 && NF {print; exit}')
@@ -249,9 +293,29 @@ if [ -n "$added" ]; then
             echo "  outcome summary (what this run established), before the command:/commit:/... anchors." >&2
             fail=1 ;;
         esac
+        # Duplicate numeric id: run001-alpha.md next to run001-beta.md breaks
+        # the one-number-one-run join. Scan the staged index (covers both
+        # existing entries and sibling adds in this commit).
+        expdir=${f%/notebook/*}
+        expdir=${expdir%/runs/*}
+        if [ "$expdir" != "$f" ] && [ -n "$num" ]; then
+          dup=$(git ls-files -- "$expdir/notebook" "$expdir/runs" 2>/dev/null | while IFS= read -r other; do
+            [ "$other" = "$f" ] && continue
+            ostem=$(basename "$other"); ostem=${ostem%.md}
+            onum=$(printf '%s' "$ostem" | grep -oE '^run[0-9]+' || true)
+            [ -n "$onum" ] || continue
+            # numeric compare, so run001 and run0001 still collide
+            [ "$((10#${onum#run}))" -eq "$((10#${num#run}))" ] && printf '%s\n' "$other"
+          done)
+          if [ -n "$dup" ]; then
+            echo "error: pre-commit (shape): $f reuses run id $num already taken by:" >&2
+            printf '%s\n' "$dup" | sed 's/^/  /' >&2
+            echo "  each numeric id is one run; reserve the next id (scripts/lenore-docs.py run)." >&2
+            fail=1
+          fi
+        fi
         continue
         ;;
-      *) continue ;;
     esac
     content=$(git show ":$f" 2>/dev/null) || continue
 
@@ -338,7 +402,7 @@ if [ -n "$added$immutable_modified" ] || true; then
     printf '%s' "$f" | grep -qE "\.($code_ext)$" || continue
     content=$(git show ":$f" 2>/dev/null) || continue
     hits=$(printf '%s\n' "$content" | grep -nE \
-      '^[[:space:]]*(import|from)[[:space:]][^#]*\bexperiments[./]|^[[:space:]]*#include[[:space:]]*["<][^">]*experiments/|require\(?[[:space:]]*['"'"'"][^'"'"'"]*experiments/' \
+      '^[[:space:]]*(import|from)[[:space:]][^#]*\bexperiments([./[:space:]]|$)|^[[:space:]]*#include[[:space:]]*["<][^">]*experiments/|require\(?[[:space:]]*['"'"'"][^'"'"'"]*experiments/|(import_module|__import__)[[:space:]]*\([[:space:]]*['"'"'"]experiments|^[[:space:]]*(source|\.)[[:space:]]+[^#]*experiments/' \
       | head -3 || true)
     if [ -n "$hits" ]; then
       echo "error: pre-commit (experiment isolation): $f references experiments/ from production code:" >&2
@@ -362,10 +426,14 @@ while IFS= read -r -d '' rec; do
   esac
   [ "$new_mode" = "120000" ] || continue
   target=$(git show ":$path" 2>/dev/null || true)
-  # The blessed store symlink (experiments/<exp>/data -> ../../data/...)
-  # points into the store, not into experiments/ — its target merely
-  # contains the word. Skip it here; check (4) validates its shape.
-  case "$path" in experiments/*/data) case "$target" in ../../data/*) continue ;; esac ;; esac
+  # The blessed store symlink (experiments/<exp>/data ->
+  # ../../data/experiments/<exp>) points into the store, not into
+  # experiments/ — its target merely contains the word. Skip exactly that
+  # form here; check (4) already rejected every other shape.
+  sl_exp=${path#experiments/}; sl_exp=${sl_exp%/data}
+  if [ "$path" = "experiments/$sl_exp/data" ] && [ "$target" = "../../data/experiments/$sl_exp" ]; then
+    case "$sl_exp" in */*|"") ;; *) continue ;; esac
+  fi
   case "$target" in
     *experiments/*)
       echo "error: pre-commit (experiment isolation): symlink $path -> $target points into experiments/" >&2
@@ -374,13 +442,14 @@ while IFS= read -r -d '' rec; do
   esac
 done < <(git diff --cached --raw -z -M "$AGAINST" 2>/dev/null || true)
 
-# --- (8) Merge guidance: conflicting dated notes/bugs -----------------------
-# Two sessions filing docs/notes|bugs files with the same dated name produce
-# an add/add conflict at merge. Doctrine: both versions survive — the merge
-# keeps one under the original name and refiles the other under a NEW dated
-# name; the refiled-from version may then be deleted later like any note.
+# --- (8) Merge guidance: conflicting dated notes/bugs/notebook entries ------
+# Two sessions filing docs/notes|bugs files (or notebook run entries) with
+# the same name produce an add/add conflict at merge. Doctrine: both versions
+# survive — the merge keeps one under the original name and refiles the other
+# under a NEW dated name (for run entries: the next free run id); the
+# refiled-from version may then be deleted later like any note.
 if [ -n "$MERGE_HEAD_REF" ]; then
-  staged_blobs=$(git ls-files -s -- docs/notes docs/bugs 2>/dev/null | awk '{print $2}')
+  staged_blobs=$(git ls-files -s -- docs/notes docs/bugs 'experiments/*/notebook/*' 'experiments/*/runs/*' 2>/dev/null | awk '{print $2}')
   while IFS=$'\t' read -r path; do
     [ -n "$path" ] || continue
     ours=$(git rev-parse -q --verify "HEAD:$path" 2>/dev/null || true)
@@ -404,15 +473,39 @@ if [ -n "$MERGE_HEAD_REF" ]; then
       echo "error: pre-commit (merge guidance): $path was filed independently on both branches" >&2
       echo "  with different content, and this merge drops a version: $missing" >&2
       echo "  Both are committed history — default is keep both: refile the losing version" >&2
-      echo "  under a new dated name, e.g.:" >&2
+      echo "  under a new dated name (notes) or the next free run id (notebook entries), e.g.:" >&2
       echo "    git show ${missing%% *} > docs/notes/\$(date +%F)-<new-topic-slug>.md && git add docs/notes/" >&2
       echo "  then re-run the merge commit. If you have READ the dropped version and judge it" >&2
       echo "  junk/duplicate, dropping it here is a valid resolution: re-run the same commit" >&2
       echo "  unchanged and it will proceed." >&2
       fail=1
     fi
-  done < <(git ls-files -- docs/notes docs/bugs 2>/dev/null)
+  done < <(git ls-files -- docs/notes docs/bugs 'experiments/*/notebook/*' 'experiments/*/runs/*' 2>/dev/null)
 fi
+
+# --- (11) PROMOTIONS.md is append-only --------------------------------------
+# The promotion ledger is provenance: rows are added, never rewritten or
+# removed. A modification must keep the previous content as a prefix.
+promo=experiments/PROMOTIONS.md
+promo_status=$(git diff --cached --name-status "$AGAINST" -- "$promo" 2>/dev/null | awk '{print $1}' | head -1)
+case "$promo_status" in
+  D)
+    echo "error: pre-commit (promotions): $promo may not be deleted — it is the promotion provenance ledger." >&2
+    fail=1
+    ;;
+  M)
+    old_promo=$(git show "$AGAINST:$promo" 2>/dev/null || true)
+    new_promo=$(git show ":$promo" 2>/dev/null || true)
+    case "$new_promo" in
+      "$old_promo"*) ;;
+      *)
+        echo "error: pre-commit (promotions): $promo is append-only — the staged version does not" >&2
+        echo "  start with the previous content. Add new rows at the end; never edit or remove old ones." >&2
+        fail=1
+        ;;
+    esac
+    ;;
+esac
 
 # --- (10) Experiment rename warning (never blocks) -------------------------
 # The store dir is keyed by experiment name; renaming experiments/<a>/ to
