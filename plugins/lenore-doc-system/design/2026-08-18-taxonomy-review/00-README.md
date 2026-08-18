@@ -29,6 +29,13 @@ recommended here.
   original list missed.
 - `05-synthesis.md` — the synthesized proposal presented to shrek, plus
   the standing constraints that shaped it.
+- `06-workflow-fit-review.md` — Claude Opus agent. Reconstructed shrek's
+  real dev flow from the 54 MB mac-stitch-video quality-gate-rework
+  session log and filed 17 real artifacts under the proposed taxonomy
+  (4 clean / 5 awkward / 8 no home). Verdict: spine fits settled truth;
+  gaps for deferred proposals, cross-cutting premises, multi-file
+  bundles, diagram sources, artifact URLs, status surface. Six ranked
+  design changes + four user practices to adopt wholesale.
 
 ## Standing constraints (user feedback, binding)
 
