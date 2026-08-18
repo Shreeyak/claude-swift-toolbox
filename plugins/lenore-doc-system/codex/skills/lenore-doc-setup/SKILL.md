@@ -29,7 +29,7 @@ offline/no-network fallback in Codex's default sandbox):
 - Tier 0 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/bc5a2013bb45ae268c6f014aa6de6d6ea44997bd/plugins/lenore-doc-system/skills/doc-system/references/rules-tier0.md`
 - Experiment README + notebook-entry templates: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/bc5a2013bb45ae268c6f014aa6de6d6ea44997bd/plugins/lenore-doc-system/skills/doc-system/references/experiment-templates.md`
 - Full doctrine (rationale, human-readable): https://claude.ai/code/artifact/fe938177-22fc-43d6-be6d-842ece97226b
-- Pre-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/bc5a2013bb45ae268c6f014aa6de6d6ea44997bd/plugins/lenore-doc-system/templates/githooks/pre-commit`
+- Pre-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/61c143582e1050c5f97306e46e78287b187d4616/plugins/lenore-doc-system/templates/githooks/pre-commit`
 - Pre-push hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/bc5a2013bb45ae268c6f014aa6de6d6ea44997bd/plugins/lenore-doc-system/templates/githooks/pre-push`
 - Commit-msg hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/bc5a2013bb45ae268c6f014aa6de6d6ea44997bd/plugins/lenore-doc-system/templates/githooks/commit-msg`
 - Pre-merge-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/bc5a2013bb45ae268c6f014aa6de6d6ea44997bd/plugins/lenore-doc-system/templates/githooks/pre-merge-commit`
