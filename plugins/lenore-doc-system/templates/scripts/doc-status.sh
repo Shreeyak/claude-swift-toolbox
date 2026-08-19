@@ -252,4 +252,36 @@ if [ -n "$stale_task_files" ]; then
   stale_task_part=" · $(printf '%s' "$stale_task_files" | sed 's/ *$//')"
 fi
 
-echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${unreflected_part}${store_part}${proposals_part}${spine_part}${html_part}${stale_task_part}"
+# --- doc-health due (drift since the last health-check journal entry) -------
+# The marker is the newest docs/journal/*doc-health*.md entry (the /doc-health
+# run writes one). Due only when BOTH thresholds pass: >=14 days AND >=30
+# commits since the marker date — an untouched repo never nags. Never-checked
+# repos nag once the repo has real history (>=30 commits total).
+health_part=""
+if [ -d docs/journal ]; then
+  health_marker=$(ls docs/journal/*doc-health*.md 2>/dev/null | sort | tail -1)
+  if [ -n "$health_marker" ]; then
+    hdate=$(basename "$health_marker" | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}' || true)
+    if [ -n "$hdate" ]; then
+      now_epoch=$(date +%s)
+      h_epoch=$(date -j -f '%Y-%m-%d' "$hdate" +%s 2>/dev/null || date -d "$hdate" +%s 2>/dev/null || echo "$now_epoch")
+      h_days=$(( (now_epoch - h_epoch) / 86400 ))
+      h_commits=$(git rev-list --count HEAD --since="$hdate" 2>/dev/null || echo 0)
+      if [ "$h_days" -ge 14 ] && [ "${h_commits:-0}" -ge 30 ]; then
+        health_part=" · doc-health: due (last check ${h_days}d/${h_commits} commits ago — run /doc-health)"
+      fi
+    fi
+  else
+    # Never checked: nag only once the repo has real history AND age —
+    # a fresh repo sprinting 30 commits in two days shouldn't open red.
+    total_commits=$(git rev-list --count HEAD 2>/dev/null || echo 0)
+    if [ "${total_commits:-0}" -ge 30 ]; then
+      first_epoch=$(git log --reverse --format=%ct 2>/dev/null | head -1)
+      now_epoch=$(date +%s)
+      repo_days=$(( (now_epoch - ${first_epoch:-$now_epoch}) / 86400 ))
+      [ "$repo_days" -ge 14 ] && health_part=" · doc-health: never (run /doc-health)"
+    fi
+  fi
+fi
+
+echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${unreflected_part}${store_part}${proposals_part}${spine_part}${html_part}${health_part}${stale_task_part}"
