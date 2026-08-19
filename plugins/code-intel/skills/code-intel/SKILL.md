@@ -58,6 +58,24 @@ Before trusting a semantic answer for the first time in a repo, run one **known-
 query** — a symbol whose references you counted by hand. A fresh checkout with no index
 returns empty for everything, and empty looks exactly like "no callers".
 
+## Every routed tool also has a CLI — MCP is not the only door
+
+A tool the routing table names is usable the moment its **binary** exists; an
+unwired MCP server is a missing convenience, not a missing capability. Never
+report a lane as unavailable without checking the CLI first.
+
+| tool | CLI form |
+|---|---|
+| code-review-graph | `code-review-graph --help` — same index the `serve` MCP exposes |
+| graphify | `graphify <path>` builds `graphify-out/graph.json`; `graphify --help` queries it |
+| ast-grep | `ast-grep run -p '<pattern>' -l <lang>` |
+| semgrep | `semgrep --config auto <path>` |
+| serena | MCP-only in practice — this is the one that genuinely needs wiring |
+
+`/code-intel:setup` reports presence for all of these and, on `--write`, generates
+a `.mcp.json` with this machine's absolute paths filled in (never merging into an
+existing one).
+
 ## When the routed tool is not available
 
 Say so, name the one-line fix, and proceed with the next-best mechanism **while labelling

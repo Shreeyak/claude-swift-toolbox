@@ -90,8 +90,39 @@ install_hint() {
     clangd)                     echo "brew install llvm   (macOS)  |  apt install clangd   (Debian/Ubuntu)" ;;
     sourcekit-lsp)              echo "ships with the Swift / Xcode toolchain: xcrun --find sourcekit-lsp" ;;
     serena)                     echo "uv tool install serena-agent   # Apple Silicon: add -p cpython-3.13-macos-aarch64-none" ;;
+    code-review-graph)          echo "uv tool install code-review-graph   # Apple Silicon: add -p cpython-3.13-macos-aarch64-none" ;;
+    graphify)                   echo "uv tool install 'graphifyy[mcp]'   # package is graphifyy, command is graphify" ;;
+    ast-grep)                   echo "brew install ast-grep   |   npm i -g @ast-grep/cli   |   cargo install ast-grep" ;;
+    semgrep)                    echo "uv tool install semgrep   # Apple Silicon: add -p cpython-3.13-macos-aarch64-none" ;;
+    rg)                         echo "brew install ripgrep   |   apt install ripgrep" ;;
+    vulture)                    echo "uv tool install vulture" ;;
+    knip)                       echo "npm i -g knip" ;;
     *)                          echo "see references/tools-catalog.md" ;;
   esac
+}
+
+# One line per tool: what question it answers, so a MISSING line says what is
+# lost rather than just naming a binary.
+tool_role() {
+  case "$1" in
+    serena)            echo "symbol-exact navigation + symbol-level edits (semantic; ~50 languages)" ;;
+    code-review-graph) echo "search by meaning, and diff review: semantic_search / detect-changes (name-match)" ;;
+    graphify)          echo "the only tool here that indexes docs/ and prose alongside code (name-match)" ;;
+    ast-grep)          echo "structural code patterns -- 'every await inside a loop' (textual, syntax-aware)" ;;
+    semgrep)           echo "known security / correctness anti-patterns, some with dataflow (textual+)" ;;
+    rg)                echo "constants, env vars, build flags, prose -- and completeness cross-checks" ;;
+    vulture)           echo "[py] dead code / unused symbols" ;;
+    knip)              echo "[ts] dead code / unused exports and dependencies" ;;
+  esac
+}
+
+report_tool() {  # report_tool <bin> [optional-label]
+  if have "$1"; then
+    say "  [present] $1  --  $(tool_role "$1")"
+  else
+    say "  [MISSING] $1  --  $(tool_role "$1")"
+    say "            install: $(install_hint "$1")"
+  fi
 }
 
 serena_languages=""
@@ -110,6 +141,20 @@ missing_bins="${missing_bins# }"; present_bins="${present_bins# }"
 plan_serena=0
 plan_manifest=1
 [ -f .serena/project.yml ] || plan_serena=1
+
+# .mcp.json is PROPOSED (never merged). The old reason for refusing -- "MCP
+# entries carry machine-specific absolute paths" -- is an argument for
+# generating the file on the machine that will use it, which is this one:
+# $TARGET is absolute and the binaries were just resolved with `have`. An
+# existing .mcp.json is never rewritten; merging someone else's server list is
+# exactly the silent destruction this script refuses elsewhere.
+plan_mcp=0
+mcp_servers=""
+for b in serena code-review-graph graphify; do
+  have "$b" && mcp_servers="$mcp_servers $b"
+done
+mcp_servers="${mcp_servers# }"
+if [ -n "$mcp_servers" ] && [ ! -f .mcp.json ]; then plan_mcp=1; fi
 
 # ------------------------------------------------------- JSON sanity check ----
 # A malformed existing config is a REFUSAL, never an auto-repair: rewriting a
@@ -188,13 +233,33 @@ if [ -n "$present_bins" ] || [ -n "$missing_bins" ]; then
   say ""
 fi
 
-say "serena (optional, adds symbol-level edits and concept-free navigation via MCP):"
-if have serena; then
-  say "  [present] serena"
-else
-  say "  [MISSING] serena -- install: $(install_hint serena)"
-fi
+# The rest of the toolbelt. The routing table in SKILL.md sends real questions
+# to every one of these, so setup reports on every one of them -- a tool that is
+# never mentioned is a tool that never gets used.
+say "Toolbelt (each answers a different class of question; see the routing table):"
+report_tool serena
+report_tool code-review-graph
+report_tool graphify
+report_tool ast-grep
+report_tool semgrep
+report_tool rg
+for p in $profiles; do
+  case "$p" in
+    py) report_tool vulture ;;
+    ts) report_tool knip ;;
+  esac
+done
 say ""
+say "  None of these is required. Each absence costs one lane of the routing"
+say "  table, and the skill will say so rather than silently substituting grep."
+say ""
+
+if have graphify && [ ! -f graphify-out/graph.json ]; then
+  say "  graphify has no graph for this repo yet -- build one before its MCP"
+  say "  server or CLI can answer:"
+  say "    graphify \"$TARGET\""
+  say ""
+fi
 
 say "Files this run would create or change:"
 if [ "$plan_serena" = "1" ]; then
@@ -203,10 +268,15 @@ else
   say "  = .serena/project.yml   (exists -- left alone; this script does not rewrite it)"
 fi
 say "  ~ .code-intel.json      (manifest: the record of what was accepted)"
+if [ "$plan_mcp" = "1" ]; then
+  say "  + .mcp.json             (new: $mcp_servers -- absolute paths filled in for this machine)"
+elif [ -f .mcp.json ]; then
+  say "  = .mcp.json             (exists -- left alone; never merged. Add missing servers by hand:"
+  say "                           references/mcp-wiring.md)"
+fi
 say ""
-say "It will NOT touch: .mcp.json (see references/mcp-wiring.md and wire it by"
-say "hand -- MCP entries carry machine-specific absolute paths), build files,"
-say "compile databases, or anything not listed above. It never installs binaries."
+say "It will NOT touch: build files, compile databases, an existing .mcp.json,"
+say "or anything not listed above. It never installs binaries."
 say ""
 
 # Diffs at propose time.
@@ -258,6 +328,24 @@ manifest_content() {
 EOF
 }
 
+mcp_json_content() {
+  local first=1 b
+  printf '{\n  "mcpServers": {\n'
+  for b in $mcp_servers; do
+    [ "$first" = "1" ] || printf ',\n'
+    first=0
+    case "$b" in
+      serena)
+        printf '    "serena": {\n      "command": "serena",\n      "args": ["start-mcp-server", "--project", "."]\n    }' ;;
+      code-review-graph)
+        printf '    "code-review-graph": {\n      "command": "code-review-graph",\n      "args": ["serve"],\n      "cwd": "%s"\n    }' "$TARGET" ;;
+      graphify)
+        printf '    "graphify": {\n      "command": "graphify",\n      "args": ["mcp", "%s/graphify-out/graph.json"]\n    }' "$TARGET" ;;
+    esac
+  done
+  printf '\n  }\n}\n'
+}
+
 show_diff() {  # show_diff <path> <content-producing-function>
   local path="$1" fn="$2" new="$tmpdir/new"
   "$fn" > "$new" 2>/dev/null
@@ -278,6 +366,7 @@ show_diff() {  # show_diff <path> <content-producing-function>
 say "Diffs:"
 [ "$plan_serena" = "1" ] && show_diff ".serena/project.yml" serena_yml_content
 show_diff ".code-intel.json" manifest_content
+[ "$plan_mcp" = "1" ] && show_diff ".mcp.json" mcp_json_content
 
 # ------------------------------------------------------------------- apply ---
 if [ "$WRITE" != "1" ]; then
@@ -319,6 +408,11 @@ rule
 say "Applying:"
 [ "$plan_serena" = "1" ] && atomic_write ".serena/project.yml" serena_yml_content
 atomic_write ".code-intel.json" manifest_content
+if [ "$plan_mcp" = "1" ]; then
+  atomic_write ".mcp.json" mcp_json_content
+  say "  .mcp.json written -- Claude Code asks you to approve new MCP servers on"
+  say "  next start; until you do, they are configured but not running."
+fi
 say ""
 
 if [ -n "$missing_bins" ]; then
