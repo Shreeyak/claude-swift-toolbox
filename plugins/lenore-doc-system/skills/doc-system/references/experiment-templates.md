@@ -13,13 +13,15 @@ understanding changes; it carries zero run-by-run narrative — that is notebook
 
 ```markdown
 ---
-status: exploring            # REQUIRED  exploring | concluded | shelved
+status: exploring            # REQUIRED  exploring | concluded | shelved (candidates: exploring | adopted | retired | parked)
 question: <one line — what this experiment decides>            # REQUIRED
 verdict: <one sentence answer>       # REQUIRED at conclusion (gate-checked); empty until known
 concluded: YYYY-MM-DD                # REQUIRED at conclusion (gate-checked)
+kind: question                       # optional, default question; candidate-system = alternative-architecture exploration
 success: <one line — what result would settle it>              # optional, written at creation
 uses: [2026-06-01-gpu-pc]            # optional — experiments whose code this one reuses
 extends: 2026-05-12-plain-ncc        # optional — prior experiment this question builds on
+artifact: <url>                      # optional — published claude.ai artifact for this experiment
 ---
 
 # <Experiment name in plain words>
@@ -47,9 +49,10 @@ numbers say, each claim citing its evidence by run id ("masking wins below tau 0
 (run002, run005)"). Rewritten freely as runs change the picture — this is the section
 the verdict-staleness counter and the judge's contradiction check are really about.
 
-## What didn't work
-RECOMMENDED. The anti-survivorship record: approaches tried and abandoned, with the run
-id that killed each. Saves every future session from re-walking dead ends.
+## Dead ends & ruled out
+REQUIRED once anything has been ruled out. The anti-survivorship register: approaches
+tried and set aside, with the run id that killed each — read this before re-opening any
+of those threads. The single cheapest anti-rework device in the system.
 
 ## Recommendations
 CONCLUSION-TIME. What production should do about it: what to adopt, parameter values,
@@ -114,7 +117,7 @@ The win is threshold-sensitive: tau>=0.4 over-masks and collapses to 0.61 (run00
 tau=0.3 is the plateau center. Outdoor clips confirm the pattern at slightly lower
 magnitude, +0.11 (run005). Cost: mask pass adds 8% wall time (run004), flat across tau.
 
-## What didn't work
+## Dead ends & ruled out
 - Entropy-based masking instead of gradient: no better than gradient and 3x the cost
   (run001).
 - Adaptive per-window tau: unstable, oscillates on boundary windows (run006); fixed
@@ -210,7 +213,48 @@ mean_ncc_at_0.4: 0.61
 ```
 ```
 
-## 5. Rejected, and why
+## 5. Candidate-system README template (`kind: candidate-system`)
+
+For a whole alternative architecture under exploration — a buildable
+candidate pipeline, not a question with runs. Exempt from the dated dir
+name, `notebook/runNNN`, and the store trio; the required shape is this:
+
+```markdown
+---
+status: exploring            # exploring | adopted | retired | parked
+question: Should <candidate> replace <current system>?
+verdict:                     # REQUIRED at adopted/retired (gate-checked)
+concluded:                   # REQUIRED at adopted/retired
+kind: candidate-system
+artifact:                    # optional — published claude.ai artifact
+---
+
+# <Candidate name>
+
+## Question
+What this candidate would replace and what would make it win.
+
+## Document map
+REQUIRED. One line per file in this dir — the reader routes from here.
+- design.md — the candidate's architecture (lives HERE until adoption, never in docs/system/)
+- harness/ — buildable package + tests
+- scenarios/ — scenario suite the harness replays
+- results/ — committed evaluation outputs (small, curated)
+
+## Status at a glance
+Where the candidate stands, what's proven, what's still open.
+
+## Dead ends & ruled out
+REQUIRED once anything has been ruled out — what was tried, set aside,
+and why; read before re-opening any of those threads.
+
+## Verdict path
+adopted -> design docs copied into docs/system/ chapters + one PROMOTIONS.md line.
+retired -> one line in the playbook's retired registry naming the preserving git tag.
+parked  -> status flip only; state the unpark condition here.
+```
+
+## 6. Rejected, and why
 
 - **Run-index table in the README** — hand-kept index agents forget; `ls notebook/` +
   browse.py derive it. (Settled earlier; stays rejected.)
@@ -231,7 +275,7 @@ mean_ncc_at_0.4: 0.61
 - **Required `success:`** — preregistration discipline is worth an optional line, not a
   gate; forcing it invites boilerplate.
 
-## 6. Judge/gate touchpoints (so the templates stay enforceable)
+## 7. Judge/gate touchpoints (so the templates stay enforceable)
 
 - Conclusion gate keeps reading frontmatter `verdict:` + `concluded:` — unchanged.
 - The judge's contradiction check targets frontmatter `verdict:` and the `## Findings`

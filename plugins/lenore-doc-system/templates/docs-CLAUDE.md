@@ -48,6 +48,29 @@ pipeline; ECC path removed. (abc1234)
   read — notes are never authority, so an old note can't mislead about
   what's true now; check only when about to act on one (the date+class
   rule already says this).
+- **Research output** (literature surveys, online research): same dated
+  notes, named `YYYY-MM-DD-research-<topic>.md` — the `research-` token is
+  the convention that makes `ls docs/notes/ | grep research` and semantic
+  search work as "show me our research". The note holds the findings with
+  sources cited. What gets *adopted* lands in `docs/playbook.md` or a
+  system chapter as one conclusion + a pointer back to the note; claims
+  needing empirical validation become experiments.
+- **Note bundles** (`docs/notes/YYYY-MM-DD-topic/`): a note may be a
+  **directory** only when it will contain members that are NOT prose
+  authored by the filing agent — downloaded sources, data files
+  (`.csv`/`.json`), figures + their sources, or reports from other
+  agents/tools. All-own-prose splits are rejected: one effort, one file.
+  Every bundle carries an `index.md` (line 1 = one-sentence summary, then
+  what each member is and where it came from — hook-checked). Members may
+  be live progress files while the effort runs; **commit the bundle when
+  the effort concludes** — committed members are immutable like any note.
+  Big/binary evidence (PDFs, >5MB anything) goes to the store, listed in
+  `index.md` by store path.
+- **Papers and downloaded documents**: never committed. The bytes go to
+  `data/library/<topic>/` in the gitignored store; a research note (or a
+  bundle's `index.md`) lists each one — title, URL/DOI, one line on why it
+  was saved, store path. The note is what search finds; it says where the
+  PDF lives.
 - **Review output** (subagent/codex/human code reviews): never save the
   raw transcript, and save nothing for findings that were fixed — the
   fix commits are the record. A review earns a note
@@ -57,12 +80,72 @@ pipeline; ECC path removed. (abc1234)
   to `docs/bugs/` (one file each); design-changing findings go into the
   openspec change/spec, not a note.
 
-## Reference docs (`docs/reference/<topic>.md`)
+## The spine — `system` / `caveats` / `playbook` (living, mutable)
 
-- Named, not dated. Editable in place — exempt from the immutability
-  hook. Update when the external thing (tool, API, workflow) changes.
-- For things outside the repo only. Internal project thinking is a note,
-  never a reference doc.
+Three question-shaped homes for current truth, beside the specs:
+
+- **`docs/system.md` + `docs/system/`** — *how it works now.* The hub file
+  is a one-page map (what this system is + one line per chapter); substance
+  lives in chapter files under `docs/system/` (`architecture.md`,
+  `data-flow.md`, `state-transitions.md`, `premises.md`, plus earned
+  chapters — soft cap ~8, the status line warns). Update a chapter **in
+  the same commit that falsifies it**. Figures live beside their chapter,
+  with their editable sources (`.d2`/`.excalidraw`/`.mmd`/generator `.py`)
+  committed next to the render — a render whose source is lost can't be
+  iterated.
+- **`docs/system/premises.md`** — ground rules about the product,
+  instrument, and operator that every design must satisfy. Numbered
+  entries (`**P1 — …**`), each with a provenance pointer (the note or
+  experiment that established it) and a consumers hint. Admission test:
+  *would this still be true if we rewrote the entire pipeline in another
+  language tomorrow?* Yes → premise; no → it's a mechanism, put it in a
+  regular chapter. Soft cap ~15 entries. This file is **mandatory
+  pre-design reading** — the root `CLAUDE.md` carries the line; cite the
+  premise IDs a design rests on or bends.
+- **`docs/caveats.md`** — *where it fails now.* One registry of known
+  failure modes, limitations, and data hazards. Entries carry **stable
+  IDs** (`## C4 — <title>`), sequential, never renumbered or reused. Each
+  entry carries a **Validity ladder**, read in order:
+  1. `Confirmed:` what is reproducibly observed.
+  2. `Mechanism:` the current working explanation (the one to work from).
+  3. `Retracted:` earlier readings that were wrong, with the reason.
+  The ladder is required — without it, entries quietly assert retracted
+  mechanisms. Fix/no-fix stance goes in the entry; an actionable defect
+  is a `docs/bugs/` file instead, and graduates to a caveat only if it's
+  accepted as a standing limitation.
+- **`docs/playbook.md`** — *how we do things.* Procedures, evaluated
+  tools (each with a "use when" line + a last-verified date), and adopted
+  research conclusions (the conclusion + a pointer to the dated research
+  note that established it — never the survey itself).
+
+`caveats.md`/`playbook.md` start as single files; when one outgrows a
+file, it becomes a hub + `docs/caveats/`/`docs/playbook/` chapters, same
+shape as system. There is no `docs/reference/` — external-tool how-tos
+live in the playbook; internal explanations in system chapters.
+
+## Proposals (`docs/proposals/YYYY-MM-DD-topic.md`)
+
+Designed-but-not-committed work: feature designs, parked plans, candidate
+directions. **The one revisable dated class** — it's a plan, not a
+record. Required front-matter:
+
+```yaml
+---
+status: proposed | accepted | deferred | superseded | implemented  # hook-checked
+created: YYYY-MM-DD
+artifact:            # optional — claude.ai artifact URL if one was published
+---
+```
+
+A proposal and its task pointer are one two-part artifact:
+`scripts/lenore-docs.py proposal "Title" <<'EOF' … EOF` creates the file
+AND appends `- Proposal: <title> — details: proposals/<file>` to
+`docs/tasks/project.md` in the same call. While status is
+`proposed`/`deferred` the pointer must exist (the status line flags
+orphans); on `accepted` the design becomes an openspec change and the
+proposal freezes; on `implemented`/`superseded` the pointer is removed
+and the file stays as history. Deferred proposals state their unfreeze
+condition in the body.
 
 ## Tasks (`docs/tasks/`)
 
@@ -98,10 +181,12 @@ uv run scripts/lenore-docs.py note "One-sentence summary" <<'EOF'
 Full prose body...
 EOF
 scripts/lenore-docs.py note "..." --supersedes notes/2026-08-10-x.md <<'EOF' ... EOF
+scripts/lenore-docs.py note "..." --research [--bundle]   # research naming; --bundle makes a dated dir + index.md
 scripts/lenore-docs.py bug "..." <<'EOF' repro, expected vs actual ... EOF
 scripts/lenore-docs.py journal "One-sentence event" [body ≤10 lines/150 words total]
 scripts/lenore-docs.py task "Self-contained title" [--someday|--branch] [--note] [context]
-scripts/lenore-docs.py experiment "short name"   # dated dir + README + data symlink + store dirs
+scripts/lenore-docs.py proposal "Title" <<'EOF' ... EOF   # dated proposal + task pointer + recall, atomic
+scripts/lenore-docs.py experiment "short name"   # dated dir + README + data symlink + store dirs + recall
 scripts/lenore-docs.py run <experiment> [slug]   # reserve next run id, mkdir its out/ dir
 ```
 
@@ -137,13 +222,15 @@ the store dirs). Picking an experiment back up: read its README, then
 
 ```yaml
 ---
-status: exploring | concluded | shelved     # REQUIRED
+status: exploring | concluded | shelved     # REQUIRED (candidates: exploring | adopted | retired | parked)
 question: <one line — what this experiment decides>   # REQUIRED
 verdict: <one sentence answer>    # REQUIRED at conclusion (gate-checked)
 concluded: YYYY-MM-DD             # REQUIRED at conclusion (gate-checked)
+kind: question | candidate-system # optional, default question — see below
 success: <one line — what result would settle it>     # optional
 uses: [2026-06-01-gpu-pc]         # optional — experiments whose code this reuses
 extends: 2026-05-12-plain-ncc     # optional — prior experiment this builds on
+artifact: <url>                   # optional — published claude.ai artifact for this experiment
 ---
 ```
 
@@ -151,7 +238,10 @@ Headings, fixed order, omitted when empty (never left blank): `Question`
 (required — full framing), `Approach`, `Data` (required once data exists —
 what `keep/` holds and why, plus the exact `regen/` rebuild command; this
 IS the regen manifest), `Findings` (required once runs exist — every
-claim cites run ids), `What didn't work`, `Recommendations`
+claim cites run ids), `Dead ends & ruled out` (required once anything has
+been ruled out — what was tried, set aside, and why; **read before
+re-opening any of those threads** — the single cheapest anti-rework
+device), `Recommendations`
 (conclusion-time), `Caveats`, `Open questions`. Closing line:
 `History: notebook/ — catch up with `cat notebook/*.md``. No run-by-run
 narrative here — the README is rewritten freely; narrative is notebook/'s
@@ -165,6 +255,41 @@ contradict the standing verdict, update the README in the same commit as
 the entry; the commit lint flags a contradicting entry that leaves the
 README untouched, and the status line counts experiments with ≥2 entries
 newer than their README's last commit (`unreflected-runs`).
+
+## Candidate systems (`kind: candidate-system`)
+
+An exploratory **alternative architecture** — a whole candidate pipeline
+or subsystem, not a question-shaped experiment — still lives under
+`experiments/` (quarantine for free: its docs can't be mistaken for
+current truth, the isolation hook keeps production from importing it, the
+promotion path already exists). Mark it `kind: candidate-system` in the
+README front-matter. That buys three exemptions and imposes three
+requirements:
+
+- *Exempt from*: the dated dir name, the `notebook/runNNN` structure, and
+  the store trio — a candidate has code, design docs, and a `results/`,
+  not numbered runs.
+- *Requires*: (1) a **document map** section in the README — one line per
+  file in the dir saying what it is; (2) a **`Dead ends & ruled out`**
+  register ("read this before re-opening any of those threads");
+  (3) a **verdict on conclusion** — `status: adopted` (its architecture
+  docs are copied into `docs/system/` chapters + a `PROMOTIONS.md` line),
+  `retired` (one line in the playbook's retired registry naming the git
+  tag that preserves it), or `parked` (README status flip only, with the
+  unpark condition stated).
+
+Its own core docs (architecture, data flow) live **inside its dir** as
+ordinary files while it's a candidate — never in `docs/system/`, or the
+spine acquires a second, competing "how it works now."
+
+## Experiment figures (`experiments/<name>/figures/`)
+
+Reviewed deliverable images — annotated overlays, comparison grids,
+anything the human actually looked at or an artifact embeds — are
+committed under the experiment's `figures/`, size-capped (5MB/file,
+hook-enforced). Raw outputs still never leave the store; `figures/` holds
+only what was curated for human eyes. Name figures after their run when
+they belong to one (`run003-overlay.png`).
 
 ## Notebook entries (`experiments/<name>/notebook/runNNN[-slug].md`)
 

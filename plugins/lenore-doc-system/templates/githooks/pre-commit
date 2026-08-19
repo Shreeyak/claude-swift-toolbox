@@ -2,7 +2,12 @@
 # Lenore doc system — pre-commit
 # Enforces: (1) immutability of docs/journal, docs/notes, experiments/*/notebook
 #           (2) deny-filename for tracking docs (state.md, decisions.md, ...)
-#           (3) prose-only docs/ (additions must be .md/.html/image/.gitkeep)
+#           (3) closed docs/ layout + extension rules + 5MB size cap:
+#               top-level docs/ children are a fixed set (spine files + known
+#               dirs); prose everywhere, figures + diagram sources
+#               (.d2/.excalidraw/.mmd/.py) beside spine chapters and inside
+#               dated note bundles, data evidence (.csv/.json) only inside
+#               bundles; note bundles are dated dirs with an index.md
 #           (4) no symlinks/gitlinks under docs/ or experiments/ (except
 #               AGENTS.md and each experiment's data -> ../../data/... symlink)
 #           (5) shape of new journal/notes/bugs .md files (caps, line-1 summary)
@@ -26,6 +31,10 @@
 #               the store dir data/experiments/<a>.
 #           (11) experiments/PROMOTIONS.md is append-only: modifications must
 #               keep the old content as a prefix; deletion is blocked.
+#           (12) proposal shape: every staged docs/proposals/*.md carries a
+#               front-matter status: proposed|accepted|deferred|superseded|
+#               implemented (proposals are the one revisable dated class —
+#               the status field is what makes that safe).
 set -euo pipefail
 
 [ "${SKIP_DOC_HOOKS:-0}" = "1" ] && exit 0
@@ -168,28 +177,128 @@ if [ -n "$added" ]; then
   done <<< "$added"
 fi
 
-# --- (3) Prose-only docs/ ------------------------------------------------
+# --- (3) Closed docs/ layout, extension rules, size cap -------------------
+# docs/ is a closed set. Extensions vary by area: prose everywhere; figures
+# and their editable sources beside spine chapters and inside note bundles;
+# small data evidence only inside bundles. Big bytes go to the store.
+DOCS_MAX_BYTES=5242880
+ext_err() {  # ext_err <file> <allowed-description>
+  echo "error: pre-commit (docs layout): $1 has a disallowed extension here" >&2
+  echo "  $2" >&2
+  echo "  code -> scripts/ or experiments/<name>/ ; run outputs -> data/experiments/<name>/out/ ;" >&2
+  echo "  large/binary evidence -> the gitignored store (data/) ; throwaway -> tmp/." >&2
+  fail=1
+}
 if [ -n "$added" ]; then
   while IFS= read -r f; do
     [ -z "$f" ] && continue
     lower_f=$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')
+    base=$(basename "$f")
+    [ "$base" = ".gitkeep" ] && continue
+    # Size cap for docs/ and experiments/ — git is for prose, code, and
+    # curated figures; heavyweight bytes live in the store.
     case "$lower_f" in
-      docs/*)
-        base=$(basename "$f")
-        if [ "$base" = ".gitkeep" ]; then
+      docs/*|experiments/*)
+        blob_size=$(git cat-file -s ":$f" 2>/dev/null || echo 0)
+        if [ "$blob_size" -gt "$DOCS_MAX_BYTES" ]; then
+          echo "error: pre-commit (size cap): $f is $((blob_size / 1048576))MB — max 5MB under docs/ and experiments/" >&2
+          echo "  put the bytes in the gitignored store (data/...) and commit a pointer or a downscaled figure." >&2
+          fail=1
           continue
         fi
-        ext=$(printf '%s' "$f" | sed -n 's/.*\.\([A-Za-z0-9]*\)$/\1/p' | tr '[:upper:]' '[:lower:]')
+        ;;
+    esac
+    case "$lower_f" in docs/*) ;; *) continue ;; esac
+    rest=${lower_f#docs/}
+    rest_orig=${f#*/}   # original case, for git index lookups
+    ext=$(printf '%s' "$lower_f" | sed -n 's/.*\.\([a-z0-9]*\)$/\1/p')
+    if [ "$rest" = "${rest%%/*}" ]; then
+      # A file directly under docs/ — only the hub files live here.
+      case "$rest" in
+        claude.md|agents.md|system.md|caveats.md|playbook.md) ;;
+        *)
+          echo "error: pre-commit (closed layout): docs/$rest_orig is not part of the docs/ layout" >&2
+          echo "  docs/ top level is a closed set: CLAUDE.md, system.md, caveats.md, playbook.md, plus" >&2
+          echo "  the dirs system/ caveats/ playbook/ proposals/ notes/ journal/ bugs/ tasks/ desk/." >&2
+          echo "  Route by question: how it works now -> system; where it fails -> caveats; procedures/" >&2
+          echo "  tools/adopted research -> playbook; designed-not-committed -> proposals/; dated" >&2
+          echo "  evidence/thinking -> notes/; unsure -> notes/." >&2
+          fail=1
+          ;;
+      esac
+      continue
+    fi
+    seg1=${rest%%/*}
+    case "$seg1" in
+      system|caveats|playbook)
         case "$ext" in
-          md|html|png|jpg|jpeg|gif|svg|webp) ;;
-          *)
-            echo "error: pre-commit (prose-only docs/): $f has a disallowed extension for docs/" >&2
-            echo "  docs/ holds prose and images only (.md .html .png .jpg .jpeg .gif .svg .webp)." >&2
-            echo "  code -> scripts/ or experiments/<name>/ ; run outputs -> data/experiments/<name>/out/ ;" >&2
-            echo "  throwaway -> tmp/ (gitignored)." >&2
+          md|html|png|jpg|jpeg|gif|svg|webp|d2|excalidraw|mmd|py) ;;
+          *) ext_err "$f" "spine chapter dirs hold prose, figures, and the figures' editable sources (.md .html images .d2 .excalidraw .mmd .py)." ;;
+        esac
+        ;;
+      proposals)
+        case "$rest" in
+          proposals/*/*)
+            echo "error: pre-commit (proposals): $f — docs/proposals/ is flat (dated .md files, no subdirs)" >&2
             fail=1
+            continue
             ;;
         esac
+        if ! printf '%s' "$base" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9][a-z0-9-]*\.md$'; then
+          echo "error: pre-commit (proposals): $f — proposals are dated files named YYYY-MM-DD-topic.md" >&2
+          fail=1
+        fi
+        ;;
+      notes)
+        sub=${rest#notes/}
+        case "$sub" in
+          */*)
+            bundle=${sub%%/*}
+            bundle_orig=${rest_orig#notes/}; bundle_orig=${bundle_orig%%/*}
+            if ! printf '%s' "$bundle" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]'; then
+              echo "error: pre-commit (note bundles): $f — a directory under docs/notes/ must be a dated" >&2
+              echo "  bundle named YYYY-MM-DD-<topic>/ (multi-file research/evidence efforts only)." >&2
+              fail=1
+              continue
+            fi
+            if ! git ls-files --cached -- "docs/notes/$bundle_orig/index.md" 2>/dev/null | grep -q . \
+               && ! git ls-files --cached -- "docs/notes/$bundle_orig/INDEX.md" 2>/dev/null | grep -q .; then
+              echo "error: pre-commit (note bundles): docs/notes/$bundle_orig/ has no index.md" >&2
+              echo "  every bundle carries an index.md: line 1 = one-sentence summary, then what each" >&2
+              echo "  member file is and where it came from. Stage it in this commit." >&2
+              fail=1
+            fi
+            case "$ext" in
+              md|html|png|jpg|jpeg|gif|svg|webp|d2|excalidraw|mmd|py|csv|json) ;;
+              *) ext_err "$f" "bundle members are prose, figures, figure sources, or small data evidence (.md .html images .d2 .excalidraw .mmd .py .csv .json)." ;;
+            esac
+            ;;
+          *)
+            case "$ext" in
+              md|html) ;;
+              *) ext_err "$f" "single notes are .md or .html; figures/sources/data ride in a dated bundle dir (docs/notes/YYYY-MM-DD-topic/)." ;;
+            esac
+            ;;
+        esac
+        ;;
+      journal|bugs|tasks)
+        case "$ext" in
+          md) ;;
+          *) ext_err "$f" "docs/$seg1/ holds .md files only." ;;
+        esac
+        ;;
+      desk) ;;   # gitignored; nothing staged here is ours to shape
+      reference)
+        echo "error: pre-commit (closed layout): docs/reference/ is retired" >&2
+        echo "  external-tool how-tos and procedures -> docs/playbook.md; internal explanations" >&2
+        echo "  -> docs/system/ chapters; dated research -> docs/notes/." >&2
+        fail=1
+        ;;
+      *)
+        echo "error: pre-commit (closed layout): docs/$seg1/ is not a known docs/ directory" >&2
+        echo "  the set is closed: system/ caveats/ playbook/ proposals/ notes/ journal/ bugs/ tasks/ desk/." >&2
+        echo "  New homes are a design change, not a filing decision — when unsure, file a dated note." >&2
+        fail=1
         ;;
     esac
   done <<< "$added"
@@ -260,8 +369,15 @@ if [ -n "$added" ]; then
   while IFS= read -r f; do
     [ -z "$f" ] && continue
     lower_f=$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')
+    # Inside a note bundle, only index.md carries the line-1 summary; other
+    # members are arbitrary evidence (external agents' reports, data, figures).
     case "$lower_f" in
-      docs/journal/*.md|docs/notes/*.md|docs/bugs/*.md) ;;
+      docs/notes/*/*)
+        case "$(basename "$lower_f")" in index.md) ;; *) continue ;; esac
+        ;;
+    esac
+    case "$lower_f" in
+      docs/journal/*.md|docs/notes/*.md|docs/notes/*/index.md|docs/bugs/*.md) ;;
       *)
         is_notebook_entry "$lower_f" || continue
         # Notebook entries: runNNN[-slug].md; `# runNNN[-slug] — date` header
@@ -368,7 +484,10 @@ if [ -n "$exp_readmes" ]; then
     [ -z "$f" ] && continue
     staged=$(git show ":$f" 2>/dev/null) || continue
     new_status=$(fm_field "$staged" status | tr '[:upper:]' '[:lower:]')
-    case "$new_status" in concluded|shelved) ;; *) continue ;; esac
+    # question experiments conclude as concluded/shelved; candidate systems
+    # (kind: candidate-system) as adopted/retired. parked is a light flip —
+    # no gate. All four terminal states need verdict + date + journal entry.
+    case "$new_status" in concluded|shelved|adopted|retired) ;; *) continue ;; esac
     old_content=$(git show "$AGAINST:$f" 2>/dev/null || true)
     old_status=$(fm_field "$old_content" status | tr '[:upper:]' '[:lower:]')
     [ "$old_status" = "$new_status" ] && continue   # not flipped in this commit
@@ -506,6 +625,29 @@ case "$promo_status" in
     esac
     ;;
 esac
+
+# --- (12) Proposal status field ---------------------------------------------
+# Proposals are the ONE revisable dated class (a plan, not a record); the
+# front-matter status: is what makes that safe — the status surface and the
+# task pointer both key off it. Every staged proposal must carry a valid one.
+prop_files=$(git diff --cached --name-only --diff-filter=AM "$AGAINST" -- 'docs/proposals/*.md' 2>/dev/null || true)
+if [ -n "$prop_files" ]; then
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    staged=$(git show ":$f" 2>/dev/null) || continue
+    pstatus=$(fm_field "$staged" status | tr '[:upper:]' '[:lower:]')
+    case "$pstatus" in
+      proposed|accepted|deferred|superseded|implemented) ;;
+      *)
+        echo "error: pre-commit (proposals): $f needs front-matter 'status: proposed|accepted|deferred|superseded|implemented'" >&2
+        echo "  (got: '${pstatus:-<missing>}'). Proposals are revisable BECAUSE the status makes their" >&2
+        echo "  authority explicit; accepted -> becomes an openspec change; implemented -> conclusions" >&2
+        echo "  land in docs/system/ or docs/playbook.md." >&2
+        fail=1
+        ;;
+    esac
+  done <<< "$prop_files"
+fi
 
 # --- (10) Experiment rename warning (never blocks) -------------------------
 # The store dir is keyed by experiment name; renaming experiments/<a>/ to

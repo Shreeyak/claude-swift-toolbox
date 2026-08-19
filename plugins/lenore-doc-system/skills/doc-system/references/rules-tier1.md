@@ -17,7 +17,24 @@
   never edited, never given IDs or statuses, never treated as a source
   of current truth.
 - Current truth lives ONLY in openspec/specs/ (updated in the same
-  commit as the code), this file's invariants, and experiment READMEs.
+  commit as the code), this file's invariants, experiment READMEs, and
+  the docs/ spine: docs/system.md + docs/system/ chapters (how it works
+  now — update a chapter in the same commit that falsifies it),
+  docs/caveats.md (where it fails now — stable C<n> IDs, each entry a
+  Validity ladder: Confirmed / Mechanism / Retracted, read in order),
+  docs/playbook.md (procedures, evaluated tools with use-when +
+  last-verified, adopted research conclusions).
+- Before drafting a proposal, design, or experiment, read
+  docs/system/premises.md — the numbered ground rules (P1…) about the
+  product, instrument, and operator that hold regardless of
+  implementation. State which premise IDs the design rests on or bends.
+- Designed-but-not-committed work goes to docs/proposals/
+  YYYY-MM-DD-topic.md — the ONE revisable dated class, front-matter
+  status: proposed|accepted|deferred|superseded|implemented
+  (hook-checked). Create via scripts/lenore-docs.py proposal — it also
+  appends the task pointer to project.md; a proposal without a pointer
+  is unreachable and gets flagged. accepted -> becomes an openspec
+  change; implemented -> conclusions land in the spine.
 - Cross-references: cite commit hashes; name dated files or experiment
   folders in plain words. One-way only. Never IDs, never code→doc
   links, never link-consistency checks.
@@ -27,9 +44,15 @@
   project.md is edited at landings, items graduating only with the
   user's confirmation. Entries: one-line title + ≤5 lines context; more
   becomes a note.
-- docs/notes/YYYY-MM-DD-topic.md for all ad-hoc artifacts, including
-  architecture snapshots (stamp the source commit). Immutable once
-  committed.
+- docs/notes/YYYY-MM-DD-topic.md for all ad-hoc dated artifacts and for
+  anything you're unsure how to file (the escape hatch — a dated note is
+  never wrong). Immutable once committed. Research output (literature/
+  online surveys) is named YYYY-MM-DD-research-<topic>.md. A note may be
+  a DIRECTORY (dated bundle with an index.md) only when it holds members
+  that are not your own prose — downloaded sources, .csv/.json evidence,
+  figures + sources, other agents' reports; commit the bundle when the
+  effort concludes. Papers/PDFs are never committed: bytes go to
+  data/library/<topic>/ in the store, listed in the note by store path.
 - Bugs: when a bug is noticed — by an agent mid-task or the user at
   any time — file docs/bugs/YYYY-MM-DD-topic.md immediately: one-line
   symptom, then ≤5 lines (file anchor, repro, suspected cause). Do not
@@ -49,28 +72,47 @@
   read the README, then cat notebook/*.md. Shapes: docs/CLAUDE.md.
 - For experiment outcomes, query live:
   grep -H "^verdict:" experiments/*/README.md
-- docs/ contains prose and images only: .md, .html, images (a
-  pre-commit hook enforces this). Experiments live at repo root; their
-  bytes live in the /data/ store, joined to notebook entries by run id.
+- docs/ is a CLOSED layout (hook-enforced): top level holds only
+  CLAUDE.md, system.md, caveats.md, playbook.md and the dirs system/
+  caveats/ playbook/ proposals/ notes/ journal/ bugs/ tasks/ desk/.
+  Never invent a new docs/ home — route by question, or file a note.
+  Prose everywhere; figures + their editable sources (.d2/.excalidraw/
+  .mmd/.py) beside spine chapters and inside note bundles; .csv/.json
+  only inside bundles; 5MB/file cap. Experiments live at repo root;
+  their bytes live in the /data/ store, joined to notebook entries by
+  run id; curated human-reviewed images go in experiments/<name>/figures/.
 - The first line of every note and journal entry is a one-sentence
   summary — browse.py displays these. HTML notes: an HTML comment at
   the top with the summary, plus "published: <url>" if uploaded as a
   web artifact. Docs built FOR the user (reports, diagrams, artifacts)
   are notes like any other.
-- Prefer scripts/lenore-docs.py (note|bug|journal|task, body via
-  heredoc) for creating doc entries — it generates dated filenames,
-  enforces shape caps with explanatory errors, and links task + backing
-  note atomically. Plain Write stays valid.
+- Prefer scripts/lenore-docs.py (note|bug|journal|task|proposal, body
+  via heredoc) for creating doc entries — it generates dated filenames,
+  enforces shape caps with explanatory errors, links task + backing
+  note (and proposal + pointer) atomically, and surfaces related prior
+  work (recall) when creating proposals and experiments. Plain Write
+  stays valid.
 - Task entries in docs/tasks/project.md must be readable with none of
   this session's context: name the files, commits, and parameters — no
   "the fix" / "the sweep" shorthand. Context beyond 5 lines becomes a
   dated note the entry points to ("— details: notes/...").
 - Need an index of existing docs/experiments? Run
   scripts/browse.py --plain (or --json). Never write an index file.
-- docs/reference/<topic>.md holds living how-tos for external things
-  (tool integrations, workflow setups, research references). Named,
-  not dated; editable in place. Internal project thinking goes to
-  notes/, never here.
+- There is no docs/reference/: external-tool how-tos live in
+  docs/playbook.md (use-when + last-verified per tool); internal
+  explanations in docs/system/ chapters; dated research in notes/.
+- Experiments exploring a whole alternative architecture (not a
+  question) set kind: candidate-system in their README: exempt from
+  dated name/runNNN/store, required to carry a document-map section, a
+  "Dead ends & ruled out" register, and a terminal verdict
+  (adopted -> docs copied to docs/system/ + PROMOTIONS line;
+  retired -> playbook registry line naming the git tag; parked ->
+  status flip with the unpark condition). Their design docs stay INSIDE
+  their dir until adoption.
+- A published claude.ai artifact's URL is recorded where the file
+  lives: front-matter artifact: (proposals, experiment READMEs) or
+  "published: <url>" in an HTML file's top comment — the status line
+  flags committed HTML with no recorded URL.
 - Throwaway files — scratch scripts, hack-plans, one-off outputs — go
   in tmp/ (gitignored wholesale). Anything worth keeping graduates
   out of it. Never write scratch files anywhere else in the repo.

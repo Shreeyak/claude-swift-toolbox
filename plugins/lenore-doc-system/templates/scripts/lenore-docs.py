@@ -8,9 +8,15 @@ convenient path, not a gate. The git hooks are the enforcement layer.
 
 Usage (body is read from stdin — use a heredoc — or --body-file):
 
-  lenore-docs note "One-sentence summary" [--topic slug] [--supersedes notes/OLD.md] <<'EOF'
+  lenore-docs note "One-sentence summary" [--topic slug] [--supersedes notes/OLD.md]
+              [--research] [--bundle] <<'EOF'
   Full prose body...
   EOF
+      --research prefixes the slug with "research-" (the convention for
+      literature/online research output). --bundle creates a dated DIRECTORY
+      docs/notes/YYYY-MM-DD-<slug>/ with the body as its index.md — for
+      efforts that produce multiple files (downloaded sources, data
+      evidence, multi-agent reports); add member files beside index.md.
 
   lenore-docs bug "One-sentence summary of the bug" [--topic slug] <<'EOF'
   Repro, expected vs actual, suspicion...
@@ -22,6 +28,14 @@ Usage (body is read from stdin — use a heredoc — or --body-file):
       Inline context must be <=5 lines. Longer context: pass --note and the
       body becomes a dated note in docs/notes/, with a pointer appended to
       the task line automatically.
+
+  lenore-docs proposal "Title" [--topic slug] [--someday] <<'EOF'
+  The design: motivation, approach, done condition...
+  EOF
+      Creates docs/proposals/YYYY-MM-DD-<slug>.md (status: proposed) AND
+      appends a pointer line to docs/tasks/project.md in the same call —
+      a proposal without a task pointer is unreachable. Also runs the
+      recall step (semantic search on the title) so prior work surfaces.
 
   lenore-docs experiment "short name" [--question "one line"]
       Creates experiments/YYYY-MM-DD-<slug>/ with a README skeleton,
@@ -153,7 +167,23 @@ def cmd_note(root, args, body):
     if args.supersedes:
         rel = resolve_supersedes(root, args.supersedes)
         body = f"Revises {rel}.\n\n{body}" if body else f"Revises {rel}."
-    name = f"{datetime.now():%Y-%m-%d}-{slugify(args.summary, args.topic)}.md"
+    slug = slugify(args.summary, args.topic)
+    if args.research and not slug.startswith("research-"):
+        slug = "research-" + slug
+    if args.bundle:
+        dirname = f"{datetime.now():%Y-%m-%d}-{slug}"
+        bundle = root / "docs/notes" / dirname
+        if bundle.exists():
+            die(f"lenore-docs: {bundle.relative_to(root)} already exists.")
+        bundle.mkdir(parents=True)
+        path = write_doc(bundle / "index.md", args.summary, body)
+        print(path.relative_to(root))
+        print("Add member files beside index.md (prose/figures/sources/.csv/.json; PDFs and", file=sys.stderr)
+        print("big bytes -> data/library/ or the store, listed in index.md). List every member", file=sys.stderr)
+        print("in index.md with one line on what it is. Commit the bundle when the effort", file=sys.stderr)
+        print("concludes — committed members are immutable like any note.", file=sys.stderr)
+        return
+    name = f"{datetime.now():%Y-%m-%d}-{slug}.md"
     path = write_doc(fresh_path(root / "docs/notes", name), args.summary, body)
     print(path.relative_to(root))
 
@@ -267,6 +297,72 @@ def cmd_task(root, args, body):
         print(f"docs/{note_rel}")
 
 
+def recall(root, query):
+    """Surface prior knowledge at the two moments it changes behavior:
+    starting an experiment and writing a proposal. The hits print in this
+    tool's own output so the calling agent can't miss them — no memory or
+    goodwill involved."""
+    search = root / "scripts" / "docs-search.py"
+    if not search.is_file():
+        return
+    if not (root / ".docs-embeddings").is_dir():
+        print("recall: no semantic index — grep docs/notes/, docs/proposals/, and", file=sys.stderr)
+        print("experiment READMEs for prior work on this topic before designing.", file=sys.stderr)
+        return
+    try:
+        out = subprocess.run(
+            ["uv", "run", str(search), query, "-k", "5"],
+            cwd=root, capture_output=True, text=True, timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        print("recall: semantic search failed — fall back to grep + scripts/browse.py --plain.",
+              file=sys.stderr)
+        return
+    if out.returncode == 0 and out.stdout.strip():
+        print("recall — related prior knowledge (read before designing):", file=sys.stderr)
+        print(out.stdout.rstrip(), file=sys.stderr)
+    else:
+        print("recall: semantic search returned nothing usable — grep before assuming novelty.",
+              file=sys.stderr)
+
+
+PROPOSAL_TEMPLATE = """\
+---
+status: proposed
+created: {date}
+artifact:
+---
+
+# {title}
+
+{body}
+"""
+
+
+def cmd_proposal(root, args, body):
+    check_summary(args.summary)
+    if not body:
+        die(
+            "lenore-docs: a proposal needs a body (motivation, approach, done condition) —",
+            "pipe it via a heredoc. A title alone is a task line, not a proposal.",
+        )
+    slug = slugify(args.summary, args.topic)
+    name = f"{datetime.now():%Y-%m-%d}-{slug}.md"
+    path = fresh_path(root / "docs/proposals", name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(PROPOSAL_TEMPLATE.format(
+        date=f"{datetime.now():%Y-%m-%d}", title=args.summary, body=body))
+    rel = path.relative_to(root / "docs").as_posix()
+    heading = "## Someday" if args.someday else "## Next"
+    entry = f"- Proposal: {args.summary} — details: {rel}"
+    append_to_section(root / "docs/tasks/project.md", heading, [entry])
+    print(path.relative_to(root))
+    print(f"docs/tasks/project.md ({heading[3:]}) — pointer appended")
+    print("Keep status: current (proposed|accepted|deferred|superseded|implemented) — the", file=sys.stderr)
+    print("hook requires it; doc-status flags proposed/deferred proposals with no task pointer.", file=sys.stderr)
+    recall(root, args.summary)
+
+
 EXPERIMENT_README = """\
 ---
 status: exploring
@@ -308,6 +404,7 @@ def cmd_experiment(root, args, body):
           file=sys.stderr)
     print("and the data symlink. Templates: doc-system skill, references/experiment-templates.md.",
           file=sys.stderr)
+    recall(root, question)
 
 
 def check_worktree_store(root):
@@ -393,10 +490,17 @@ def main():
         p.add_argument("--body-file", help="read body from a file instead of stdin")
         if name == "note":
             p.add_argument("--supersedes", help="older note this one revises (notes/... or docs/notes/...)")
+            p.add_argument("--research", action="store_true", help="research output — slug gets the research- prefix")
+            p.add_argument("--bundle", action="store_true", help="create a dated bundle DIR with the body as index.md")
         if name == "task":
             p.add_argument("--someday", action="store_true", help="file under ## Someday instead of ## Next")
             p.add_argument("--branch", action="store_true", help="append to this branch's task file instead of project.md")
             p.add_argument("--note", action="store_true", help="body becomes a backing note in docs/notes/, auto-linked")
+    p = sub.add_parser("proposal")
+    p.add_argument("summary", help="proposal title (one line)")
+    p.add_argument("--topic", help="filename slug override")
+    p.add_argument("--body-file", help="read body from a file instead of stdin")
+    p.add_argument("--someday", action="store_true", help="task pointer goes under ## Someday instead of ## Next")
     p = sub.add_parser("experiment")
     p.add_argument("summary", help="short experiment name (becomes the dated dir slug and README title)")
     p.add_argument("--question", help="one-line question for the README front-matter (defaults to the name)")
@@ -409,7 +513,7 @@ def main():
     root = repo_root()
     body = read_body(args) if args.cmd not in ("experiment", "run") else ""
     {"note": cmd_note, "bug": cmd_bug, "journal": cmd_journal, "task": cmd_task,
-     "experiment": cmd_experiment, "run": cmd_run}[args.cmd](root, args, body)
+     "proposal": cmd_proposal, "experiment": cmd_experiment, "run": cmd_run}[args.cmd](root, args, body)
 
 
 if __name__ == "__main__":

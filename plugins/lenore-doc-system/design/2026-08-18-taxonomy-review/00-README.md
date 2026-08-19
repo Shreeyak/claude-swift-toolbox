@@ -36,6 +36,11 @@ recommended here.
   gaps for deferred proposals, cross-cutting premises, multi-file
   bundles, diagram sources, artifact URLs, status surface. Six ranked
   design changes + four user practices to adopt wholesale.
+- `07-final-design.md` — the adopted design as shipped (plugin v0.5.0,
+  2026-08-20): system/caveats/playbook spine + premises, proposals/,
+  research naming + bundles, data/library, candidate systems, figures/,
+  artifact URLs, recall wiring, closed-layout enforcement — with each
+  deviation from 05 marked to its source (06 review or user answer).
 
 ## Standing constraints (user feedback, binding)
 

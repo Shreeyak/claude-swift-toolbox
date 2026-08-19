@@ -1,9 +1,14 @@
 # lenore-doc-system
 
 Documentation-as-history for AI-maintained repos: dated, immutable files;
-current truth kept separate from history; every high-damage rule enforced
-by committed git hooks instead of prose discipline; a desk for human
-retrieval; a gated landing flow for long-lived branches.
+current truth kept separate from history in a three-file spine —
+`docs/system` (how it works now, incl. the mandatory-read premises),
+`docs/caveats.md` (where it fails now, stable IDs + Validity ladders),
+`docs/playbook.md` (procedures, evaluated tools, adopted research) —
+plus revisable status-carrying `docs/proposals/`; a closed, hook-enforced
+docs/ layout; every high-damage rule enforced by committed git hooks
+instead of prose discipline; a desk for human retrieval; a gated landing
+flow for long-lived branches.
 
 Full doctrine (rationale, design history, adversarial-review ledger):
 https://claude.ai/code/artifact/fe938177-22fc-43d6-be6d-842ece97226b
@@ -31,12 +36,16 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
 
 ## Tooling installed into each repo
 
-- `scripts/lenore-docs.py` — CLI for creating notes/bugs/journal/tasks:
-  dated filenames, shape caps with explanatory errors, `--supersedes`,
-  atomic task+backing-note+pointer (`task --note`). Body via heredoc.
+- `scripts/lenore-docs.py` — CLI for creating notes/bugs/journal/tasks/
+  proposals: dated filenames, shape caps with explanatory errors,
+  `--supersedes`, `--research`/`--bundle` for research notes, atomic
+  task+backing-note+pointer (`task --note`) and proposal+task-pointer.
+  Body via heredoc.
   Also `experiment` (dated dir + README skeleton + notebook/ + data
   symlink + store trio under the gitignored `/data/` root) and `run`
   (reserves the next runNNN id by creating its store out/ dir).
+  `proposal` and `experiment` both end with a recall step — top semantic
+  hits for the title/question print in the tool's own output.
 - `scripts/browse.py` / `scripts/doc-status.sh` — live index and the
   one-line status (journal age, stale tasks, bugs, desk, semantic-index
   staleness, dangling pointers); the plugin's own SessionStart hook runs
@@ -45,7 +54,9 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   optional.
 - `.githooks/{pre-commit,commit-msg,pre-merge-commit,pre-push}` — the
   enforcement layer: immutability (journal, notes, experiment notebook
-  entries), deny-filenames, prose-only docs/, shape of new entries
+  entries), deny-filenames, the closed docs/ layout (fixed top-level
+  set, per-area extension rules incl. diagram sources and note bundles,
+  5MB size cap), proposal `status:` front-matter, shape of new entries
   (including notebook entries: runNNN names, a header naming its own
   file, line-1 outcome sentence, unique numeric run ids per experiment),
   the append-only PROMOTIONS.md ledger,

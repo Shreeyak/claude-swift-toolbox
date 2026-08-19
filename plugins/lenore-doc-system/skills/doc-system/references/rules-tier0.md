@@ -16,7 +16,8 @@
 - No tracking docs of any kind: no decisions.md, state.md, STATUS.md,
   CHANGELOG.md, HANDOFF.md, TASKS.md. Current truth (if this repo has
   any beyond the code) lives in CLAUDE.md invariants only.
-- No docs/tasks/, docs/bugs/, docs/reference/, or desk/ machinery —
+- No docs/tasks/, docs/bugs/, spine (system/caveats/playbook),
+  proposals/, or desk/ machinery —
   those exist to manage long-lived branches and multiple sessions.
   If this repo grows into needing them, that's the signal to migrate
   to Tier 1 (see the doc-system skill's setup command).

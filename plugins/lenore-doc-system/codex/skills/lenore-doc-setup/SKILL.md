@@ -27,7 +27,8 @@ offline/no-network fallback in Codex's default sandbox):
 - Skill (agent-facing summary): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/f5a3c81eb69cb46361f1beb45fe6b336c621d5a0/plugins/lenore-doc-system/skills/doc-system/SKILL.md`
 - Tier 1 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/f5a3c81eb69cb46361f1beb45fe6b336c621d5a0/plugins/lenore-doc-system/skills/doc-system/references/rules-tier1.md`
 - Tier 0 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/f5a3c81eb69cb46361f1beb45fe6b336c621d5a0/plugins/lenore-doc-system/skills/doc-system/references/rules-tier0.md`
-- Experiment README + notebook-entry templates: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/f5a3c81eb69cb46361f1beb45fe6b336c621d5a0/plugins/lenore-doc-system/skills/doc-system/references/experiment-templates.md`
+- Experiment README + notebook-entry templates (incl. candidate-system): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/f5a3c81eb69cb46361f1beb45fe6b336c621d5a0/plugins/lenore-doc-system/skills/doc-system/references/experiment-templates.md`
+- Setup command (spine-stub contents + migration steps): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/f5a3c81eb69cb46361f1beb45fe6b336c621d5a0/plugins/lenore-doc-system/commands/setup.md`
 - Full doctrine (rationale, human-readable): https://claude.ai/code/artifact/fe938177-22fc-43d6-be6d-842ece97226b
 - Pre-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/f5a3c81eb69cb46361f1beb45fe6b336c621d5a0/plugins/lenore-doc-system/templates/githooks/pre-commit`
 - Pre-push hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/f5a3c81eb69cb46361f1beb45fe6b336c621d5a0/plugins/lenore-doc-system/templates/githooks/pre-push`
@@ -64,11 +65,20 @@ described in this prompt.
    `.codex/hooks.json` registers
    `scripts/doc-status.sh` — repair anything missing, since a fresh clone
    with the marker in `CLAUDE.md` still needs this repaired locally.
-2. Ask which tier: Tier 1 (full layout — journal/notes/reference/tasks/
-   bugs, openspec, experiments, desk) or Tier 0 (small repo — `docs/log/`
+2. Ask which tier: Tier 1 (full layout — the system/caveats/playbook
+   spine, proposals, journal/notes/tasks/bugs, openspec, experiments,
+   desk) or Tier 0 (small repo — `docs/log/`
    only). Default to Tier 1 unless this is clearly a small/experiment repo.
-3. For Tier 1: create `docs/{journal,notes,reference,tasks,bugs}/`,
-   `docs/desk/`, and `tmp/`; create `docs/tasks/project.md` with `## Next`
+3. For Tier 1: create `docs/{journal,notes,proposals,tasks,bugs,system}/`,
+   `docs/desk/`, and `tmp/` (never `docs/reference/` — retired; the hook
+   rejects it); seed the spine stubs if absent — `docs/system.md`
+   (one-page hub map), `docs/system/premises.md` (numbered P<n> ground
+   rules, mandatory pre-design read), `docs/caveats.md` (stable C<n> IDs +
+   Validity ladders), `docs/playbook.md` (Procedures / Tools / Adopted
+   research conclusions / Retired candidates) — the exact stub contents
+   are in the Claude setup command at
+   `plugins/lenore-doc-system/commands/setup.md`, copy them from there;
+   create `docs/tasks/project.md` with `## Next`
    and `## Someday` headings if absent; fetch the four hook templates
    (pre-commit, pre-push, pre-merge-commit, commit-msg) into `.githooks/`
    and make them executable; fetch `browse.py`, `doc-status.sh`,
@@ -76,7 +86,8 @@ described in this prompt.
    `doc-lint-judge.md` into `scripts/`) into `scripts/` (executable);
    fetch `docs-CLAUDE.md`
    into `docs/CLAUDE.md`; append the `.gitignore` snippet (idempotent —
-   check its marker line); `mkdir -p data/datasets data/experiments`;
+   check its marker line); `mkdir -p data/datasets data/experiments
+   data/library`;
    create `experiments/PROMOTIONS.md` (append-only ledger, header +
    comment row); run `git config core.hooksPath .githooks` (stop
    and ask first if it's already set to something else, or `.githooks/`

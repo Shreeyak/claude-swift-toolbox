@@ -9,10 +9,15 @@ or deciding whether to search `docs/notes/` before starting new work.
 |---|---|
 | "Why is the code shaped like this?" | Recent `docs/journal/` files (`ls` is the index), then the relevant spec; cited hashes for code detail |
 | "What does feature X actually do today?" | `openspec/specs/<x>/` |
-| "What's the overall architecture?" | Newest architecture note in `docs/notes/` — or generate a fresh one, stamped with the source commit |
+| "What's the overall architecture / data flow / state model?" | `docs/system.md` (the hub map), then the named chapter in `docs/system/` |
+| "What must every design respect?" | `docs/system/premises.md` — the numbered P\<n\> ground rules; mandatory before any design/proposal/experiment |
+| "Where does the system fail / what are the known hazards?" | `docs/caveats.md` — stable C\<n\> IDs; read each entry's Validity ladder in order |
+| "How do we do X / which tool for X?" | `docs/playbook.md` — procedures, evaluated tools (use-when + last-verified), adopted research conclusions |
+| "What was designed but not built?" | `docs/proposals/` — front-matter `status:` says where each stands; `browse.py --plain` shows them with status |
+| "What research have we done on X?" | `ls docs/notes/ \| grep research`, or semantic search; adopted conclusions are already in the playbook/system with pointers back |
 | "What was I going to do next?" | `docs/tasks/` + open `openspec/changes/` folders |
 | "What's broken right now?" | `ls docs/bugs/` — always the live list; fixed bugs are gone (their record is the fix commit) |
-| "Did we ever try Y? What happened?" | `grep verdict: experiments/*/README.md`, then that README; `cat notebook/*.md` for the story, an entry's anchors to reproduce |
+| "Did we ever try Y? What happened?" | `grep verdict: experiments/*/README.md`, then that README; `cat notebook/*.md` for the story, an entry's anchors to reproduce; check the README's Dead ends & ruled out before re-opening a thread |
 | "What's happening on the other branches?" | Other `tasks/branch-*.md` files (sibling worktrees / `git show`) + newest journal entries |
 | "How has this project evolved?" | `docs/journal/` in date order — the narrative by construction; experiments appear inline with verdicts |
 | "What changed in the code last week?" | `git log` — commits are the changelog |
@@ -65,7 +70,8 @@ to be junk gets deleted (notes are deletable — see `doc-guidance.md`'s desk
 section for the deletion policy); a note that's merely old sinks down the
 newest-first `browse.py` listing; a note that's *wrong* misleads nobody,
 because notes are never authority — the routing table above sends every
-"what's true now" question to specs, `CLAUDE.md`, and experiment READMEs,
+"what's true now" question to specs, `CLAUDE.md`, the spine
+(system/caveats/playbook), and experiment READMEs,
 so an outdated note is by definition historical context, not a trap.
 
 ## Semantic search while coding — the rules

@@ -85,18 +85,102 @@ delete). Succession is discoverable both ways with zero infrastructure:
 date-sorted views surface the newer note above the older, and grepping an
 old note's filename finds its successors.
 
-## `docs/reference/` — living how-tos
+### Research notes and bundles
 
-For things *outside* the repo that must stay current: CLI-tool
-integrations, workflow setups, external API quirks, research summaries
-consulted repeatedly. Named (`ferry-cli-integration.md`), not dated, and
-**editable** — exempt from the immutability hook, updated in place when the
-external thing changes.
+Research output (literature surveys, online research) is a dated note
+named `YYYY-MM-DD-research-<topic>.md` — the `research-` token makes
+"show me our research" a one-liner (`ls docs/notes/ | grep research`) and
+a good semantic query. The note holds findings with sources; adopted
+conclusions graduate to the playbook or a system chapter with a pointer
+back; claims needing validation become experiments. That's the whole
+research lifecycle: dated evidence (immutable note) → empirical
+validation (experiment) → adopted conclusion (living spine).
 
-Routing: thinking about *this project* on a given day → `notes/` (dated,
-immutable). How to use *something external* → `reference/` (named,
-living). A stale reference doc fails loudly the moment it's followed, so
-its drift risk is low-damage.
+A note may be a **dated bundle directory** (`docs/notes/YYYY-MM-DD-topic/`)
+only when it will contain members that are *not prose authored by the
+filing agent*: downloaded sources, `.csv`/`.json` evidence, figures and
+their sources, reports from other agents/tools (codex output, external
+model advice). If everything is your own markdown, it's one file —
+split-for-tidiness bundles are rejected. Every bundle carries an
+`index.md` (hook-checked): line 1 = one-sentence summary, then one line
+per member saying what it is and where it came from. Members may be live
+progress files while the effort runs — commit the bundle when the effort
+concludes; committed members are then immutable like any note. Oversized
+or binary evidence goes to the store, listed in `index.md` by store path.
+
+## The spine — `docs/system` / `docs/caveats.md` / `docs/playbook.md`
+
+Three living, question-shaped homes for current truth beside the specs.
+Classified by the reader's question, not the content's topic:
+
+- **"How does it work now?" → `docs/system.md` + `docs/system/`.** The hub
+  file is a one-page map — what the system is plus one line per chapter;
+  a reader routes from it in ten seconds. Chapters (`architecture.md`,
+  `data-flow.md`, `state-transitions.md`, plus earned ones) carry the
+  substance and are updated **in the same commit that falsifies them** —
+  a system chapter that survived the commit is presumed current. Figures
+  live beside their chapter with their editable sources committed
+  (`.d2`, `.excalidraw`, `.mmd`, generator `.py`) — diagrams here are
+  iterated, not deposited, and a render without its source is a dead end.
+  Soft cap ~8 chapters (status line warns): merge before splitting.
+- **`docs/system/premises.md`** — the ground rules. Numbered entries
+  (`**P1 — <one sentence>**`, then `provenance:` + `consumers:` lines)
+  stating facts about the product, instrument, and operator that hold
+  regardless of implementation. Admission test: *would this still be true
+  if we rewrote the entire pipeline in another language tomorrow?* This
+  chapter has special standing: the root `CLAUDE.md` requires reading it
+  before any design/proposal/experiment and citing the P-IDs the design
+  rests on or bends. Soft cap ~15 — a premise list that grows into an
+  essay stops being read.
+- **"Where does it fail now?" → `docs/caveats.md`.** The registry of known
+  failure modes, limitations, and data hazards. Stable sequential IDs
+  (`## C4 — <title>`), never renumbered or reused — cite them as `per C4`.
+  Every entry carries a **Validity ladder**, read in order: `Confirmed:`
+  (what reproduces) → `Mechanism:` (current working explanation — the one
+  to work from) → `Retracted:` (earlier readings and why they were wrong).
+  Beliefs here reverse fast; the ladder is what stops an entry from
+  quietly asserting a retracted mechanism. Fixable defects are bugs, not
+  caveats; a bug graduates here only when accepted as a standing
+  limitation.
+- **"How do we do X?" → `docs/playbook.md`.** Procedures (build, release,
+  data capture), evaluated tools — one block each with a *use when* line
+  and a *last-verified* date — and adopted research conclusions (one
+  paragraph + a pointer to the dated research note; the survey itself
+  stays in notes). A retired-candidates registry lives here too: one line
+  per retired candidate system naming its git tag.
+
+`caveats.md` and `playbook.md` start as single files and become
+hub+chapter dirs (`docs/caveats/`, `docs/playbook/`) only when they
+outgrow one file. There is no `docs/reference/` — its old contents split
+into playbook (external tools/how-tos) and system chapters (internal
+explanations).
+
+## `docs/proposals/` — designed, not committed
+
+`YYYY-MM-DD-topic.md`, the **one revisable dated class**: a proposal is a
+plan, not a record, and plans get revised. What makes that safe is the
+hook-required front-matter `status: proposed | accepted | deferred |
+superseded | implemented` — authority is always explicit, and the status
+surface (`browse.py`, `doc-status.sh`) reads it.
+
+A proposal and its task pointer are one two-part artifact — the design
+carries the depth, the `project.md` line is how anyone ever reaches it.
+`lenore-docs.py proposal` creates both atomically; the status line flags
+`proposed`/`deferred` proposals with no pointer. Lifecycle: `accepted` →
+the design becomes an openspec change and the proposal freezes;
+`deferred` → the body states the unfreeze condition ("revisit after
+real-hardware capture"); `implemented` → conclusions land in the spine,
+pointer removed, file stays as history; `superseded` → the successor
+names it.
+
+## `data/library/` — papers and downloaded documents
+
+PDFs and downloaded documents are never committed (big, binary,
+unindexable, re-fetchable). Bytes go to `data/library/<topic>/` in the
+gitignored store; the knowledge that they exist goes to a dated research
+note (or a bundle's `index.md`) listing each one — title, URL/DOI, one
+line on why it was saved, store path. Search finds the note; the note
+says where the PDF lives.
 
 ## `experiments/` — trials (repo root, not under `docs/`)
 
@@ -141,8 +225,9 @@ framing), Approach (how to operate the experiment cold), Data (required
 once data exists — what `keep/` holds and why it's irreplaceable, plus
 the exact `regen/` rebuild command; this section IS the regen manifest),
 Findings (required once runs exist — current understanding, every claim
-citing run ids), What didn't work (dead ends with the run that killed
-each), Recommendations (conclusion-time: what production should adopt),
+citing run ids), Dead ends & ruled out (what was tried and set aside,
+with the run that killed each — read before re-opening any of those
+threads), Recommendations (conclusion-time: what production should adopt),
 Caveats, Open questions. Omitted sections are omitted, never left as
 empty headings. Closing line, fixed: `History: notebook/ — catch up with
 `cat notebook/*.md``. Rewritten freely as understanding changes — no
@@ -230,9 +315,39 @@ a shared dir inside experiments/ is a library with no owner.
 
 Isolation stays one-way: production never imports from or symlinks into
 `experiments/` (pre-commit rejects both; intra-experiments references are
-exempt). If a dir in `experiments/` has no question, it is not an
-experiment and gets flagged for relocation — integration workspaces and
-demo apps live in the normal repo structure.
+exempt). If a dir in `experiments/` has neither a question nor
+`kind: candidate-system`, it is not an experiment and gets flagged for
+relocation — integration workspaces and demo apps live in the normal
+repo structure.
+
+### Candidate systems (`kind: candidate-system`)
+
+An exploratory alternative architecture — a whole candidate pipeline, not
+a question with runs — lives under `experiments/` too: the question it
+answers is "should this replace the current system?", and the quarantine,
+isolation hook, and promotion machinery all apply unchanged. Mark the
+README `kind: candidate-system`. Exemptions: no dated dir name, no
+`notebook/runNNN` structure, no store trio — a candidate has code, design
+docs, and a committed `results/`. Requirements: (1) a **document map**
+README section — one line per file saying what it is; (2) a **`Dead ends
+& ruled out`** register — what was tried, set aside, and why; read before
+re-opening any of those threads; (3) a terminal verdict, gate-checked like
+any conclusion: `adopted` (its architecture docs are *copied* into
+`docs/system/` chapters, one PROMOTIONS.md line), `retired` (one line in
+the playbook's retired registry naming the preserving git tag, then the
+tree may be deleted), or `parked` (status flip with the unpark condition
+stated — no gate). Its core docs stay **inside its dir** until adoption —
+never in `docs/system/`, or the spine acquires a second, competing "how
+it works now."
+
+### `figures/` — curated human-reviewed images
+
+Images the human actually reviewed or an artifact embeds (annotated
+overlays, comparison grids) are committed at
+`experiments/<name>/figures/`, size-capped 5MB/file by the hook, named
+after their run when they belong to one. Raw outputs still never leave
+the store — `figures/` is deliberate curation, the committed counterpart
+of notebook artifact promotion for images the human consumed.
 
 The judgment lint checks new notebook entries for evidence anchors and
 flags an entry contradicting the README's `verdict:`/Findings while the

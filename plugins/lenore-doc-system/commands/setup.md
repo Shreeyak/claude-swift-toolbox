@@ -86,8 +86,9 @@ the plan, apply only after the user confirms.
 
 ## 2. Ask the tier (fresh install only)
 
-Ask the user: Tier 1 (real project — journal/notes/reference/tasks/bugs
-split, openspec, experiments, desk) or Tier 0 (small/experiment repo —
+Ask the user: Tier 1 (real project — the system/caveats/playbook spine,
+proposals, journal/notes/tasks/bugs split, openspec, experiments, desk)
+or Tier 0 (small/experiment repo —
 `docs/log/` only, no tracking machinery). Default to Tier 1 unless the repo
 is clearly a weekend/experiment repo, and say why you're defaulting that
 way.
@@ -102,10 +103,61 @@ exec this plugin's, or vice versa) rather than silently overwriting.
 
 **Tier 1:**
 
-- Create `docs/{journal,notes,reference,tasks,bugs}/`, `docs/desk/`, and
-  `tmp/` (each doc subdir gets a `.gitkeep` if needed for an empty dir to
-  exist, except `tmp/` which is gitignored wholesale and `docs/desk/`
-  which is also gitignored — see gitignore-snippet).
+- Create `docs/{journal,notes,proposals,tasks,bugs,system}/`, `docs/desk/`,
+  and `tmp/` (each doc subdir gets a `.gitkeep` if needed for an empty dir
+  to exist, except `tmp/` which is gitignored wholesale and `docs/desk/`
+  which is also gitignored — see gitignore-snippet). Never create
+  `docs/reference/` — it is retired; the closed-layout hook rejects it.
+- Seed the spine files if absent (each a stub the repo grows into — show
+  them in the proposal):
+  - `docs/system.md`:
+
+    ```markdown
+    # System — how it works now
+
+    One-page map. One line per chapter; substance lives in docs/system/.
+    Update a chapter in the same commit that falsifies it.
+
+    - system/premises.md — ground rules every design must satisfy (read before designing)
+    <!-- add chapters as they are earned: architecture.md, data-flow.md, state-transitions.md, ... -->
+    ```
+  - `docs/system/premises.md`:
+
+    ```markdown
+    # Premises — ground rules every design must satisfy
+
+    Numbered, stable, cited by ID (per P1). Admission test: would this
+    still be true if we rewrote the entire pipeline in another language
+    tomorrow? Soft cap ~15 entries.
+
+    <!-- **P1 — <one sentence>.**
+         provenance: <note/experiment that established it> · consumers: <who depends on it> -->
+    ```
+  - `docs/caveats.md`:
+
+    ```markdown
+    # Caveats — where it fails now
+
+    Known failure modes, limitations, data hazards. Stable IDs (## C1 — ...),
+    never renumbered. Every entry: a Validity ladder read in order —
+    Confirmed: / Mechanism: / Retracted:.
+    ```
+  - `docs/playbook.md`:
+
+    ```markdown
+    # Playbook — how we do things
+
+    ## Procedures
+
+    ## Tools
+    <!-- per tool: use when ... · last-verified YYYY-MM-DD · how to invoke -->
+
+    ## Adopted research conclusions
+    <!-- one paragraph each + pointer to the dated research note -->
+
+    ## Retired candidates
+    <!-- one line per retired candidate system: name · git tag · why -->
+    ```
 - Create `docs/tasks/project.md` with `## Next` and `## Someday` headings
   if it does not already exist.
 - Copy `templates/githooks/{pre-commit,pre-push,pre-merge-commit,commit-msg}`
@@ -143,9 +195,10 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   `experiments/*/data` and `experiments/*/out` instead of the single
   `/data/` store root), show the diff and propose updating the block.
 - Create the experiment store root: `mkdir -p data/datasets
-  data/experiments` (gitignored — it will not survive clones; the
-  activation check recreates it). In a linked worktree, symlink
-  `data -> <main worktree>/data` instead of creating real dirs.
+  data/experiments data/library` (gitignored — it will not survive
+  clones; the activation check recreates it; `library/` holds papers and
+  downloaded documents, listed by research notes). In a linked worktree,
+  symlink `data -> <main worktree>/data` instead of creating real dirs.
 - Create `experiments/PROMOTIONS.md` (committed, append-only — the
   pre-commit hook enforces that) with the header:
 
@@ -226,6 +279,23 @@ diffs — the migration steps:
   `docs/tasks/project.md` under Next/Someday.
 - Old reports/explorations/handoffs → `docs/notes/`, date-prefixed from
   git history.
+- `docs/reference/` (pre-2026-08-20 installs) → split per file, shown as
+  individually confirmable moves: external-tool how-tos into
+  `docs/playbook.md` (## Tools, with a last-verified date set to the
+  file's last commit date); internal explanations into `docs/system/`
+  chapters; anything that was really dated research into `docs/notes/`
+  with a date prefix from git history. Delete the empty dir last.
+- A top-level `research/` dir (user habit) → each research effort becomes
+  `docs/notes/YYYY-MM-DD-research-<topic>.md`, or a dated bundle dir if
+  multi-file; PDFs move to `data/library/<topic>/` and get listed in the
+  note. Date from git history.
+- `docs/proposals/` files without front-matter → propose adding
+  `status:` (infer from any status text in the body; default `proposed`)
+  and a task pointer line in `project.md` for each `proposed`/`deferred`
+  one.
+- Undated dirs in `experiments/` that are really alternative
+  architectures → propose `kind: candidate-system` front-matter + a
+  document-map README section instead of forcing the dated/runNNN shape.
 - `experiments/*/README.md` missing front-matter → propose adding
   `status`/`question`/`verdict`/`concluded` fields (question is required
   by the template). Legacy layout: propose renaming `runs/` to

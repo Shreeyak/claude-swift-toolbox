@@ -4,10 +4,12 @@
 # dependencies = ["textual"]
 # ///
 # usage: uv run scripts/browse.py [group] [--plain] [--json]
-# what it does: browses docs/desk, docs/journal, docs/notes, docs/reference,
-# docs/tasks, docs/bugs, docs/log, experiments/*/README.md, and scripts/ —
-# a TUI by default, or a plain-text/JSON index for agents (--plain/--json
-# skip the textual import entirely, so they work without it installed).
+# what it does: browses the spine (docs/system.md + system/, caveats.md,
+# playbook.md), docs/proposals (with status), docs/desk, docs/journal,
+# docs/notes (bundles included), docs/reference (legacy), docs/tasks,
+# docs/bugs, docs/log, experiments/*/README.md, and scripts/ — a TUI by
+# default, or a plain-text/JSON index for agents (--plain/--json skip the
+# textual import entirely, so they work without it installed).
 
 from __future__ import annotations
 
@@ -29,6 +31,8 @@ ROOT = Path(
 
 GROUPS = [
     "desk",
+    "spine",
+    "proposals",
     "journal",
     "notes",
     "reference",
@@ -41,7 +45,7 @@ GROUPS = [
 
 STALE_DAYS = 14
 
-DATED_GROUPS = {"journal", "notes", "bugs", "reference", "log"}
+DATED_GROUPS = {"journal", "notes", "bugs", "reference", "log", "proposals"}
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 
 
@@ -119,7 +123,25 @@ def scan_dated_dir(group: str, dirpath: Path) -> list[Row]:
     if not dirpath.is_dir():
         return rows
     for p in sorted(dirpath.glob("*")):
-        if p.is_dir() or p.name.startswith("."):
+        if p.name.startswith("."):
+            continue
+        if p.is_dir():
+            # Note bundles: a dated dir with an index.md carrying the summary.
+            if group != "notes":
+                continue
+            index = p / "index.md"
+            members = sum(1 for m in p.rglob("*") if m.is_file() and m.name != "index.md")
+            rows.append(
+                Row(
+                    group=group,
+                    path=str(p.relative_to(ROOT)),
+                    date=date_from_name(p.name),
+                    summary=md_first_line_summary(index) if index.is_file() else "",
+                    extra=f"bundle:{members} files",
+                    mtime=p.stat().st_mtime,
+                    date_ts=date_ts_from_name(p.name),
+                )
+            )
             continue
         if p.suffix.lower() in IMAGE_EXTS:
             summary = ""
@@ -181,6 +203,93 @@ def scan_desk() -> list[Row]:
     return rows
 
 
+def front_matter_status(text: str) -> tuple[str, str]:
+    """Return (status, first-summary-line-after-front-matter)."""
+    status = ""
+    body = text
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end != -1:
+            fm = text[3:end]
+            body = text[end + 4 :]
+            for line in fm.splitlines():
+                if line.strip().startswith("status:"):
+                    status = line.split(":", 1)[1].strip()
+    summary = ""
+    for line in body.splitlines():
+        line = line.strip()
+        if line:
+            summary = line.lstrip("#").strip()
+            break
+    return status, summary
+
+
+def scan_spine() -> list[Row]:
+    rows = []
+    docs = ROOT / "docs"
+    for rel in ("system.md", "caveats.md", "playbook.md"):
+        p = docs / rel
+        if p.is_file():
+            rows.append(
+                Row(
+                    group="spine",
+                    path=str(p.relative_to(ROOT)),
+                    date="",
+                    summary=md_first_line_summary(p),
+                    mtime=p.stat().st_mtime,
+                )
+            )
+    for sub in ("system", "caveats", "playbook"):
+        d = docs / sub
+        if not d.is_dir():
+            continue
+        for p in sorted(d.glob("*")):
+            if p.is_dir() or p.name.startswith("."):
+                continue
+            suffix = p.suffix.lower()
+            if suffix in (".md", ".html"):
+                summary = (
+                    html_comment_summary(p) if suffix == ".html" else md_first_line_summary(p)
+                )
+            else:
+                summary = ""  # figures and their sources list by name only
+            rows.append(
+                Row(
+                    group="spine",
+                    path=str(p.relative_to(ROOT)),
+                    date="",
+                    summary=summary,
+                    mtime=p.stat().st_mtime,
+                )
+            )
+    return rows
+
+
+def scan_proposals() -> list[Row]:
+    rows = []
+    d = ROOT / "docs" / "proposals"
+    if not d.is_dir():
+        return rows
+    for p in sorted(d.glob("*.md")):
+        try:
+            text = p.read_text(errors="replace")
+        except OSError:
+            text = ""
+        status, summary = front_matter_status(text)
+        rows.append(
+            Row(
+                group="proposals",
+                path=str(p.relative_to(ROOT)),
+                date=date_from_name(p.stem),
+                summary=summary,
+                extra=status,
+                mtime=p.stat().st_mtime,
+                date_ts=date_ts_from_name(p.stem),
+            )
+        )
+    return rows
+
+
 def scan_experiments() -> list[Row]:
     rows = []
     exp_dir = ROOT / "experiments"
@@ -189,6 +298,7 @@ def scan_experiments() -> list[Row]:
     for readme in sorted(exp_dir.glob("*/README.md")):
         status = ""
         verdict = ""
+        kind = ""
         try:
             text = readme.read_text(errors="replace")
         except OSError:
@@ -201,13 +311,16 @@ def scan_experiments() -> list[Row]:
                     status = line.split(":", 1)[1].strip()
                 if line.strip().startswith("verdict:"):
                     verdict = line.split(":", 1)[1].strip()
+                if line.strip().startswith("kind:"):
+                    kind = line.split(":", 1)[1].strip()
+        extra = f"{kind} · {status}" if kind and kind != "question" else status
         rows.append(
             Row(
                 group="experiments",
                 path=str(readme.relative_to(ROOT)),
                 date="",
                 summary=verdict or status,
-                extra=status,
+                extra=extra,
                 mtime=readme.stat().st_mtime,
             )
         )
@@ -255,6 +368,8 @@ def scan_tasks() -> list[Row]:
 def collect() -> list[Row]:
     rows: list[Row] = []
     rows += scan_desk()
+    rows += scan_spine()
+    rows += scan_proposals()
     rows += scan_dated_dir("journal", ROOT / "docs" / "journal")
     rows += scan_dated_dir("notes", ROOT / "docs" / "notes")
     rows += scan_dated_dir("reference", ROOT / "docs" / "reference")

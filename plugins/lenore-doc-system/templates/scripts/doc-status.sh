@@ -3,7 +3,9 @@
 # what it does: prints one status line summarizing doc-system drift
 # (last journal age, commit gap, stale branch-task files, bug count,
 # Someday count, stale/dangling desk links, semantic-index staleness,
-# unreflected experiment runs, untriaged run outputs, orphan store dirs).
+# unreflected experiment runs, untriaged run outputs, orphan store dirs,
+# open/unpointed proposals, spine size pressure, published HTML missing
+# its recorded URL).
 # Silent (exit 0) when not in a repo with docs/. Fast — meant to run on
 # every session start.
 set -uo pipefail
@@ -120,13 +122,13 @@ else
   fi
 fi
 
-# --- dangling pointers (task "— details:" -> notes, note "Revises" -> note) --
+# --- dangling pointers (task "— details:" -> notes/proposals, note "Revises") --
 dangling_ptr_part=""
 dang=""
 if [ -d docs/tasks ]; then
   for tf in docs/tasks/*.md; do
     [ -e "$tf" ] || continue
-    for ref in $(grep -oE '(docs/)?notes/[A-Za-z0-9._-]+\.md' "$tf" 2>/dev/null | sort -u); do
+    for ref in $(grep -oE '(docs/)?(notes|proposals)/[A-Za-z0-9._-]+(/index)?\.md' "$tf" 2>/dev/null | sort -u); do
       rel="${ref#docs/}"
       [ -f "docs/$rel" ] || dang="${dang}${tf}->${rel} "
     done
@@ -200,9 +202,54 @@ if [ -d data/experiments ]; then
   [ "$orphans" -gt 0 ] && store_part="${store_part} · orphan-store-dirs: ${orphans} (${orphan_first})"
 fi
 
+# --- proposals (open count + orphans: proposed/deferred with no task pointer) --
+proposals_part=""
+if [ -d docs/proposals ]; then
+  open_props=0
+  orphan_props=0
+  orphan_first=""
+  for pf in docs/proposals/*.md; do
+    [ -e "$pf" ] || continue
+    st=$(sed -n '/^---$/,/^---$/p' "$pf" | sed -n 's/^status:[[:space:]]*//p' | head -1 | tr '[:upper:]' '[:lower:]')
+    case "$st" in
+      proposed|deferred)
+        open_props=$((open_props + 1))
+        pbase=$(basename "$pf")
+        if ! grep -qF "$pbase" docs/tasks/*.md 2>/dev/null; then
+          orphan_props=$((orphan_props + 1))
+          [ -z "$orphan_first" ] && orphan_first="$pbase"
+        fi
+        ;;
+    esac
+  done
+  [ "$open_props" -gt 0 ] && proposals_part=" · proposals-open: ${open_props}"
+  [ "$orphan_props" -gt 0 ] && proposals_part="${proposals_part} · proposals-unpointed: ${orphan_props} (${orphan_first} — add a task pointer or flip its status)"
+fi
+
+# --- spine size pressure (system chapters cap ~8, premises cap ~15) ---------
+spine_part=""
+if [ -d docs/system ]; then
+  chapters=$(ls docs/system/*.md 2>/dev/null | wc -l | tr -d ' ')
+  [ "$chapters" -gt 8 ] && spine_part=" · system-chapters: ${chapters} (soft cap 8 — merge before splitting further)"
+fi
+if [ -f docs/system/premises.md ]; then
+  premises=$(grep -cE '^\*\*P[0-9]+' docs/system/premises.md 2>/dev/null || true)
+  [ "${premises:-0}" -gt 15 ] && spine_part="${spine_part} · premises: ${premises} (soft cap 15 — a premise list that grows into an essay stops being read)"
+fi
+
+# --- published HTML without a recorded URL ----------------------------------
+# A committed .html report whose file records no published/artifact URL is
+# findable only in a conversation log — the exact loss this check prevents.
+html_part=""
+nohtmlurl=0
+for hf in $(find docs experiments -maxdepth 4 -type f -name '*.html' 2>/dev/null | grep -v '^docs/desk/'); do
+  grep -qiE 'published:|claude\.ai/(code/)?artifact' "$hf" 2>/dev/null || nohtmlurl=$((nohtmlurl + 1))
+done
+[ "$nohtmlurl" -gt 0 ] && html_part=" · html-no-url: ${nohtmlurl} (add 'published: <url>' in the file's top comment, or note it was never published)"
+
 stale_task_part=""
 if [ -n "$stale_task_files" ]; then
   stale_task_part=" · $(printf '%s' "$stale_task_files" | sed 's/ *$//')"
 fi
 
-echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${unreflected_part}${store_part}${stale_task_part}"
+echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${unreflected_part}${store_part}${proposals_part}${spine_part}${html_part}${stale_task_part}"

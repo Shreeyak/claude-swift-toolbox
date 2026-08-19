@@ -1,6 +1,6 @@
 ---
 name: doc-system
-description: Rules for writing, filing, and finding documentation in a repo using the Lenore doc system — journal, notes, tasks, bugs, experiments, desk, landing. Invoke before creating or moving any doc file, before landing a branch, or when adopting the system in a new repo.
+description: Rules for writing, filing, and finding documentation in a repo using the Lenore doc system — the system/caveats/playbook spine, proposals, journal, notes, tasks, bugs, experiments, desk, landing. Invoke before creating or moving any doc file, before landing a branch, or when adopting the system in a new repo.
 ---
 
 # Lenore doc system
@@ -50,15 +50,27 @@ get only `docs/log/` (dated files, journal+notes merged) — see
 `references/rules-tier0.md`.
 
 ```
-CLAUDE.md                    hub: tier, conventions, invariants, doc rules
+CLAUDE.md                    hub: tier, conventions, invariants, doc rules,
+                             the premises pre-design read line
 openspec/
-  specs/                     as-built truth — committed atomically with code
+  specs/                     as-built feature truth — committed atomically with code
   changes/                   in-flight work; archived on landing
 docs/
   CLAUDE.md                  formatting details only (entry shapes, front-matter)
+  system.md                  SPINE: how it works now — one-page hub, chapters below
+  system/                    architecture.md · data-flow.md · state-transitions.md ·
+                             premises.md (P<n> ground rules — mandatory pre-design
+                             read) · earned chapters · figures + their sources
+  caveats.md                 SPINE: where it fails now — stable C<n> IDs, each with
+                             a Validity ladder (Confirmed/Mechanism/Retracted)
+  playbook.md                SPINE: procedures · evaluated tools (use-when +
+                             last-verified) · adopted research conclusions
+  proposals/2026-08-20-topic.md   designed-not-committed; the ONE revisable dated
+                             class; status: front-matter + mandatory task pointer
   journal/2026-08-15-1432-topic.md    one immutable file per entry
-  notes/2026-08-02-topic.md           dated, immutable; line 1 = summary
-  reference/ferry-cli-integration.md  named, editable, living how-tos
+  notes/2026-08-02-topic.md           dated, immutable; line 1 = summary;
+                             research- prefix for research output; dated bundle
+                             DIRS (index.md + non-own-prose members) allowed
   desk/                      gitignored, per-worktree symlinks (see doc-guidance.md)
   tasks/project.md · branch-<name>.md
   bugs/2026-08-15-topic.md
@@ -66,25 +78,50 @@ experiments/                 repo ROOT, not docs/ — one dated dir per experime
   PROMOTIONS.md              append-only ledger of code promoted to production
   YYYY-MM-DD-<name>/         README.md (current truth) · code at root ·
                              notebook/runNNN[-slug].md entries + promoted
-                             artifacts · data -> ../../data/experiments/<same>
-data/                        THE STORE, gitignored: datasets/ + per-experiment
-                             regen/ · keep/ · out/<runid>/ (all raw run bytes)
+                             artifacts · figures/ (curated human-reviewed images) ·
+                             data -> ../../data/experiments/<same>
+  <candidate>/               kind: candidate-system README — alternative
+                             architectures; own docs INSIDE; adopted/retired/parked
+data/                        THE STORE, gitignored: datasets/ + library/<topic>/
+                             (papers, PDFs) + per-experiment regen/ · keep/ ·
+                             out/<runid>/ (all raw run bytes)
 .githooks/                   pre-commit · commit-msg · pre-merge-commit · pre-push — all rule enforcement
 scripts/browse.py · doc-status.sh · lenore-docs.py · docs-search.py
 tmp/                         gitignored wholesale
 ```
 
-`docs/` holds only prose (`.md`, `.html`, images) — a pre-commit hook
-enforces this. Full per-directory rules: `references/doc-guidance.md`
-(read when you need the complete rule for journal / notes / reference /
-tasks / bugs / experiments' three zones / desk semantics incl.
-remove-vs-delete / tmp / scripts / openspec).
+`docs/` is a **closed layout** — the pre-commit hook rejects any
+top-level child outside the set above, plus per-area extension rules
+(prose everywhere; figures and their editable sources beside spine
+chapters and inside note bundles; `.csv`/`.json` only inside bundles;
+5MB/file cap). There is no `docs/reference/` — tools/procedures live in
+the playbook, internal explanations in system chapters. Full
+per-directory rules: `references/doc-guidance.md` (read when you need
+the complete rule for the spine / proposals / journal / notes incl.
+bundles / tasks / bugs / experiments' three zones / candidate systems /
+desk semantics incl. remove-vs-delete / tmp / scripts / openspec).
+
+**Routing in ten seconds** — how it works now → `system` chapter (same
+commit that falsifies it); ground rule about product/instrument/operator
+→ `premises.md`; where it fails / hazard → `caveats.md`; procedure /
+evaluated tool / adopted research conclusion → `playbook.md`; adopted
+feature contract → openspec; designed-but-not-committed → `proposals/` +
+task pointer; repair → `bugs/`; later → `tasks/`; dated evidence,
+research, or thinking → `notes/`; empirical question or candidate
+architecture → `experiments/`. **Unsure → dated note** — the escape
+hatch is always correct.
 
 ## When X happens, do Y
 
 | Trigger | Action |
 |---|---|
-| Creating any journal entry, note, bug, or task | Prefer `scripts/lenore-docs.py note\|bug\|journal\|task "summary"` with the body as a heredoc — correct dated filename, shape caps with explanatory errors, atomic task+note+pointer (`task --note`), `--supersedes` for corrections. Plain Write stays valid; hooks backstop. |
+| Creating any journal entry, note, bug, task, or proposal | Prefer `scripts/lenore-docs.py note\|bug\|journal\|task\|proposal "summary"` with the body as a heredoc — correct dated filename, shape caps with explanatory errors, atomic task+note+pointer (`task --note`) and proposal+pointer, `--supersedes` for corrections. Plain Write stays valid; hooks backstop. |
+| Something belongs in current truth | Route by question: how it works now → `docs/system/` chapter (updated in the same commit that falsifies it); hazard/limitation → `docs/caveats.md` entry (next C\<n\> ID + Validity ladder); procedure, evaluated tool, or adopted research conclusion → `docs/playbook.md`. |
+| About to design, propose, or start an experiment | Read `docs/system/premises.md` first; cite the P\<n\> IDs the design rests on or bends. The CLI's recall step also surfaces related prior notes/proposals/experiments. |
+| A designed plan isn't being built now | `scripts/lenore-docs.py proposal "Title"` — dated file (status: proposed) + task pointer, one call. Flip status as it moves: accepted → openspec change; deferred (state the unfreeze condition); implemented/superseded → remove the pointer, file stays. |
+| Research task (literature/online survey) | Findings → `docs/notes/YYYY-MM-DD-research-<topic>.md` (`note --research`); multi-file output (downloaded sources, other agents' reports, data) → a dated bundle (`note --research --bundle`), members listed in its index.md. PDFs/papers → `data/library/<topic>/`, listed in the note. Adopted conclusions graduate to playbook/system with a pointer back. |
+| Exploring a whole alternative architecture | An experiment with `kind: candidate-system` — own docs inside its dir, document-map README section, Dead ends & ruled out register; concludes as adopted (docs → `docs/system/` + PROMOTIONS line) / retired (playbook registry line + git tag) / parked (unpark condition stated). |
+| Publishing a claude.ai artifact from repo content | Record the URL where the file lives: `artifact:` front-matter (proposal/experiment README) or `published: <url>` in the HTML's top comment — the status line flags committed HTML with no URL. |
 | Bug noticed (by anyone, any time) | File `docs/bugs/YYYY-MM-DD-topic.md` now — one-line symptom + ≤5 lines with a repro. Don't derail current work. Delete it in the fix commit (the commit-msg hook rejects a fix claim that doesn't). |
 | Openspec phase / task-group completed | Write a journal entry (shape below). |
 | A committed note turns out wrong or superseded | New dated note whose body says "Revises notes/YYYY-MM-DD-x.md" — never edit or mark the old one; grep the old filename to find successors. |
@@ -152,7 +189,12 @@ or deleting `docs/journal/`, `docs/notes/` (modify only), and
 `STATUS.md`/`CHANGELOG.md`/`HANDOFF.md`/`PLAN-*.md`/`REVIEW-*.md`;
 rejects non-prose additions under `docs/`; and shape-checks new
 journal/notes/bugs files (prose line-1 summary; journal ≤10 lines /
-150 words, no headers or bullets). Commit-msg rejects a message claiming
+150 words, no headers or bullets). It also enforces the closed docs/
+layout (fixed top-level set; per-area extensions — figure sources beside
+spine chapters and in bundles, `.csv`/`.json` only in bundles; dated
+bundle dirs must carry an index.md; 5MB/file cap under docs/ and
+experiments/) and requires a valid `status:` on every staged
+`docs/proposals/*.md`. Commit-msg rejects a message claiming
 to fix a `docs/bugs/` file without deleting it in that commit. Pre-push
 rejects any push to `main` missing landing markers (leftover
 `docs/tasks/branch-*.md`, unarchived `openspec/changes/*/`).
@@ -171,7 +213,8 @@ entries; a new run that contradicts its experiment README's verdict while
 the README goes untouched is flagged): violations block that one attempt
 with reasons, an unchanged retry proceeds (warn-once), `LENORE_NO_LINT=1`
 disables. The pre-commit hook additionally gates conclusions (flipping an
-experiment README's `status` to concluded/shelved requires a real verdict,
+experiment README's `status` to concluded/shelved — or a candidate
+system's to adopted/retired — requires a real verdict,
 a concluded date, and a journal entry in the same commit), quarantines
 experiments (no import-shaped references or symlinks into `experiments/`
 from production code — promotion goes by copy + a `PROMOTIONS.md` entry;
@@ -198,8 +241,17 @@ scheduled jobs; doc maintenance is event-driven only.
   compute everything live.
 - No inbox, no librarian subagent — capture is direct, in flow.
 - No dedicated docs worktree — unique dated files already kill conflicts.
-- No `state.md` — task content → `project.md`; architecture → on-demand
-  dated notes; history → backfilled journal.
+- No `state.md` — task content → `project.md`; architecture →
+  `docs/system/` chapters; history → backfilled journal.
+- No `docs/reference/` — retired 2026-08-20: tools/procedures →
+  playbook; internal explanations → system chapters; dated research →
+  notes. The closed-layout hook rejects it.
+- Proposals are the ONE revisable dated class — everything else dated is
+  immutable. The status field is what makes revisability safe; never
+  extend it to notes or journal.
+- No new docs/ homes, ever, without a design round — the closed-layout
+  hook enforces the set; "this content is special" routes to an existing
+  home or a dated note.
 - No scheduled/cron jobs for doc maintenance.
 - No pin-until / frontmatter expiry on desk links — the 14-day mtime check
   covers it.
@@ -217,7 +269,11 @@ scheduled jobs; doc maintenance is event-driven only.
 - No tool-provenance tracking — hooks enforce what files contain, never
   which tool wrote them.
 - No monolithic JOURNAL.md/TASKS.md — one file per entry, always.
-- No standing ARCHITECTURE.md — demoted to on-demand dated snapshot.
+- Architecture lives in `docs/system/` chapters (living, hook-limited,
+  updated in the falsifying commit) — this supersedes the earlier "no
+  standing ARCHITECTURE.md, dated snapshots only" rule (2026-08-20
+  taxonomy adoption; the workflow-fit review showed cross-cutting current
+  truth needs a maintained home, not snapshots).
 - Experiments: no notebook.md file (the notebook is the `notebook/` dir —
   `cat notebook/*.md` is the derived single-scroll view); no `results/`
   or `artifacts/` dirs (keepers are promoted into `notebook/`, named
@@ -228,7 +284,10 @@ scheduled jobs; doc maintenance is event-driven only.
   — everything to the store's `out/<runid>/`, curation only at cleanup
   rounds; store inside the repo at `/data/` (no external per-project
   dir, no `data/data/` nesting); no DVC/MLflow/W&B; no
-  `experiments/_shared/` — third consumer means promote.
+  `experiments/_shared/` — third consumer means promote. Candidate
+  systems (`kind: candidate-system`) are exempt from dated names,
+  runNNN structure, and the store trio — their required shape is the
+  document map + Dead ends register + terminal verdict instead.
 
 ## Reference index
 
