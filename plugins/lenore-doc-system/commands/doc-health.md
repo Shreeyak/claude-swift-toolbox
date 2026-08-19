@@ -23,12 +23,21 @@ own worktree and the user's session stays exactly where it is.
    continue with whatever else they were doing. Do not poll; the
    completion notification arrives on its own.
 
-3. When the completion notification arrives: relay the auditor's
+3. While it runs: the audit is an ordinary background task in this
+   session — the user can check progress with `git log <branch>`
+   (the auditor commits each lens as it finishes, so the branch's log
+   is the live progress feed).
+
+4. When the completion notification arrives: relay the auditor's
    one-sentence verdict, the finding counts, the branch name, and its
    "proposed deletions" list verbatim — deletions happen only with the
-   user's confirmation, applied as commits on the audit branch.
+   user's confirmation, applied as commits on the audit branch. Then
+   ASK the user whether to merge the audit branch now or leave it for
+   later review — never merge without an explicit yes in this
+   conversation; the user may have ongoing work the merge would
+   disturb.
 
-4. Merging the audit branch is the user's call, now or later. The
+5. Merging the audit branch is the user's call, now or later. The
    status line's doc-health nag advances only when the audit's journal
    marker entry reaches the current branch — an abandoned audit
    intentionally keeps nagging. If the user says merge and HEAD has
@@ -36,14 +45,14 @@ own worktree and the user's session stays exactly where it is.
    edited also changed upstream; if so, say which and offer a re-run of
    just those files instead of a blind merge.
 
-5. Never merge autonomously; if the user is away, step 3's relay is
+6. Never merge autonomously; if the user is away, step 4's relay is
    your closing summary and the branch waits.
 
 Codex sessions (no Agent tool): run `scripts/doc-health.sh &` — it
 creates the worktree itself and drives the same auditor prompt through
 a headless backend (`claude -p` on Sonnet when available, else
 `codex exec`), prints the branch name when done, and never touches the
-current checkout. Relay its output the same way as step 3.
+current checkout. Relay its output the same way as step 4.
 
 If neither path is available (no plugin agents, no script), give the
 user this one-liner to paste into a Claude session instead: "Launch the

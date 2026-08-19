@@ -78,8 +78,10 @@ finding — downgrade it to a review note.
 - Make an edit only when the finding is high-confidence AND the fix is
   mechanical given the evidence (a stale default, a falsified sentence
   replaced by the current-contract sentence, a missing pointer line).
-  Commit in small thematic commits on this branch; every commit message
-  names its evidence.
+  Commit in small thematic commits on this branch — commit each lens's
+  edits as you finish that lens, so the branch's `git log` doubles as a
+  live progress feed for anyone checking on the audit mid-run; every
+  commit message names its evidence.
 - Never edit journal entries, dated notes, or notebook entries — the
   pre-commit hook will reject it and they are history by design.
 - Deletions of any doc content: do NOT perform — list them in the
