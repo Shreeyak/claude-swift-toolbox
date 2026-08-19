@@ -1,6 +1,6 @@
 ---
 name: doc-lint-judge
-description: Judgment-rule linter for Lenore doc-system files (journal, notes, bugs, tasks, experiment notebook entries). Used automatically by the commit-time drift lint; invoke directly to review doc files on demand ("check docs/tasks/project.md against the doc rules"). Checks only what deterministic hooks can't — real summaries, self-contained task entries, actionable bugs, evidence-grade notebook entries, and experiment READMEs left contradicting their own runs.
+description: Commit-time judgment linter for Lenore doc-system files (journal, notes, bugs, tasks, experiment notebook entries). Used automatically by the commit-time drift lint; invoke directly to review doc files on demand ("check docs/tasks/project.md against the doc rules"). Checks only what deterministic hooks can't — real summaries, self-contained task entries, actionable bugs, evidence-grade notebook entries, experiment READMEs left contradicting their own runs, plus the cheap pattern-level hygiene tells (invented entry IDs, opaque codenames in immutable files, editing narrative); the subtle hygiene judgments belong to landing-doc-reviewer.
 model: haiku
 tools: Read, Glob, Grep
 ---
@@ -55,6 +55,28 @@ Calibration for docs/tasks/:
   the tau/mu threshold fix in Matcher.swift (commit abc123); the qwez1 test
   clip (data/clips/qwez1.mov) may need tau at 0.2." — every referent is
   locatable; do not flag entries like this for missing purpose/theory.
+
+Hygiene tells (checked in ALL payload files; the full rules with
+calibrated examples live in the plugin's doc-hygiene-rules.md — you
+flag only these cheap pattern-level cases; the landing reviewer
+handles the subtle ones on a stronger model):
+- Invented entry IDs: a heading or bolded lead addressing an entry by
+  an invented code (`## C4 — ...`, `**P1 — ...**`, ADR-12) or an
+  ordering/classification prefix repeated across sibling entries
+  (a-/b-/phase-one-/priority-). Domain identifiers are NOT violations:
+  P95/P99 metrics, HTTP codes, RFC/CVE/issue numbers, commit hashes,
+  and runNNN experiment records.
+- Session-opaque codenames in journal/notes files: a coined name ("the
+  alpha-cut approach", "the b2 branch", bare "v2") that names no file,
+  dir, branch, symbol, or experiment in the repo and is not defined
+  near first use. These files are immutable once committed — this is
+  the last moment the name can be fixed. Flag only the clearly
+  unresolvable; when in doubt, pass.
+- Editing narrative: "we used to X, but now Y", "now correctly",
+  "as requested", "fixed per review", strikethroughs or
+  "(superseded)" markers. In journal/notes/notebook entries, narrating
+  the past is their job — flag only the reviewer-directed phrases
+  there, never tense or past-narration itself.
 
 If file contents are appended below this prompt (=== FILE: ... === blocks),
 judge exactly those. Otherwise you are being invoked interactively: read the

@@ -29,6 +29,12 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   branch tasks and the desk, merge as the last step.
 - `/lenore-doc-system:desk` — review the desk: list pins with summaries
   and ages, renew-or-drop the stale ones, suggest unpinned docs.
+- `/lenore-doc-system:doc-health` — launch the corpus-wide truth audit
+  in the background: the `doc-health-auditor` agent (Sonnet, medium
+  effort) works in its own worktree branch — stale docstrings,
+  falsified spine claims, duplication drift, orphans — and reports an
+  evidence-backed diff the user merges. Triggered by the status line's
+  `doc-health: due` nag. Codex equivalent: `scripts/doc-health.sh &`.
 - `/lenore-doc-system:doc-cleanup` — doc-hygiene pass: Someday prunes,
   stale branch-task disposal, stale-bug triage, experiment-store triage
   (delete/keep/promote run outputs, orphaned-store repair), optional
@@ -75,7 +81,17 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   unchanged retry proceeds. `LENORE_NO_LINT=1` disables. The judgment prompt ships as a real agent,
   `agents/doc-lint-judge.md` — the lint script sources its prompt from
   that file, and the agent can also be invoked directly ("check
-  docs/tasks/project.md against the doc rules").
+  docs/tasks/project.md against the doc rules"). It carries only the
+  cheap pattern-level hygiene tells; three agents divide the doc work:
+  `doc-lint-judge` (Haiku — commit-time, touched files),
+  `landing-doc-reviewer` (Sonnet — the branch diff at landing: docs AND
+  docstrings, reader-modeling duties, contradiction cross-check), and
+  `doc-health-auditor` (Sonnet — corpus truth maintenance via
+  /doc-health, own worktree). All three share ONE rulebook,
+  `skills/doc-system/references/doc-hygiene-rules.md` (copied to
+  `scripts/doc-hygiene-rules.md` by setup): no invented entry IDs,
+  no session-opaque codenames, present-tense contract prose in living
+  docs/docstrings, no reviewer-directed comments.
 - `tests/doc-lint/` — committed regression suite for the judge (20
   cases + runner + provenance README). Run `tests/doc-lint/run-suite.sh`
   before shipping any change to the judge prompt or the lint script.

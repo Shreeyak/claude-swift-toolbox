@@ -319,7 +319,7 @@ scheduled jobs; doc maintenance is event-driven only.
 - `agents/doc-lint-judge.md` — the Haiku judgment prompt behind the
   commit-time lint, shipped as an invocable agent; `doc-lint.sh` sources
   its prompt from this file, so there is exactly one copy to tune.
-- `tests/doc-lint/` — regression suite for the judge prompt (20 cases,
+- `tests/doc-lint/` — regression suite for the judge prompt (26 cases,
   runner, provenance README). Run it before changing the prompt or the
   lint script; a `borderline_*` case turning BLOCK means the change is
   wrong.

@@ -41,6 +41,20 @@ Make sure `openspec/specs/` reflects what actually landed — if the branch's
 `openspec/changes/<name>/` folder describes work that's done, sync the spec
 now, in the same commit style as the rest of the branch.
 
+## 1b. Landing doc review
+
+Spawn the branch-diff doc reviewer via the Agent tool: `subagent_type:
+"lenore-doc-system:landing-doc-reviewer"` (it pins its own model — do not
+review inline), telling it the merge base and branch head. It checks the
+branch's doc files and docstrings against the hygiene rulebook (invented
+IDs, opaque names, history narration, reviewer-directed comments) and
+cross-checks new claims against untouched living docs. Fix what it flags
+(same warn-once posture as the commit lint: a finding you judge wrong
+after reading it can be waived — note why in the closing journal entry if
+you waive anything). If the agent type is unavailable (Codex, plugin not
+installed), read `scripts/doc-hygiene-rules.md` and do this review
+yourself before proceeding.
+
 ## 2. Closing journal entry
 
 Write one `docs/journal/YYYY-MM-DD-HHMM-topic.md` entry following the journal

@@ -5,7 +5,7 @@ doc-lint-judge.md`) as exercised through `templates/scripts/doc-lint.sh`.
 Run it before shipping ANY change to the judge prompt or the lint script:
 
 ```
-tests/doc-lint/run-suite.sh        # ~20 Haiku calls, ~2-3 min
+tests/doc-lint/run-suite.sh        # ~26 Haiku calls, ~3-4 min
 ```
 
 Expected verdict is encoded in the filename: `*good*` and `*borderline*`
@@ -53,3 +53,10 @@ else it improves.
   never been exercised (all cases are new files).
 - Single-draw LLM judging: a clean run is one sample. For prompt changes,
   re-draw at least the borderline cases 3× (the baseline did).
+
+The hygiene classes (N5-N8, J5-J6) were added 2026-08-20 with the
+doc-hygiene-rules.md rulebook: invented entry IDs vs domain identifiers
+(P95/RFC/runNNN must pass), session-opaque codenames vs
+defined-at-first-use, reviewer-directed phrases in a journal entry vs
+legitimate past-narration (J6 guards the journal's exemption from the
+history-narration rule). Baseline after adding: 26/26 correct.

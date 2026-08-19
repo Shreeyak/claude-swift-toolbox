@@ -28,7 +28,8 @@ the plan, apply only after the user confirms.
   `.githooks/pre-commit`, `.githooks/pre-push`, `.githooks/pre-merge-commit`,
   `.githooks/commit-msg`, `scripts/doc-status.sh`, `scripts/browse.py`,
   `scripts/docs-search.py`, `scripts/lenore-docs.py`, `scripts/doc-lint.sh`,
-  `scripts/doc-lint-judge.md`, `.codex/hooks.json`,
+  `scripts/doc-lint-judge.md`, `scripts/doc-hygiene-rules.md`,
+  `scripts/doc-health.sh`, `scripts/doc-health-auditor.md`, `.codex/hooks.json`,
   `docs/CLAUDE.md` against this plugin's `templates/` — propose replacing
   any that differ, and report the diffs. Do not touch `docs/journal/`,
   `docs/notes/`, or other content.
@@ -165,7 +166,10 @@ exec this plugin's, or vice versa) rather than silently overwriting.
 - Copy `templates/githooks/{pre-commit,pre-push,pre-merge-commit,commit-msg}`
   to `.githooks/`, then `chmod +x` all four.
 - Copy `templates/scripts/{browse.py,doc-status.sh,docs-search.py,lenore-docs.py,doc-lint.sh}`
-  and the plugin's `agents/doc-lint-judge.md` to `scripts/` (the committed
+  and the plugin's `agents/doc-lint-judge.md`,
+  `agents/doc-health-auditor.md`,
+  `templates/scripts/doc-health.sh` (chmod +x), and
+  `skills/doc-system/references/doc-hygiene-rules.md` to `scripts/` (the committed
   lint + judge copies are what Codex and CI invoke; Claude Code keeps using
   the plugin's own copies), then `chmod +x doc-status.sh lenore-docs.py doc-lint.sh` (`browse.py`/`docs-search.py`
   are invoked via `uv run`, executable bit optional but harmless to set).

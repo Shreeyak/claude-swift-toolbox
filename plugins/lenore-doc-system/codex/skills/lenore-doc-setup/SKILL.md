@@ -42,6 +42,9 @@ offline/no-network fallback in Codex's default sandbox):
 - .gitignore snippet: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/69ef688a0374c335b6d791ee0d4a57f15e5355a6/plugins/lenore-doc-system/templates/gitignore-snippet`
 - doc-lint.sh (commit-time judgment lint): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/69ef688a0374c335b6d791ee0d4a57f15e5355a6/plugins/lenore-doc-system/templates/scripts/doc-lint.sh`
 - doc-lint-judge.md (the lint's judge prompt): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/69ef688a0374c335b6d791ee0d4a57f15e5355a6/plugins/lenore-doc-system/agents/doc-lint-judge.md`
+- doc-hygiene-rules.md (the shared hygiene rulebook — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/69ef688a0374c335b6d791ee0d4a57f15e5355a6/plugins/lenore-doc-system/skills/doc-system/references/doc-hygiene-rules.md`
+- doc-health.sh (background health-audit runner — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/69ef688a0374c335b6d791ee0d4a57f15e5355a6/plugins/lenore-doc-system/templates/scripts/doc-health.sh`
+- doc-health-auditor.md (the audit agent prompt — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/69ef688a0374c335b6d791ee0d4a57f15e5355a6/plugins/lenore-doc-system/agents/doc-health-auditor.md`
 - Codex hooks config (SessionStart status + PreToolUse lint): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/69ef688a0374c335b6d791ee0d4a57f15e5355a6/plugins/lenore-doc-system/templates/codex-hooks.json`
 
 When you bump the pin, re-verify each template still matches what's
@@ -83,7 +86,7 @@ described in this prompt.
    (pre-commit, pre-push, pre-merge-commit, commit-msg) into `.githooks/`
    and make them executable; fetch `browse.py`, `doc-status.sh`,
    `docs-search.py`, `lenore-docs.py`, and `doc-lint.sh` (plus
-   `doc-lint-judge.md` into `scripts/`) into `scripts/` (executable);
+   `doc-lint-judge.md` and `doc-hygiene-rules.md` into `scripts/`) into `scripts/` (executable);
    fetch `docs-CLAUDE.md`
    into `docs/CLAUDE.md`; append the `.gitignore` snippet (idempotent —
    check its marker line); `mkdir -p data/datasets data/experiments
@@ -101,7 +104,7 @@ described in this prompt.
    into any existing hooks config, never overwrite) — it registers
    `scripts/doc-status.sh` on `SessionStart` and `scripts/doc-lint.sh` as a
    `PreToolUse` hook on Bash (the commit-time judgment lint; copy
-   doc-lint.sh AND doc-lint-judge.md into `scripts/`, chmod +x the .sh —
+   doc-lint.sh, doc-lint-judge.md, doc-hygiene-rules.md, doc-health.sh AND doc-health-auditor.md into `scripts/`, chmod +x the .sh files —
    the lint uses `codex exec` with gpt-5.6-terra at medium effort as its
    judge when `claude` isn't installed). Codex requires per-repo hooks to
    be trusted: the first interactive `codex` session prompts once and
@@ -139,6 +142,13 @@ abandonment) always last.
    already checked out elsewhere.
 1. **Final spec sync.** Make sure `openspec/specs/` reflects what actually
    landed, in the same commit style as the rest of the branch.
+1b. **Landing doc review.** Read `scripts/doc-hygiene-rules.md` and review
+   the branch diff against it — every changed docs/ file and every
+   docstring/comment in changed code files (invented entry IDs, opaque
+   codenames, history narration in living docs/docstrings,
+   reviewer-directed comments), plus check that new living-doc claims
+   don't contradict untouched living docs. Fix what you find; note any
+   waived finding in the closing journal entry.
 2. **Closing journal entry.** Write one
    `docs/journal/YYYY-MM-DD-HHMM-topic.md` entry (line 1 = one sentence,
    ≤10 lines/150 words, no headers/bullets, cite commit hashes) opening
@@ -176,3 +186,14 @@ read (or fetch) the SKILL.md link above rather than guessing. The pre-push
 hook only gates a `git push` that updates main/master — it does not gate a
 bare local `git merge`, and it only applies once `core.hooksPath` is set in
 this clone (step 1's activation check exists for exactly this reason).
+
+## 3. Doc-health audit (Codex-native equivalent of `/doc-health`)
+
+When the status line shows `doc-health: due` (or `never`), or the user
+asks for a doc health check: run `scripts/doc-health.sh &` from the repo
+root. It creates its own worktree + `doc-health-YYYY-MM-DD` branch from
+HEAD, drives the auditor prompt (`scripts/doc-health-auditor.md` + the
+rulebook) through `codex exec` inside that worktree, and prints the
+branch when done — the current checkout is never touched, and the audit
+never merges itself. Relay the report; the user merges the branch (that
+merge is what advances the doc-health nag). Never merge it autonomously.
