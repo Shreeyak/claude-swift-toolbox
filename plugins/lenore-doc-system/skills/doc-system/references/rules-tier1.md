@@ -20,14 +20,19 @@
   commit as the code), this file's invariants, experiment READMEs, and
   the docs/ spine: docs/system.md + docs/system/ chapters (how it works
   now — update a chapter in the same commit that falsifies it),
-  docs/caveats.md (where it fails now — stable C<n> IDs, each entry a
+  docs/caveats.md (where it fails now — named entries, each a
   Validity ladder: Confirmed / Mechanism / Retracted, read in order),
   docs/playbook.md (procedures, evaluated tools with use-when +
   last-verified, adopted research conclusions).
+- NO entry IDs or numbering schemes anywhere in docs or docstrings — no
+  C1/P3/ADR-### style designations, ever. Entries that need referencing
+  get a short descriptive slug name (heading or bolded lead) and are
+  cited by name in plain words ("the seam-drift caveat"). Descriptive
+  names are stable without renumbering and greppable without a registry.
 - Before drafting a proposal, design, or experiment, read
-  docs/system/premises.md — the numbered ground rules (P1…) about the
+  docs/system/premises.md — the named ground rules about the
   product, instrument, and operator that hold regardless of
-  implementation. State which premise IDs the design rests on or bends.
+  implementation. Name the premises the design rests on or bends.
 - Designed-but-not-committed work goes to docs/proposals/
   YYYY-MM-DD-topic.md — the ONE revisable dated class, front-matter
   status: proposed|accepted|deferred|superseded|implemented

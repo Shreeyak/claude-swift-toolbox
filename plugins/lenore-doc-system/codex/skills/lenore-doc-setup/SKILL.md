@@ -72,9 +72,9 @@ described in this prompt.
 3. For Tier 1: create `docs/{journal,notes,proposals,tasks,bugs,system}/`,
    `docs/desk/`, and `tmp/` (never `docs/reference/` — retired; the hook
    rejects it); seed the spine stubs if absent — `docs/system.md`
-   (one-page hub map), `docs/system/premises.md` (numbered P<n> ground
-   rules, mandatory pre-design read), `docs/caveats.md` (stable C<n> IDs +
-   Validity ladders), `docs/playbook.md` (Procedures / Tools / Adopted
+   (one-page hub map), `docs/system/premises.md` (named ground
+   rules — never numbered, mandatory pre-design read), `docs/caveats.md`
+   (named entries + Validity ladders; no entry IDs anywhere in docs), `docs/playbook.md` (Procedures / Tools / Adopted
    research conclusions / Retired candidates) — the exact stub contents
    are in the Claude setup command at
    `plugins/lenore-doc-system/commands/setup.md`, copy them from there;

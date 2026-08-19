@@ -123,18 +123,22 @@ Classified by the reader's question, not the content's topic:
   (`.d2`, `.excalidraw`, `.mmd`, generator `.py`) — diagrams here are
   iterated, not deposited, and a render without its source is a dead end.
   Soft cap ~8 chapters (status line warns): merge before splitting.
-- **`docs/system/premises.md`** — the ground rules. Numbered entries
-  (`**P1 — <one sentence>**`, then `provenance:` + `consumers:` lines)
+- **`docs/system/premises.md`** — the ground rules. Named entries, never
+  numbered (`**<short-descriptive-name> — <one sentence>**`, then
+  `provenance:` + `consumers:` lines)
   stating facts about the product, instrument, and operator that hold
   regardless of implementation. Admission test: *would this still be true
   if we rewrote the entire pipeline in another language tomorrow?* This
   chapter has special standing: the root `CLAUDE.md` requires reading it
-  before any design/proposal/experiment and citing the P-IDs the design
-  rests on or bends. Soft cap ~15 — a premise list that grows into an
+  before any design/proposal/experiment and naming the premises the design
+  rests on or bends, in plain words. Soft cap ~15 — a premise list that grows into an
   essay stops being read.
 - **"Where does it fail now?" → `docs/caveats.md`.** The registry of known
-  failure modes, limitations, and data hazards. Stable sequential IDs
-  (`## C4 — <title>`), never renumbered or reused — cite them as `per C4`.
+  failure modes, limitations, and data hazards. Named entries, never
+  numbered (`## <short-descriptive-slug>`) — a descriptive name is stable
+  without a numbering scheme and greppable without a registry; cite one
+  in plain words ("per the seam-drift caveat"). No entry IDs anywhere in
+  docs — numbering schemes are the ADR latch pattern returning.
   Every entry carries a **Validity ladder**, read in order: `Confirmed:`
   (what reproduces) → `Mechanism:` (current working explanation — the one
   to work from) → `Retracted:` (earlier readings and why they were wrong).

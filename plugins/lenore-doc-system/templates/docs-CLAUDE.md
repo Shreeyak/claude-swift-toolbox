@@ -80,6 +80,20 @@ pipeline; ECC path removed. (abc1234)
   to `docs/bugs/` (one file each); design-changing findings go into the
   openspec change/spec, not a note.
 
+## No entry IDs — names only (applies to every doc class)
+
+No document entry anywhere gets an identifier or a number: no `C1`,
+`P3`, `ADR-###`, `D-12`, no sequential prefixes of any kind, in any file
+under `docs/` or in docstrings. IDs are the ADR failure mode returning
+through the side door: agents latch onto the scheme, start policing
+consistency, renumber, cross-reference by ID, and build the registry
+bureaucracy this system exists to avoid. Instead, an entry that needs to
+be referenced gets a **short descriptive slug name** (a heading or bolded
+lead), and is cited **by name in plain words** ("the seam-drift caveat",
+"the operator-wears-gloves premise"). Descriptive names are stable
+without renumbering and greppable without a registry. Dated filenames
+are not IDs — the date is provenance, not an address.
+
 ## The spine — `system` / `caveats` / `playbook` (living, mutable)
 
 Three question-shaped homes for current truth, beside the specs:
@@ -94,17 +108,22 @@ Three question-shaped homes for current truth, beside the specs:
   committed next to the render — a render whose source is lost can't be
   iterated.
 - **`docs/system/premises.md`** — ground rules about the product,
-  instrument, and operator that every design must satisfy. Numbered
-  entries (`**P1 — …**`), each with a provenance pointer (the note or
-  experiment that established it) and a consumers hint. Admission test:
-  *would this still be true if we rewrote the entire pipeline in another
-  language tomorrow?* Yes → premise; no → it's a mechanism, put it in a
-  regular chapter. Soft cap ~15 entries. This file is **mandatory
-  pre-design reading** — the root `CLAUDE.md` carries the line; cite the
-  premise IDs a design rests on or bends.
+  instrument, and operator that every design must satisfy. Entries are
+  **named, never numbered**: `**<short-descriptive-name> — <the rule in
+  one sentence>**` (e.g. `**operator-wears-gloves — …**`), each with a
+  provenance pointer (the note or experiment that established it) and a
+  consumers hint. Admission test: *would this still be true if we
+  rewrote the entire pipeline in another language tomorrow?* Yes →
+  premise; no → it's a mechanism, put it in a regular chapter. Soft cap
+  ~15 entries. This file is **mandatory pre-design reading** — the root
+  `CLAUDE.md` carries the line; name the premises a design rests on or
+  bends, in plain words.
 - **`docs/caveats.md`** — *where it fails now.* One registry of known
-  failure modes, limitations, and data hazards. Entries carry **stable
-  IDs** (`## C4 — <title>`), sequential, never renumbered or reused. Each
+  failure modes, limitations, and data hazards. Entries are **named,
+  never numbered**: `## <short-descriptive-slug>` (e.g. `## seam-drift-
+  at-low-overlap`) — a descriptive name is stable without any numbering
+  scheme, greppable, and citable in plain words ("the seam-drift
+  caveat"). No ID prefixes, ever (the no-entry-IDs rule above). Each
   entry carries a **Validity ladder**, read in order:
   1. `Confirmed:` what is reproducibly observed.
   2. `Mechanism:` the current working explanation (the one to work from).

@@ -59,10 +59,11 @@ docs/
   CLAUDE.md                  formatting details only (entry shapes, front-matter)
   system.md                  SPINE: how it works now — one-page hub, chapters below
   system/                    architecture.md · data-flow.md · state-transitions.md ·
-                             premises.md (P<n> ground rules — mandatory pre-design
+                             premises.md (named ground rules — mandatory pre-design
                              read) · earned chapters · figures + their sources
-  caveats.md                 SPINE: where it fails now — stable C<n> IDs, each with
-                             a Validity ladder (Confirmed/Mechanism/Retracted)
+  caveats.md                 SPINE: where it fails now — named entries (never
+                             numbered), each with a Validity ladder
+                             (Confirmed/Mechanism/Retracted)
   playbook.md                SPINE: procedures · evaluated tools (use-when +
                              last-verified) · adopted research conclusions
   proposals/2026-08-20-topic.md   designed-not-committed; the ONE revisable dated
@@ -116,8 +117,8 @@ hatch is always correct.
 | Trigger | Action |
 |---|---|
 | Creating any journal entry, note, bug, task, or proposal | Prefer `scripts/lenore-docs.py note\|bug\|journal\|task\|proposal "summary"` with the body as a heredoc — correct dated filename, shape caps with explanatory errors, atomic task+note+pointer (`task --note`) and proposal+pointer, `--supersedes` for corrections. Plain Write stays valid; hooks backstop. |
-| Something belongs in current truth | Route by question: how it works now → `docs/system/` chapter (updated in the same commit that falsifies it); hazard/limitation → `docs/caveats.md` entry (next C\<n\> ID + Validity ladder); procedure, evaluated tool, or adopted research conclusion → `docs/playbook.md`. |
-| About to design, propose, or start an experiment | Read `docs/system/premises.md` first; cite the P\<n\> IDs the design rests on or bends. The CLI's recall step also surfaces related prior notes/proposals/experiments. |
+| Something belongs in current truth | Route by question: how it works now → `docs/system/` chapter (updated in the same commit that falsifies it); hazard/limitation → `docs/caveats.md` entry (named slug heading + Validity ladder — never an ID); procedure, evaluated tool, or adopted research conclusion → `docs/playbook.md`. |
+| About to design, propose, or start an experiment | Read `docs/system/premises.md` first; name the premises the design rests on or bends, in plain words. The CLI's recall step also surfaces related prior notes/proposals/experiments. |
 | A designed plan isn't being built now | `scripts/lenore-docs.py proposal "Title"` — dated file (status: proposed) + task pointer, one call. Flip status as it moves: accepted → openspec change; deferred (state the unfreeze condition); implemented/superseded → remove the pointer, file stays. |
 | Research task (literature/online survey) | Findings → `docs/notes/YYYY-MM-DD-research-<topic>.md` (`note --research`); multi-file output (downloaded sources, other agents' reports, data) → a dated bundle (`note --research --bundle`), members listed in its index.md. PDFs/papers → `data/library/<topic>/`, listed in the note. Adopted conclusions graduate to playbook/system with a pointer back. |
 | Exploring a whole alternative architecture | An experiment with `kind: candidate-system` — own docs inside its dir, document-map README section, Dead ends & ruled out register; concludes as adopted (docs → `docs/system/` + PROMOTIONS line) / retired (playbook registry line + git tag) / parked (unpark condition stated). |
@@ -237,6 +238,11 @@ scheduled jobs; doc maintenance is event-driven only.
 ## Settled decisions — do not re-litigate
 
 - No `decisions.md`, no ADRs, no entry IDs, no supersession markers.
+- No entry IDs extends to the spine (corrected 2026-08-20): caveats and
+  premises briefly shipped with C1/P1-style stable IDs and the user
+  killed them same-day — an ID scheme anywhere teaches agents to number,
+  renumber, and cross-reference by ID (the ADR latch pattern). Entries
+  get short descriptive slug names and are cited by name in plain words.
 - No maintained indexes or `_generated/` files — `ls`/`grep`/`browse.py`
   compute everything live.
 - No inbox, no librarian subagent — capture is direct, in flow.

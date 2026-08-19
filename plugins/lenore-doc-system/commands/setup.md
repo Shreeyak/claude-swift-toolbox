@@ -126,11 +126,12 @@ exec this plugin's, or vice versa) rather than silently overwriting.
     ```markdown
     # Premises — ground rules every design must satisfy
 
-    Numbered, stable, cited by ID (per P1). Admission test: would this
+    Named entries, never numbered — no IDs anywhere in docs. Cite a
+    premise by its name in plain words. Admission test: would this
     still be true if we rewrote the entire pipeline in another language
     tomorrow? Soft cap ~15 entries.
 
-    <!-- **P1 — <one sentence>.**
+    <!-- **<short-descriptive-name> — <the rule in one sentence>.**
          provenance: <note/experiment that established it> · consumers: <who depends on it> -->
     ```
   - `docs/caveats.md`:
@@ -138,9 +139,10 @@ exec this plugin's, or vice versa) rather than silently overwriting.
     ```markdown
     # Caveats — where it fails now
 
-    Known failure modes, limitations, data hazards. Stable IDs (## C1 — ...),
-    never renumbered. Every entry: a Validity ladder read in order —
-    Confirmed: / Mechanism: / Retracted:.
+    Known failure modes, limitations, data hazards. Entries are named,
+    never numbered (## <short-descriptive-slug> — no IDs anywhere in
+    docs); cite an entry by its name in plain words. Every entry: a
+    Validity ladder read in order — Confirmed: / Mechanism: / Retracted:.
     ```
   - `docs/playbook.md`:
 

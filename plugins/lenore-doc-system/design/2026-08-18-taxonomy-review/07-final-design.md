@@ -119,3 +119,16 @@ revisability vs bundle immutability, CLI round-trips through the hook.
 - "docs/reference/ for external things" → retired into playbook/system.
 - "Every designed plan is an openspec change" → proposals/ holds
   designed-but-not-committed work; openspec holds accepted work.
+
+## Correction (2026-08-20, same day, user)
+
+The shipped C\<n\> caveat IDs and P\<n\> premise numbering violated the
+system's own oldest rule ("prose has no addresses") and were removed the
+same day: "No designated numbered or other ID based designations. Not
+allowed anywhere in the entire generated docs" — an ID scheme is the ADR
+latch pattern; agents number, renumber, police, and cross-reference by
+ID. Replacement: entries are **named, never numbered** — short
+descriptive slug headings (`## seam-drift-at-low-overlap`,
+`**operator-wears-gloves — ...**`), cited by name in plain words. The
+Validity ladder and the mandatory pre-design premises read survive
+unchanged; only the addressing scheme died.

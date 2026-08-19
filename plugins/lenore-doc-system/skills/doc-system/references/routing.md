@@ -11,7 +11,7 @@ or deciding whether to search `docs/notes/` before starting new work.
 | "What does feature X actually do today?" | `openspec/specs/<x>/` |
 | "What's the overall architecture / data flow / state model?" | `docs/system.md` (the hub map), then the named chapter in `docs/system/` |
 | "What must every design respect?" | `docs/system/premises.md` — the numbered P\<n\> ground rules; mandatory before any design/proposal/experiment |
-| "Where does the system fail / what are the known hazards?" | `docs/caveats.md` — stable C\<n\> IDs; read each entry's Validity ladder in order |
+| "Where does the system fail / what are the known hazards?" | `docs/caveats.md` — named entries; read each entry's Validity ladder in order |
 | "How do we do X / which tool for X?" | `docs/playbook.md` — procedures, evaluated tools (use-when + last-verified), adopted research conclusions |
 | "What was designed but not built?" | `docs/proposals/` — front-matter `status:` says where each stands; `browse.py --plain` shows them with status |
 | "What research have we done on X?" | `ls docs/notes/ \| grep research`, or semantic search; adopted conclusions are already in the playbook/system with pointers back |

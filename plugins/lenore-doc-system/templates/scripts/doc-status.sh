@@ -233,7 +233,7 @@ if [ -d docs/system ]; then
   [ "$chapters" -gt 8 ] && spine_part=" · system-chapters: ${chapters} (soft cap 8 — merge before splitting further)"
 fi
 if [ -f docs/system/premises.md ]; then
-  premises=$(grep -cE '^\*\*P[0-9]+' docs/system/premises.md 2>/dev/null || true)
+  premises=$(grep -cE '^\*\*[a-z0-9]' docs/system/premises.md 2>/dev/null || true)
   [ "${premises:-0}" -gt 15 ] && spine_part="${spine_part} · premises: ${premises} (soft cap 15 — a premise list that grows into an essay stops being read)"
 fi
 

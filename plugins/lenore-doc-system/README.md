@@ -3,7 +3,7 @@
 Documentation-as-history for AI-maintained repos: dated, immutable files;
 current truth kept separate from history in a three-file spine —
 `docs/system` (how it works now, incl. the mandatory-read premises),
-`docs/caveats.md` (where it fails now, stable IDs + Validity ladders),
+`docs/caveats.md` (where it fails now — named entries + Validity ladders),
 `docs/playbook.md` (procedures, evaluated tools, adopted research) —
 plus revisable status-carrying `docs/proposals/`; a closed, hook-enforced
 docs/ layout; every high-damage rule enforced by committed git hooks
