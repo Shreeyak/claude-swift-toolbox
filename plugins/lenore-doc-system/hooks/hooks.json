@@ -8,6 +8,11 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/templates/scripts/doc-lint.sh\" \"${CLAUDE_PLUGIN_ROOT}\"",
             "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/templates/scripts/land-guard.sh\"",
+            "timeout": 15
           }
         ]
       }

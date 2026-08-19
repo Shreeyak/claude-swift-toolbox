@@ -137,7 +137,7 @@ hatch is always correct.
 | Status line shows a large gap | One catch-up journal entry (~20 lines) summarizing the arc from `git log` — don't back-fill many. |
 | You produce a doc FOR the user | Save it in its normal home (usually `docs/notes/`), symlink it into `docs/desk/` in the same message. |
 | User says "put/take X on/off my desk" or "delete X" | Do it in plain words — see `references/doc-guidance.md` desk section for remove-vs-delete semantics. |
-| Branch is landing or being abandoned | Run `/lenore-doc-system:land`. Never a bare `git merge` into main. |
+| Branch is landing or being abandoned | Run `/lenore-doc-system:land`. Never a bare `git merge` — into main OR any other branch; a branch whose task file is still open must be closed out before its work is integrated anywhere. |
 | Repo has no doc system yet, or needs upgrading | Run `/lenore-doc-system:setup`. |
 | Before a proposal/design, or "did we try this before?" | Search `docs/notes/` + experiment READMEs (`scripts/browse.py --plain` or grep) — see `references/routing.md`. |
 | Any "where do I find X" question | `references/routing.md` — the question→location table. |
@@ -171,11 +171,22 @@ branch — both run `/lenore-doc-system:land`: final spec sync, closing
 journal entry, change folder archived, branch task file disposed with the
 user's confirmation on what graduates to `project.md`, desk walked and
 cleared, merge as the *last* step. Trigger is plain words ("merge it") —
-never a ritual invocation. The pre-push hook gates any `git push` that
-updates main/master with structural marker checks — it does not gate a
-bare local `git merge` with no push, and it's local config that only
-applies once a clone has run `/lenore-doc-system:setup`'s activation
-check.
+never a ritual invocation. This applies to merges into ANY branch, not
+just main — merging feature X into feature Y while X's branch task file
+is still open is the same skipped close-out. Manual merges are checked
+the same way: a landing guard fires at both layers (an agent-harness
+PreToolUse hook on `git merge` commands, and the `pre-merge-commit` git
+hook for user-typed merges) whenever the merged branch's
+`docs/tasks/branch-<slug>.md` still exists — the land flow deletes that
+file before merging, so its presence means the flow has not run. The
+guard warns once and blocks; re-running the identical merge proceeds
+(`LENORE_NO_MERGE_GUARD=1` skips). Setup also sets `git config merge.ff
+false` (with `pull.ff true`): no git hook fires on a pure fast-forward,
+so forcing merge commits is what makes the git-layer guard cover every
+merge. The pre-push hook additionally gates any `git push` that updates
+main/master with structural marker checks; all of this is local config
+that only applies once a clone has run `/lenore-doc-system:setup`'s
+activation check.
 
 Not a landing: direct-to-main work on Tier 0 (no ceremony), syncing main
 into a feature branch, an experiment conclusion on its own, a partial

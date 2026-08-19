@@ -73,7 +73,15 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   it points exactly at its own store dir), a rename
   warning when an experiment dir moves without its store dir, merge
   guidance for same-named dated notes (both versions must survive; one
-  gets refiled), landing gate.
+  gets refiled), landing gate, and the landing-flow merge guard
+  (pre-merge-commit blocks merging any branch whose
+  `docs/tasks/branch-<slug>.md` is still open — warn-once, any target
+  branch; setup sets `merge.ff false` so no merge can slip past as a
+  hook-less fast-forward).
+- `scripts/land-guard.sh` — the same landing-flow guard at the agent
+  layer: a PreToolUse hook on `git merge` commands (Claude via the
+  plugin's hooks.json, Codex via `.codex/hooks.json`), so the reminder
+  fires before the merge even starts.
 - Plugin-level drift lint (`hooks/hooks.json` → `doc-lint.sh`): one
   batched Haiku judgment check per `git commit` touching docs/ entries or
   experiment notebook entries — including whether a new run contradicts

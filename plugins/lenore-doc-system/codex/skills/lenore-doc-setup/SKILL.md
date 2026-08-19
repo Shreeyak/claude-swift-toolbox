@@ -45,7 +45,8 @@ offline/no-network fallback in Codex's default sandbox):
 - doc-hygiene-rules.md (the shared hygiene rulebook — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/0ed9993/plugins/lenore-doc-system/skills/doc-system/references/doc-hygiene-rules.md`
 - doc-health.sh (background health-audit runner — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/0ed9993/plugins/lenore-doc-system/templates/scripts/doc-health.sh`
 - doc-health-auditor.md (the audit agent prompt — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/0ed9993/plugins/lenore-doc-system/agents/doc-health-auditor.md`
-- Codex hooks config (SessionStart status + PreToolUse lint): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/0ed9993/plugins/lenore-doc-system/templates/codex-hooks.json`
+- land-guard.sh (landing-flow merge guard — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/0ed9993/plugins/lenore-doc-system/templates/scripts/land-guard.sh`
+- Codex hooks config (SessionStart status + PreToolUse lint + landing guard): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/0ed9993/plugins/lenore-doc-system/templates/codex-hooks.json`
 
 When you bump the pin, re-verify each template still matches what's
 described in this prompt.
@@ -85,8 +86,9 @@ described in this prompt.
    and `## Someday` headings if absent; fetch the four hook templates
    (pre-commit, pre-push, pre-merge-commit, commit-msg) into `.githooks/`
    and make them executable; fetch `browse.py`, `doc-status.sh`,
-   `docs-search.py`, `lenore-docs.py`, and `doc-lint.sh` (plus
-   `doc-lint-judge.md` and `doc-hygiene-rules.md` into `scripts/`) into `scripts/` (executable);
+   `docs-search.py`, `lenore-docs.py`, `doc-lint.sh`, and `land-guard.sh`
+   (plus `doc-lint-judge.md` and `doc-hygiene-rules.md`) into `scripts/`
+   (executable);
    fetch `docs-CLAUDE.md`
    into `docs/CLAUDE.md`; append the `.gitignore` snippet (idempotent —
    check its marker line); `mkdir -p data/datasets data/experiments
@@ -94,7 +96,12 @@ described in this prompt.
    create `experiments/PROMOTIONS.md` (append-only ledger, header +
    comment row); run `git config core.hooksPath .githooks` (stop
    and ask first if it's already set to something else, or `.githooks/`
-   already has other hooks — propose chaining, don't overwrite); symlink
+   already has other hooks — propose chaining, don't overwrite); run
+   `git config merge.ff false` and `git config pull.ff true` (no git hook
+   fires on a pure fast-forward merge, so forcing merge commits is what
+   makes the pre-merge-commit landing guard cover every merge, manual
+   ones included; pull.ff true keeps ordinary pulls fast-forwarding);
+   symlink
    `AGENTS.md -> CLAUDE.md` at repo root and beside `docs/CLAUDE.md`;
    append the Tier 1 rules block verbatim to the repo's `CLAUDE.md`
    followed by `docs-system: lenore-v1 (tier 1)` (skip the append if the
@@ -182,10 +189,18 @@ steps 1-4, then leave or delete the branch per the user's instruction.
 ## Notes
 
 Never invent policy beyond what's in the linked doctrine. When in doubt,
-read (or fetch) the SKILL.md link above rather than guessing. The pre-push
-hook only gates a `git push` that updates main/master — it does not gate a
-bare local `git merge`, and it only applies once `core.hooksPath` is set in
-this clone (step 1's activation check exists for exactly this reason).
+read (or fetch) the SKILL.md link above rather than guessing. Bare `git
+merge` — into main or ANY other branch — is guarded twice: the Codex
+`PreToolUse` hook runs `scripts/land-guard.sh` on agent merge commands,
+and the `pre-merge-commit` git hook runs the same check on manual
+merges; both fire when the merged branch's `docs/tasks/branch-<slug>.md`
+still exists (the landing flow deletes it before merging). Warn-once:
+re-running the identical merge proceeds; `LENORE_NO_MERGE_GUARD=1`
+skips. `merge.ff false` (set in step 2) is what closes the fast-forward
+gap — no git hook fires on a pure ff ref update. The pre-push hook
+additionally gates any `git push` that updates main/master; all of this
+only applies once `core.hooksPath` is set in this clone (step 1's
+activation check exists for exactly this reason).
 
 ## 3. Doc-health audit (Codex-native equivalent of `/doc-health`)
 

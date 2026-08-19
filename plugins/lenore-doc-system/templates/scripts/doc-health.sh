@@ -24,19 +24,24 @@ fi
 mkdir -p .claude/worktrees
 git worktree add "$wt" -b "$branch" HEAD >/dev/null 2>&1 || { echo "doc-health: worktree add failed" >&2; exit 1; }
 
-# Locate the auditor prompt + rulebook: repo copies first, then the plugin.
+# Locate the auditor prompt + rulebook: the plugin's canonical copy first
+# (always current when running under Claude Code), the repo scripts/
+# snapshot as the no-plugin fallback (Codex, plain terminal, CI — the
+# snapshot is refreshed by setup's upgrade diff).
 find_file() {
   for c in "$@"; do [ -f "$c" ] && { echo "$c"; return 0; }; done
   return 1
 }
-rules=$(find_file scripts/doc-hygiene-rules.md \
-  "${CLAUDE_PLUGIN_ROOT:-/nonexistent}/skills/doc-system/references/doc-hygiene-rules.md") || {
+rules=$(find_file \
+  "${CLAUDE_PLUGIN_ROOT:-/nonexistent}/skills/doc-system/references/doc-hygiene-rules.md" \
+  scripts/doc-hygiene-rules.md) || {
   echo "doc-health: doc-hygiene-rules.md not found (run setup to copy it into scripts/)" >&2
   git worktree remove --force "$wt" >/dev/null 2>&1; git branch -D "$branch" >/dev/null 2>&1
   exit 1
 }
-auditor=$(find_file scripts/doc-health-auditor.md \
-  "${CLAUDE_PLUGIN_ROOT:-/nonexistent}/agents/doc-health-auditor.md") || {
+auditor=$(find_file \
+  "${CLAUDE_PLUGIN_ROOT:-/nonexistent}/agents/doc-health-auditor.md" \
+  scripts/doc-health-auditor.md) || {
   echo "doc-health: doc-health-auditor.md not found (run setup to copy it into scripts/)" >&2
   git worktree remove --force "$wt" >/dev/null 2>&1; git branch -D "$branch" >/dev/null 2>&1
   exit 1

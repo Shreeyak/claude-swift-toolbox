@@ -4,4 +4,50 @@
 set -euo pipefail
 
 hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Landing-flow guard (covers MANUAL merges — agent-harness hooks never see
+# a user-typed `git merge`): if the branch being merged in still has its
+# open branch task file (docs/tasks/branch-<slug>.md — the landing flow
+# deletes it BEFORE merging), the flow has not run. Warn once and abort;
+# re-running the same merge proceeds (stamp handshake shared with the
+# agent-layer land-guard.sh, so the two layers never double-warn).
+# MERGE_HEAD does not exist yet at pre-merge-commit time (verified on git
+# 2.54: only AUTO_MERGE is present) — the merged commits arrive as
+# GITHEAD_<sha>=<name> env vars instead. LENORE_NO_MERGE_GUARD=1 skips.
+if [ "${LENORE_NO_MERGE_GUARD:-0}" != "1" ]; then
+  while IFS='=' read -r ghead_var ghead_name; do
+    [ -n "$ghead_var" ] || continue
+    merged_sha="${ghead_var#GITHEAD_}"
+    stamp="$(git rev-parse --git-dir)/lenore-land-warned"
+    if [ -f "$stamp" ] && [ "$(cat "$stamp" 2>/dev/null)" = "$merged_sha" ]; then
+      rm -f "$stamp"
+      continue
+    fi
+    # Candidate slugs: the name merge was invoked with, plus every branch
+    # pointing at the merged sha (covers merging by sha or remote name).
+    slugs=$(
+      printf '%s\n' "$ghead_name"
+      git branch --points-at "$merged_sha" --format='%(refname:short)' 2>/dev/null
+    )
+    open_task=""
+    while IFS= read -r name; do
+      [ -n "$name" ] || continue
+      slug=$(printf '%s' "$name" | sed 's|/|-|g')
+      if git ls-files --cached -- "docs/tasks/branch-${slug}.md" 2>/dev/null | grep -q .; then
+        open_task="docs/tasks/branch-${slug}.md"
+        break
+      fi
+    done <<EOF_SLUGS
+$slugs
+EOF_SLUGS
+    if [ -n "$open_task" ]; then
+      printf '%s' "$merged_sha" > "$stamp"
+      echo "lenore: the branch being merged still has its open task file ($open_task) — the landing flow has not run. Run /lenore-doc-system:land (Codex: the landing flow in the lenore-doc-setup skill) first: closing journal entry, doc review, task cleanup, THEN the merge. The merge was left uncommitted — run 'git merge --abort' first, then either run the landing flow or re-run the same merge to proceed anyway." >&2
+      exit 1
+    fi
+  done <<EOF_GITHEADS
+$(env | grep '^GITHEAD_' || true)
+EOF_GITHEADS
+fi
+
 exec "$hook_dir/pre-commit" "$@"

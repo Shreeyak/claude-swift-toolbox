@@ -29,7 +29,8 @@ the plan, apply only after the user confirms.
   `.githooks/commit-msg`, `scripts/doc-status.sh`, `scripts/browse.py`,
   `scripts/docs-search.py`, `scripts/lenore-docs.py`, `scripts/doc-lint.sh`,
   `scripts/doc-lint-judge.md`, `scripts/doc-hygiene-rules.md`,
-  `scripts/doc-health.sh`, `scripts/doc-health-auditor.md`, `.codex/hooks.json`,
+  `scripts/doc-health.sh`, `scripts/doc-health-auditor.md`,
+  `scripts/land-guard.sh`, `.codex/hooks.json`,
   `docs/CLAUDE.md` against this plugin's `templates/` — propose replacing
   any that differ, and report the diffs. Do not touch `docs/journal/`,
   `docs/notes/`, or other content.
@@ -165,13 +166,13 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   if it does not already exist.
 - Copy `templates/githooks/{pre-commit,pre-push,pre-merge-commit,commit-msg}`
   to `.githooks/`, then `chmod +x` all four.
-- Copy `templates/scripts/{browse.py,doc-status.sh,docs-search.py,lenore-docs.py,doc-lint.sh}`
+- Copy `templates/scripts/{browse.py,doc-status.sh,docs-search.py,lenore-docs.py,doc-lint.sh,land-guard.sh}`
   and the plugin's `agents/doc-lint-judge.md`,
   `agents/doc-health-auditor.md`,
   `templates/scripts/doc-health.sh` (chmod +x), and
   `skills/doc-system/references/doc-hygiene-rules.md` to `scripts/` (the committed
   lint + judge copies are what Codex and CI invoke; Claude Code keeps using
-  the plugin's own copies), then `chmod +x doc-status.sh lenore-docs.py doc-lint.sh` (`browse.py`/`docs-search.py`
+  the plugin's own copies), then `chmod +x doc-status.sh lenore-docs.py doc-lint.sh land-guard.sh` (`browse.py`/`docs-search.py`
   are invoked via `uv run`, executable bit optional but harmless to set).
   Mention to the user that `docs-search.py` (local semantic search, Apple
   Silicon only) is optional — its setup and troubleshooting live in
@@ -179,6 +180,12 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   only once grep starts missing things.
 - Copy `templates/docs-CLAUDE.md` to `docs/CLAUDE.md`.
 - `git config core.hooksPath .githooks` (repo-local, once).
+- `git config merge.ff false` and `git config pull.ff true` (repo-local).
+  No git hook fires on a pure fast-forward merge (it is only a ref
+  update), so `merge.ff false` forces every merge to create a merge
+  commit — which makes `pre-merge-commit` (and its landing-flow guard)
+  fire on ALL merges, manual ones included. `pull.ff true` keeps
+  ordinary pulls fast-forwarding as normal.
 - Symlink `AGENTS.md -> CLAUDE.md` at repo root, and `docs/AGENTS.md ->
   CLAUDE.md` beside `docs/CLAUDE.md` — skip creating a symlink that
   already points at the right target; if `AGENTS.md` exists and is

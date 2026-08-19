@@ -106,6 +106,16 @@ completed.
   checked out. **Never pass `--no-verify` to skip hooks** — if the
   pre-push landing gate rejects the push, that means a marker is still
   missing; fix it and retry, do not bypass.
+- The landing guard (agent hook + `pre-merge-commit`) blocks any merge of
+  a branch whose `docs/tasks/branch-<slug>.md` still exists. Because this
+  flow deletes that file in the steps above, its own merge passes the
+  guard silently — if the guard fires here, a step above was skipped: go
+  fix it, never re-run the merge to bypass. Repos set `merge.ff false`,
+  so the merge creating a merge commit is expected, not an error.
+- Landing into a non-default integration branch (stacked branches) runs
+  this same flow with that branch as the merge target — the guard checks
+  merges into every branch, and an open branch task file must be closed
+  out before its work is integrated anywhere.
 - Clean up the branch's worktree if one was used for this branch
   (`git worktree remove`), after the merge succeeds.
 - **Recovery if the merge or push fails:** the closing journal entry
