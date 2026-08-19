@@ -82,17 +82,40 @@ pipeline; ECC path removed. (abc1234)
 
 ## No entry IDs — names only (applies to every doc class)
 
-No document entry anywhere gets an identifier or a number: no `C1`,
-`P3`, `ADR-###`, `D-12`, no sequential prefixes of any kind, in any file
-under `docs/` or in docstrings. IDs are the ADR failure mode returning
+Do not invent serial, ordinal, categorical, date-based, or otherwise
+systematic identifiers for documentation entries — no `C1`, `P3`,
+`ADR-###`, `D-12`, and no prefix/suffix scheme whose job is ordering,
+uniqueness, classification, or lookup rather than describing the entry
+(`a-…`/`b-…` ordering slugs and `phase-one-`/`priority-` prefixes are
+IDs wearing a slug costume). IDs are the ADR failure mode returning
 through the side door: agents latch onto the scheme, start policing
 consistency, renumber, cross-reference by ID, and build the registry
-bureaucracy this system exists to avoid. Instead, an entry that needs to
-be referenced gets a **short descriptive slug name** (a heading or bolded
-lead), and is cited **by name in plain words** ("the seam-drift caveat",
-"the operator-wears-gloves premise"). Descriptive names are stable
-without renumbering and greppable without a registry. Dated filenames
-are not IDs — the date is provenance, not an address.
+bureaucracy this system exists to avoid. An entry that needs referencing
+gets a **short descriptive, content-derived slug name** that stays
+meaningful in isolation (a heading or bolded lead), and is cited **by
+name in plain words** ("the seam-drift caveat", "the
+operator-wears-gloves premise").
+
+Carve-out — identifiers that belong to the documented domain are
+untouched: versions, standards (RFC 9110, SHA-256), metrics (P95),
+issue numbers, commit hashes, and the sanctioned experiment run ids
+(`run012`). Use them freely when writing *about* them; never repurpose
+one as a documentation organization scheme.
+
+Dates in filenames are provenance, not addresses: cite "the 2026-08-14
+embeddings research note", never "the 2026-08-14 note" alone — the
+descriptive name is the locator; the date only disambiguates.
+
+**Citing an entry to justify a decision, warning, or non-obvious
+claim:** state the claim itself in one sentence (two only when
+genuinely needed), then the literal greppable locator — "NCC drifts
+near seams at <50% overlap, so we mask first (docs/caveats.md,
+seam-drift-at-low-overlap)". Never a bare pointer ("per
+seam-drift-at-low-overlap"), never a date alone. The test: deleting the
+locator must leave a sentence that still states the relevant claim. If
+the inline summary and the entry ever disagree, the entry is
+authoritative. Passing mentions need no citation ritual — this applies
+only where a reference carries the justification.
 
 ## The spine — `system` / `caveats` / `playbook` (living, mutable)
 

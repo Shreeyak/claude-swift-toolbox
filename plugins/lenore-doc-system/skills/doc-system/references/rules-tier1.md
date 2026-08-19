@@ -24,11 +24,21 @@
   Validity ladder: Confirmed / Mechanism / Retracted, read in order),
   docs/playbook.md (procedures, evaluated tools with use-when +
   last-verified, adopted research conclusions).
-- NO entry IDs or numbering schemes anywhere in docs or docstrings — no
-  C1/P3/ADR-### style designations, ever. Entries that need referencing
-  get a short descriptive slug name (heading or bolded lead) and are
-  cited by name in plain words ("the seam-drift caveat"). Descriptive
-  names are stable without renumbering and greppable without a registry.
+- Never invent serial, ordinal, categorical, date-based, or otherwise
+  systematic identifiers for doc entries — no C1/P3/ADR-### style
+  designations, no ordering/priority prefix schemes, anywhere in docs
+  or docstrings. Entries that need referencing get a short descriptive,
+  content-derived slug name (heading or bolded lead) and are cited by
+  name in plain words ("the seam-drift caveat"). Carve-out: identifiers
+  belonging to the documented domain (P95, RFC 9110, commit hashes,
+  issue numbers, run012 experiment records) are fine to write ABOUT —
+  never repurpose one to organize docs. When a reference justifies a
+  decision, warning, or non-obvious claim: state the claim in one
+  sentence, then the greppable locator — "NCC drifts near seams, so we
+  mask first (docs/caveats.md, seam-drift-at-low-overlap)"; never a
+  bare pointer or a date alone. Deleting the locator must leave a
+  sentence that still states the claim; the entry is authoritative if
+  the summary drifts.
 - Before drafting a proposal, design, or experiment, read
   docs/system/premises.md — the named ground rules about the
   product, instrument, and operator that hold regardless of
