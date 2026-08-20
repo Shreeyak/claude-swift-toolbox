@@ -46,6 +46,9 @@ offline/no-network fallback in Codex's default sandbox):
 - doc-health.sh (background health-audit runner — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/doc-health.sh`
 - doc-health-auditor.md (the audit agent prompt — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/agents/doc-health-auditor.md`
 - land-guard.sh (landing-flow merge guard — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/land-guard.sh`
+- truth-candidates.sh (reverse-drift candidate collector — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/truth-candidates.sh`
+- reverse-drift-check.md (the shared sync-check contract — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/skills/doc-system/references/reverse-drift-check.md`
+- code-doc-sync-reviewer.md (the sync reviewer prompt — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/agents/code-doc-sync-reviewer.md`
 - Codex hooks config (SessionStart status + PreToolUse lint + landing guard): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/codex-hooks.json`
 
 When you bump the pin, re-verify each template still matches what's
@@ -86,9 +89,11 @@ described in this prompt.
    and `## Someday` headings if absent; fetch the four hook templates
    (pre-commit, pre-push, pre-merge-commit, commit-msg) into `.githooks/`
    and make them executable; fetch `browse.py`, `doc-status.sh`,
-   `docs-search.py`, `lenore-docs.py`, `doc-lint.sh`, and `land-guard.sh`
-   (plus `doc-lint-judge.md` and `doc-hygiene-rules.md`) into `scripts/`
-   (executable);
+   `docs-search.py`, `lenore-docs.py`, `doc-lint.sh`, `land-guard.sh`,
+   and `truth-candidates.sh`
+   (plus `doc-lint-judge.md`, `doc-hygiene-rules.md`,
+   `reverse-drift-check.md`, and `code-doc-sync-reviewer.md`) into
+   `scripts/` (executable);
    fetch `docs-CLAUDE.md`
    into `docs/CLAUDE.md`; append the `.gitignore` snippet (idempotent —
    check its marker line); `mkdir -p data/datasets data/experiments
@@ -147,8 +152,12 @@ abandonment) always last.
    different worktree (`git worktree list`), you'll merge there in step 5
    — never check out the default branch in the current worktree if it's
    already checked out elsewhere.
-1. **Final spec sync.** Make sure `openspec/specs/` reflects what actually
-   landed, in the same commit style as the rest of the branch.
+1. **Final spec sync.** Apply the change folder's APPROVED deltas to
+   `openspec/specs/`, in the same commit style as the rest of the branch.
+   Never rewrite specs to match whatever was built: if the built behavior
+   diverges from the planned spec, stop and raise it to the user with the
+   spec line vs the built behavior side by side — they amend the change
+   folder or fix the code.
 1b. **Landing doc review.** Read `scripts/doc-hygiene-rules.md` and review
    the branch diff against it — every changed docs/ file and every
    docstring/comment in changed code files (invented entry IDs, opaque
@@ -163,11 +172,14 @@ abandonment) always last.
    the merge/push in step 5 then fails, append a **new** journal entry
    noting the landing did not complete — never edit the first entry
    (journal entries are immutable once committed).
-3. **Archive the openspec change folder.** Run `openspec archive <name>`
-   (the CLI also performs the spec update; it writes to
-   `openspec/changes/archive/<date>-<name>/`). Only if the CLI is absent,
-   hand-move the folder there and sync `openspec/specs/` yourself. Add a
-   one-line note if the change was dropped rather than completed.
+3. **Archive the openspec change folder.** Check its `tasks.md` first:
+   ALL boxes checked → archive automatically (`openspec archive <name>`;
+   hand-move + spec sync only if the CLI is absent) and just mention it
+   in your summary. A FEW boxes pending → never auto-archive; ask the
+   user: defer the pending tasks with a pointer (into
+   `docs/tasks/project.md` or the closing journal entry) and archive as
+   partially adopted, or keep the branch open. Dropped rather than
+   completed → archive with a one-line note saying why.
 4. **Graduate branch tasks; walk the desk.** Open
    `docs/tasks/branch-<slug>.md`; for each open item, graduate it into
    `docs/tasks/project.md` (`## Next` or `## Someday`) or drop it, then
@@ -175,6 +187,19 @@ abandonment) always last.
    the symlink — desk pins are gitignored, `git rm` won't touch them); if
    the user wants to keep one, add a pointer line to `project.md` first,
    then unpin.
+4b. **Reverse-drift sync review — after cleanup, before the merge.** Run
+   `scripts/truth-candidates.sh <merge-base> HEAD` and apply the contract
+   in `scripts/reverse-drift-check.md` (the reviewer prompt is
+   `scripts/code-doc-sync-reviewer.md` — follow it in-session, including
+   the embedding channel if `.lenore/embeddings/` exists and the
+   per-file coverage-gap docstring recommendations, which you apply
+   directly). Save the review verbatim as
+   `docs/notes/YYYY-MM-DD-landing-<slug>-sync-report.md` and commit it.
+   An evidence-backed `finding` (doc line + quoted claim + code line +
+   stated contradiction) blocks this landing until the doc is fixed or
+   the finding is waived in the closing journal entry; `clear`/
+   `inconclusive`/coverage-gaps never gate. Zero candidates and no
+   embeddings index → skip, noting "sync-check: no candidates".
 5. **Merge — last step.** Confirm the landing markers hold (no
    `docs/tasks/branch-*.md` for this branch, no unarchived
    `openspec/changes/*/` folders other than `archive/`). Merge into the
@@ -201,6 +226,13 @@ gap — no git hook fires on a pure ff ref update. The pre-push hook
 additionally gates any `git push` that updates main/master; all of this
 only applies once `core.hooksPath` is set in this clone (step 1's
 activation check exists for exactly this reason).
+
+All repo-local generated state lives under one gitignored `.lenore/`
+dir: the semantic index at `.lenore/embeddings/` (moved from the old
+`.docs-embeddings/` — docs-search.py migrates automatically) and the
+warn-once stamps at `.lenore/stamps/` (moved from `.git/lenore-*`).
+Losing `.lenore/` is always safe: the index rebuilds on the next
+search, and a lost stamp only re-arms one warning.
 
 ## 3. Doc-health audit (Codex-native equivalent of `/doc-health`)
 

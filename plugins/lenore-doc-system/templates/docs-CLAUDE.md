@@ -421,7 +421,7 @@ Managed via plain words, not commands. Symlink name is a short descriptive
 label picked by the agent on creation; the human may rename it freely
 afterward — renaming the symlink never touches the target.
 
-## Semantic index (`.docs-embeddings/`, optional)
+## Semantic index (`.lenore/embeddings/`, optional)
 
 If present, this whole tree (docs/**/*.md, docs/**/*.html,
 experiments/*/README.md, experiments/*/notebook/*.md, and openspec/**/*.md

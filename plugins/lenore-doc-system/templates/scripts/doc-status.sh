@@ -4,8 +4,8 @@
 # (last journal age, commit gap, stale branch-task files, bug count,
 # Someday count, stale/dangling desk links, semantic-index staleness,
 # unreflected experiment runs, untriaged run outputs, orphan store dirs,
-# open/unpointed proposals, spine size pressure, published HTML missing
-# its recorded URL).
+# open/unpointed proposals, openspec changes fully/nearly done but not
+# archived, spine size pressure, published HTML missing its recorded URL).
 # Silent (exit 0) when not in a repo with docs/. Fast — meant to run on
 # every session start.
 set -uo pipefail
@@ -95,12 +95,14 @@ desk_part="desk: ${stale_desk} stale, ${dangling_desk} dangling"
 
 # --- semantic-search index staleness (docs-search.py) --------------------
 docs_index_part=""
-if [ -f .docs-embeddings/meta.json ]; then
-  stale_docs=$(find docs -type f \( -name "*.md" -o -name "*.html" \) -newer .docs-embeddings/meta.json 2>/dev/null | grep -v '^docs/desk/' | wc -l | tr -d ' ')
+emb_meta=".lenore/embeddings/meta.json"
+[ -f "$emb_meta" ] || emb_meta=".docs-embeddings/meta.json"   # pre-.lenore layout
+if [ -f "$emb_meta" ]; then
+  stale_docs=$(find docs -type f \( -name "*.md" -o -name "*.html" \) -newer "$emb_meta" 2>/dev/null | grep -v '^docs/desk/' | wc -l | tr -d ' ')
   stale_exp=0
-  [ -d experiments ] && stale_exp=$(find experiments -maxdepth 3 -type f \( -name "README.md" -o -path "*/notebook/*.md" -o -path "*/runs/*.md" \) -newer .docs-embeddings/meta.json 2>/dev/null | wc -l | tr -d ' ')
+  [ -d experiments ] && stale_exp=$(find experiments -maxdepth 3 -type f \( -name "README.md" -o -path "*/notebook/*.md" -o -path "*/runs/*.md" \) -newer "$emb_meta" 2>/dev/null | wc -l | tr -d ' ')
   stale_spec=0
-  [ -d openspec ] && stale_spec=$(find openspec -type f -name "*.md" ! -name "tasks.md" -newer .docs-embeddings/meta.json 2>/dev/null | wc -l | tr -d ' ')
+  [ -d openspec ] && stale_spec=$(find openspec -type f -name "*.md" ! -name "tasks.md" -newer "$emb_meta" 2>/dev/null | wc -l | tr -d ' ')
   stale_total=$((stale_docs + stale_exp + stale_spec))
   # docs-search.py auto-refreshes incrementally on every search, so this
   # isn't "stale" in the sense of giving wrong answers — just files that
@@ -226,6 +228,27 @@ if [ -d docs/proposals ]; then
   [ "$orphan_props" -gt 0 ] && proposals_part="${proposals_part} · proposals-unpointed: ${orphan_props} (${orphan_first} — add a task pointer or flip its status)"
 fi
 
+# --- openspec change folders that look done but aren't archived -------------
+# Fully-checked tasks.md -> land auto-archives, so a lingering one means a
+# landing was skipped; mostly-checked (>=90%) -> nag to land or defer.
+spec_nag_part=""
+if [ -d openspec/changes ]; then
+  spec_done=""
+  for tf in openspec/changes/*/tasks.md; do
+    [ -e "$tf" ] || continue
+    case "$tf" in openspec/changes/archive/*) continue ;; esac
+    total=$(grep -cE '^\s*- \[[ xX]\]' "$tf" 2>/dev/null || echo 0)
+    [ "$total" -gt 0 ] || continue
+    done_n=$(grep -cE '^\s*- \[[xX]\]' "$tf" 2>/dev/null || echo 0)
+    if [ $(( done_n * 100 )) -ge $(( total * 90 )) ]; then
+      spec_done="${spec_done}$(basename "$(dirname "$tf")")(${done_n}/${total}) "
+    fi
+  done
+  if [ -n "$spec_done" ]; then
+    spec_nag_part=" · spec-changes-complete: $(printf '%s' "$spec_done" | sed 's/ *$//') — archive at landing (all boxes checked auto-archives; a few pending needs a defer decision)"
+  fi
+fi
+
 # --- spine size pressure (system chapters cap ~8, premises cap ~15) ---------
 spine_part=""
 if [ -d docs/system ]; then
@@ -284,4 +307,4 @@ if [ -d docs/journal ]; then
   fi
 fi
 
-echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${unreflected_part}${store_part}${proposals_part}${spine_part}${html_part}${health_part}${stale_task_part}"
+echo "docs: ${journal_part} · stale branch-tasks: ${stale_branch_tasks} · bugs: ${bug_count} · someday: ${someday_count} · ${desk_part}${docs_index_part}${dangling_ptr_part}${unreflected_part}${store_part}${proposals_part}${spec_nag_part}${spine_part}${html_part}${health_part}${stale_task_part}"

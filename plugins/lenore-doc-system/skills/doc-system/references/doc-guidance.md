@@ -159,6 +159,16 @@ outgrow one file. There is no `docs/reference/` — its old contents split
 into playbook (external tools/how-tos) and system chapters (internal
 explanations).
 
+**Anchor sections to code, once.** When a spine/caveat/playbook/spec
+section is about a specific piece of code, name the file or key symbol
+in backticks where the section introduces the mechanism — "the quality
+gate (`core/quality-gate.mm`) rejects frames below…". Non-unique names
+are fine; density is the rule: once per section or major paragraph,
+never every few lines. This is style guidance, not a citation ritual —
+but it is also what makes the landing-time reverse-drift check
+(`references/reverse-drift-check.md`) able to find a claim the code
+just falsified, so a section with no anchor at all is invisible to it.
+
 ## `docs/proposals/` — designed, not committed
 
 `YYYY-MM-DD-topic.md`, the **one revisable dated class**: a proposal is a

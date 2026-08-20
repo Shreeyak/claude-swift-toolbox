@@ -141,7 +141,7 @@ hatch is always correct.
 | Repo has no doc system yet, or needs upgrading | Run `/lenore-doc-system:setup`. |
 | Before a proposal/design, or "did we try this before?" | Search `docs/notes/` + experiment READMEs (`scripts/browse.py --plain` or grep) — see `references/routing.md`. |
 | Any "where do I find X" question | `references/routing.md` — the question→location table. |
-| Concept/vocabulary question over past docs ("did we explore X?") | `scripts/docs-search.py "query"` if `.docs-embeddings/` exists (local jina-v5 embeddings on MLX); else grep + `browse.py --plain` — not set up yet → `references/semantic-search-setup.md`. |
+| Concept/vocabulary question over past docs ("did we explore X?") | `scripts/docs-search.py "query"` if `.lenore/embeddings/` exists (local jina-v5 embeddings on MLX); else grep + `browse.py --plain` — not set up yet → `references/semantic-search-setup.md`. |
 
 ## The journal: shape (inline — the most-used constraint)
 
@@ -167,10 +167,16 @@ pipeline; ECC path removed. (abc1234)
 ## Landing
 
 A landing is a merge into main, or an explicit decision to abandon a
-branch — both run `/lenore-doc-system:land`: final spec sync, closing
-journal entry, change folder archived, branch task file disposed with the
+branch — both run `/lenore-doc-system:land`: final spec sync (approved
+deltas only — built-vs-planned divergence is raised to the user, never
+papered over by editing specs), closing journal entry, change folder
+archived (fully-checked tasks auto-archive; a few pending tasks need
+the user's defer-or-stay decision), branch task file disposed with the
 user's confirmation on what graduates to `project.md`, desk walked and
-cleared, merge as the *last* step. Trigger is plain words ("merge it") —
+cleared, the reverse-drift sync review (step 4b: `truth-candidates.sh`
+manifest → `code-doc-sync-reviewer` agent → report saved to
+`docs/notes/` — an evidence-backed finding gates warn-once; see
+`references/reverse-drift-check.md`), merge as the *last* step. Trigger is plain words ("merge it") —
 never a ritual invocation. This applies to merges into ANY branch, not
 just main — merging feature X into feature Y while X's branch task file
 is still open is the same skipped close-out. Manual merges are checked

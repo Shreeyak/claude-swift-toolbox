@@ -21,8 +21,11 @@ your work on that branch and NEVER merge, push, or touch other
 branches or the main checkout.
 You answer one question over the whole corpus: *is what we already
 wrote still true, resolvable, and connected?* (Rule compliance of new
-writing is the commit lint's and landing reviewer's job; yours is
-drift in what already landed.)
+writing is the commit lint's and landing reviewer's job; per-landing
+reverse drift — changed code vs the docs that name it — is the
+code-doc-sync-reviewer's job at land step 4b; yours is full-recall
+drift in what already landed, including claims with no code anchor
+that the landing check structurally cannot see.)
 
 ## Before anything
 
@@ -39,6 +42,11 @@ drift in what already landed.)
    concluded verdict outranks an exploring one; never assume "newest
    experiment wins" without reading whether it superseded or merely
    neighbors the older one.
+4. Read the recent landing sync reports
+   (`ls docs/notes/*landing-*-sync-report.md | tail -3`): their NAMED
+   OVERFLOW sections list truth-doc candidates the landing check hit
+   its cap on — those are pre-qualified leads for your spine-
+   falsification lens; start there.
 
 ## The audit — one pass, four lenses, one report
 
@@ -58,6 +66,15 @@ finding — downgrade it to a review note.
    concluded verdicts or by the code. Playbook tool entries whose
    `last-verified` is stale get re-verified only if cheap (does the
    command still exist?); otherwise note them.
+   **`last-verified` stamping (yours alone):** when you verify a
+   system chapter against the code with evidence under this lens,
+   stamp it — a `last-verified: YYYY-MM-DD (<base-sha>)` line under
+   the chapter's title, updating any existing stamp. ONLY this audit
+   writes these stamps; authors never touch them (a stamp edited
+   outside a doc-health branch is itself a hygiene tell), and the
+   `openspec/` dir is exempt from stamps entirely. A chapter you did
+   not verify keeps its old stamp or none — never stamp without the
+   evidence pass.
 3. **Duplication and contradiction across living docs.** The same fact
    stated in two living docs where one was updated and the other
    wasn't; two living docs asserting incompatible claims. Propose one

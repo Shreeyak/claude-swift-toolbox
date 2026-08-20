@@ -30,10 +30,21 @@ the plan, apply only after the user confirms.
   `scripts/docs-search.py`, `scripts/lenore-docs.py`, `scripts/doc-lint.sh`,
   `scripts/doc-lint-judge.md`, `scripts/doc-hygiene-rules.md`,
   `scripts/doc-health.sh`, `scripts/doc-health-auditor.md`,
-  `scripts/land-guard.sh`, `.codex/hooks.json`,
+  `scripts/land-guard.sh`, `scripts/truth-candidates.sh`,
+  `scripts/code-doc-sync-reviewer.md`, `scripts/reverse-drift-check.md`,
+  `.codex/hooks.json`,
   `docs/CLAUDE.md` against this plugin's `templates/` — propose replacing
   any that differ, and report the diffs. Do not touch `docs/journal/`,
   `docs/notes/`, or other content.
+  **`.lenore/` migration (pre-0.8.0 installs):** all repo-local generated
+  state now lives under one gitignored `.lenore/` dir — the embeddings
+  index moved from `.docs-embeddings/` to `.lenore/embeddings/`
+  (docs-search.py migrates the dir automatically on its next run; a
+  manual `mv` also works) and warn-once stamps moved from
+  `.git/lenore-*` to `.lenore/stamps/` (delete old stamps in `.git/`;
+  a lost stamp only re-arms one warning). Update the repo's
+  `.gitignore`: the old `.docs-embeddings` line becomes `.lenore/`
+  (the gitignore-snippet diff step below covers this — show the diff).
   For the rules block in root `CLAUDE.md`: the managed span starts at the
   line **beginning with** `<!-- lenore:rules:start` (the shipped marker
   carries a tier annotation and warning text after that prefix — match the
@@ -166,13 +177,14 @@ exec this plugin's, or vice versa) rather than silently overwriting.
   if it does not already exist.
 - Copy `templates/githooks/{pre-commit,pre-push,pre-merge-commit,commit-msg}`
   to `.githooks/`, then `chmod +x` all four.
-- Copy `templates/scripts/{browse.py,doc-status.sh,docs-search.py,lenore-docs.py,doc-lint.sh,land-guard.sh}`
+- Copy `templates/scripts/{browse.py,doc-status.sh,docs-search.py,lenore-docs.py,doc-lint.sh,land-guard.sh,truth-candidates.sh}`
   and the plugin's `agents/doc-lint-judge.md`,
-  `agents/doc-health-auditor.md`,
+  `agents/doc-health-auditor.md`, `agents/code-doc-sync-reviewer.md`,
   `templates/scripts/doc-health.sh` (chmod +x), and
-  `skills/doc-system/references/doc-hygiene-rules.md` to `scripts/` (the committed
-  lint + judge copies are what Codex and CI invoke; Claude Code keeps using
-  the plugin's own copies), then `chmod +x doc-status.sh lenore-docs.py doc-lint.sh land-guard.sh` (`browse.py`/`docs-search.py`
+  `skills/doc-system/references/doc-hygiene-rules.md` and
+  `skills/doc-system/references/reverse-drift-check.md` to `scripts/` (the committed
+  lint + judge + reviewer copies are what Codex and CI invoke; Claude Code keeps using
+  the plugin's own copies), then `chmod +x doc-status.sh lenore-docs.py doc-lint.sh land-guard.sh truth-candidates.sh` (`browse.py`/`docs-search.py`
   are invoked via `uv run`, executable bit optional but harmless to set).
   Mention to the user that `docs-search.py` (local semantic search, Apple
   Silicon only) is optional — its setup and troubleshooting live in

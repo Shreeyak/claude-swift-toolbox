@@ -18,7 +18,8 @@ if [ "${LENORE_NO_MERGE_GUARD:-0}" != "1" ]; then
   while IFS='=' read -r ghead_var ghead_name; do
     [ -n "$ghead_var" ] || continue
     merged_sha="${ghead_var#GITHEAD_}"
-    stamp="$(git rev-parse --git-dir)/lenore-land-warned"
+    stamp="$(git rev-parse --show-toplevel)/.lenore/stamps/land-warned"
+    mkdir -p "$(dirname "$stamp")"
     if [ -f "$stamp" ] && [ "$(cat "$stamp" 2>/dev/null)" = "$merged_sha" ]; then
       rm -f "$stamp"
       continue

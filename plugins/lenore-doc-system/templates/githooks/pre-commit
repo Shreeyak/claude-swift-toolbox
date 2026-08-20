@@ -582,8 +582,9 @@ if [ -n "$MERGE_HEAD_REF" ]; then
       # Warn-once: a repeated identical resolution is a deliberate drop
       # (deleting the junk twin IS valid conflict resolution) — only a
       # SILENT drop is blocked, and it costs exactly one retry.
-      gitdir=$(git rev-parse --git-dir 2>/dev/null || echo .git)
-      merge_ack="$gitdir/lenore-merge-ack"
+      stampdir="$(git rev-parse --show-toplevel 2>/dev/null || echo .)/.lenore/stamps"
+      mkdir -p "$stampdir" 2>/dev/null || true
+      merge_ack="$stampdir/merge-ack"
       sig=$(printf '%s %s %s' "$path" "$ours" "$theirs" | git hash-object --stdin 2>/dev/null || echo none)
       if [ -f "$merge_ack" ] && grep -q "^$sig$" "$merge_ack" 2>/dev/null; then
         continue

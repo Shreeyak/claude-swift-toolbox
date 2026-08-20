@@ -111,9 +111,12 @@ done <<< "$run_exps"
 
 # Warn-once: if this exact doc content was already flagged, let the retry
 # through — a disputed judgment call costs one retry, never a standoff.
-gitdir=$(git rev-parse --git-dir 2>/dev/null) || exit 0
-ack_file="$gitdir/lenore-lint-ack"
-ok_file="$gitdir/lenore-lint-ok"
+# Stamps live in .lenore/stamps/ (gitignored; losing one only re-arms a
+# warning — the safe direction).
+stampdir="$(git rev-parse --show-toplevel 2>/dev/null)/.lenore/stamps" || exit 0
+mkdir -p "$stampdir" 2>/dev/null || exit 0
+ack_file="$stampdir/lint-ack"
+ok_file="$stampdir/lint-ok"
 payload_hash=$(printf '%s' "$payload" | git hash-object --stdin 2>/dev/null || echo none)
 if [ -f "$ack_file" ] && [ "$(cat "$ack_file" 2>/dev/null)" = "$payload_hash" ]; then
   rm -f "$ack_file"

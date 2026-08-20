@@ -53,6 +53,14 @@
 - Cross-references: cite commit hashes; name dated files or experiment
   folders in plain words. One-way only. Never IDs, never code→doc
   links, never link-consistency checks.
+- When a living-doc section (spine chapter, caveat entry, playbook
+  entry, spec section) is about a specific piece of code, anchor it
+  ONCE — name the file or key symbol in backticks where the section
+  introduces the mechanism ("the quality gate (`core/quality-gate.mm`)
+  …", "`compute_score()` is responsible for X"). Non-unique names are
+  fine. Once per section/major paragraph, not every few lines — a doc
+  littered with references reads worse, not truer. These anchors are
+  what lets the landing sync check find claims the code just falsified.
 - docs/tasks/branch-<slug>.md is this session's scratch — write freely;
   other branch files are read-only. `<slug>` is the branch name with
   every `/` replaced by `-` (branch `feature/x` -> `branch-feature-x.md`).
@@ -148,8 +156,8 @@
   ones sink, wrong ones are history, junk gets deleted by the user.
 - Concept/vocabulary questions over past docs ("did we explore X?"
   phrased differently than the docs' own wording): run
-  scripts/docs-search.py "<query>" if .docs-embeddings/ exists in this
-  repo; otherwise fall back to grep + browse.py --plain.
+  scripts/docs-search.py "<query>" if .lenore/embeddings/ exists in
+  this repo; otherwise fall back to grep + browse.py --plain.
 - Doc formatting details (entry shapes, front-matter fields) live in
   docs/CLAUDE.md; the triggers and routing in THIS file apply during
   all work, everywhere in the repo.

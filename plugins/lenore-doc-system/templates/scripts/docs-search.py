@@ -64,7 +64,13 @@ ROOT = Path(
     .stdout.strip()
     or "."
 )
-CACHE_DIR = ROOT / ".docs-embeddings"
+# All repo-local generated state lives under one gitignored .lenore/ dir.
+CACHE_DIR = ROOT / ".lenore" / "embeddings"
+_LEGACY_CACHE = ROOT / ".docs-embeddings"
+if _LEGACY_CACHE.is_dir() and not CACHE_DIR.exists():
+    # One-time migration from the pre-.lenore layout.
+    CACHE_DIR.parent.mkdir(exist_ok=True)
+    _LEGACY_CACHE.rename(CACHE_DIR)
 VECTORS_FILE = CACHE_DIR / "vectors.npz"
 META_FILE = CACHE_DIR / "meta.json"
 LOCK_FILE = CACHE_DIR / "lock"
@@ -265,10 +271,12 @@ def _load_existing_index():
         return {}, {}
     try:
         meta = json.loads(META_FILE.read_text()) if META_FILE.exists() else {}
-        if meta.get("_model_revision") not in (None, MODEL_REVISION):
+        if meta.get("_model_revision") not in (None, MODEL_REVISION) or \
+           meta.get("_model_repo") not in (None, MODEL_REPO):
             print(
-                f"docs-search: cached index is for model revision "
-                f"{meta.get('_model_revision')!r}, expected {MODEL_REVISION!r} — rebuilding.",
+                f"docs-search: cached index is for model "
+                f"{meta.get('_model_repo')!r}@{meta.get('_model_revision')!r}, "
+                f"expected {MODEL_REPO!r}@{MODEL_REVISION!r} — rebuilding.",
                 file=sys.stderr,
             )
             return {}, {}
@@ -283,7 +291,7 @@ def _load_existing_index():
 def build_index(force: bool = False):
     import numpy as np
 
-    CACHE_DIR.mkdir(exist_ok=True)
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
     lock_fd = os.open(LOCK_FILE, os.O_CREAT | os.O_RDWR)
     try:
         fcntl.flock(lock_fd, fcntl.LOCK_EX)
@@ -322,7 +330,11 @@ def build_index(force: bool = False):
         for cid in stale:
             vectors.pop(cid, None)
 
-        out_meta = {"_model_revision": MODEL_REVISION, "_chunks": new_meta}
+        out_meta = {
+            "_model_repo": MODEL_REPO,       # index is self-describing:
+            "_model_revision": MODEL_REVISION,  # either field mismatching -> rebuild
+            "_chunks": new_meta,
+        }
 
         # Atomic write: vectors first, meta last (meta is the "index is ready" marker).
         tmp_vectors = VECTORS_FILE.with_name("vectors.tmp.npz")

@@ -63,7 +63,7 @@ hangs or errors, see Troubleshooting below rather than debugging mid-task.
 
 ## The cache directory
 
-`.docs-embeddings/` at the repo root (gitignored — see
+`.lenore/embeddings/` at the repo root (gitignored — see
 `templates/gitignore-snippet`):
 
 - `meta.json` — chunk id → `{path, heading, summary}`.
@@ -77,7 +77,7 @@ hook, or scheduled job required in normal use. Pass `--no-refresh` to skip
 that pass for speed when you already know the index is current (e.g.
 running several searches back-to-back with no edits in between).
 `--reindex` forces a full rebuild from scratch (useful after bulk file
-moves, or if the cache looks corrupted). Deleting `.docs-embeddings/`
+moves, or if the cache looks corrupted). Deleting `.lenore/embeddings/`
 entirely is always safe — it's a cache, not a record; the next search
 rebuilds it.
 
@@ -152,7 +152,7 @@ Nothing to schedule. The first search builds the index (model download
 ~424MB once per machine, then ~1s warm); every later search runs the
 incremental content-hash refresh first, so only new or changed files
 re-embed. `--reindex` is for bulk moves or a suspect cache;
-deleting `.docs-embeddings/` is always safe. The status line surfaces a
+deleting `.lenore/embeddings/` is always safe. The status line surfaces a
 stale or missing index, and concurrent sessions are safe (flock +
 atomic writes). The only human-side input to index quality is the
 writing guidance above — heading structure is the chunk structure.
@@ -177,4 +177,4 @@ writing guidance above — heading structure is the chunk structure.
 - **Results look wrong.** A normal search already re-embeds anything
   changed before searching, so staleness isn't the usual cause — try
   `--reindex` (full rebuild) first, and if that doesn't fix it, delete
-  `.docs-embeddings/` and search again.
+  `.lenore/embeddings/` and search again.

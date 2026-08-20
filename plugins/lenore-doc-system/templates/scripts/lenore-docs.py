@@ -305,7 +305,7 @@ def recall(root, query):
     search = root / "scripts" / "docs-search.py"
     if not search.is_file():
         return
-    if not (root / ".docs-embeddings").is_dir():
+    if not (root / ".lenore" / "embeddings").is_dir() and not (root / ".docs-embeddings").is_dir():
         print("recall: no semantic index — grep docs/notes/, docs/proposals/, and", file=sys.stderr)
         print("experiment READMEs for prior work on this topic before designing.", file=sys.stderr)
         return

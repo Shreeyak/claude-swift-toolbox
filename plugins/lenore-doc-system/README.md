@@ -25,8 +25,13 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
 - `/lenore-doc-system:setup` — detect or install the doc system in the current
   repo (propose-then-apply; Tier 0 or Tier 1).
 - `/lenore-doc-system:land` — run the landing flow for the current branch:
-  spec sync, closing journal entry, archive the openspec change, walk
-  branch tasks and the desk, merge as the last step.
+  spec sync (approved deltas only; built-vs-planned divergence is raised
+  to the user), closing journal entry, archive the openspec change
+  (fully-checked tasks auto-archive; partial needs a defer decision),
+  walk branch tasks and the desk, the reverse-drift sync review
+  (`truth-candidates.sh` manifest → `code-doc-sync-reviewer` agent →
+  report saved to `docs/notes/`; evidence-backed findings gate
+  warn-once), merge as the last step.
 - `/lenore-doc-system:desk` — review the desk: list pins with summaries
   and ages, renew-or-drop the stale ones, suggest unpinned docs.
 - `/lenore-doc-system:doc-health` — launch the corpus-wide truth audit
@@ -57,7 +62,21 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   staleness, dangling pointers); the plugin's own SessionStart hook runs
   it on every event including compaction — no per-repo hook registration.
 - `scripts/docs-search.py` — local semantic search (Apple Silicon MLX),
-  optional.
+  optional. Index lives at `.lenore/embeddings/` (all repo-local
+  generated state — index, warn-once stamps — lives under the one
+  gitignored `.lenore/` dir; losing it is always safe).
+- `scripts/truth-candidates.sh` — deterministic collector for the
+  landing-time reverse-drift check: scans the current-truth doc set
+  (spine, specs, experiment READMEs) for mentions of code the branch
+  changed — tier1 exact paths (deletes/renames are prime candidates),
+  tier2 backticked identifiers also present in the diff — with churn
+  damping, a 50-candidate cap, and named overflow. Consumed by
+  `code-doc-sync-reviewer` (Sonnet) at land step 4b under the shared
+  contract `references/reverse-drift-check.md`: verdicts
+  clear/inconclusive/finding, findings need four-part evidence and gate
+  warn-once from the first landing; the embedding channel adds semantic
+  candidates and per-file coverage-gap docstring recommendations; every
+  landing's review is saved as a dated sync report in `docs/notes/`.
 - `.githooks/{pre-commit,commit-msg,pre-merge-commit,pre-push}` — the
   enforcement layer: immutability (journal, notes, experiment notebook
   entries), deny-filenames, the closed docs/ layout (fixed top-level

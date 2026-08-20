@@ -19,4 +19,7 @@ experiments/*/data/
 experiments/*/.venv/
 experiments/*/vendor/
 **/__pycache__/
-.docs-embeddings
+# All repo-local generated state (embeddings index, warn-once stamps, any
+# future local artifacts) lives under one dir. Losing it is always safe:
+# the index rebuilds on next search, a lost stamp only re-arms a warning.
+.lenore/

@@ -38,8 +38,17 @@ abandonment) is always the **last** step.
 ## 1. Final spec sync
 
 Make sure `openspec/specs/` reflects what actually landed — if the branch's
-`openspec/changes/<name>/` folder describes work that's done, sync the spec
-now, in the same commit style as the rest of the branch.
+`openspec/changes/<name>/` folder describes work that's done, apply that
+folder's APPROVED deltas to the specs now, in the same commit style as the
+rest of the branch.
+
+**Divergence protocol:** spec sync applies the approved deltas — it never
+rewrites specs to match whatever was built. If what the branch built
+diverges from what the change folder planned, STOP and raise it to the
+user with the details (the spec/delta line vs the built behavior, side by
+side). The user decides: amend the change folder (re-approving the new
+shape) or fix the code. Silently editing specs to match the code is the
+wrong signal — it would record "built as planned" when it wasn't.
 
 ## 1b. Landing doc review
 
@@ -69,11 +78,21 @@ edit this entry after the fact. If autonomous mode skipped the desk walk
 
 ## 3. Archive the openspec change folder
 
-Run `openspec archive <name>` — the CLI also performs the spec update
-and writes to `openspec/changes/archive/<date>-<name>/`. Only if the CLI
-is absent, hand-move the folder there and sync `openspec/specs/`
-yourself. Add a one-line note if the change was dropped rather than
-completed.
+Check the change folder's `tasks.md` first:
+
+- **All tasks checked** → archive automatically: run
+  `openspec archive <name>` (the CLI also performs the spec update and
+  writes to `openspec/changes/archive/<date>-<name>/`; only if the CLI is
+  absent, hand-move the folder and sync `openspec/specs/` yourself).
+  Mention the archive in your landing summary — no question needed.
+- **A few tasks left pending** (e.g. live device verification) → never
+  auto-archive with unchecked boxes. Ask the user: (a) defer the pending
+  tasks with a pointer — move them to `docs/tasks/project.md` (or the
+  closing journal entry) naming the change folder, then archive as
+  partially adopted with a one-line note saying what's deferred; or
+  (b) keep the branch open and don't land yet.
+- **Dropped rather than completed** → archive with a one-line note saying
+  why.
 
 ## 4. Walk the branch task file and the desk
 
@@ -96,6 +115,45 @@ completed.
 - Leave every desk pin exactly as-is — do not unpin, do not graduate, do
   not touch `docs/desk/`.
 - The closing journal entry (step 2) must note "desk not reviewed."
+
+## 4b. Reverse-drift sync review — after cleanup, before the merge
+
+This is the mirror of step 1b: not "are the branch's new docs sound?"
+but "did the branch's CODE changes falsify existing current-truth docs?"
+It runs here — after spec sync, archive, and task cleanup — so it sees
+the final pre-merge tree.
+
+- Run the deterministic collector:
+  `scripts/truth-candidates.sh <merge-base> <head>`. If it reports zero
+  candidates AND the repo has no `.lenore/embeddings/` index, skip the
+  reviewer entirely and note "sync-check: no candidates" in the closing
+  journal entry.
+- Otherwise spawn the sync reviewer via the Agent tool: `subagent_type:
+  "lenore-doc-system:code-doc-sync-reviewer"` (it pins its own model —
+  do not review inline), handing it the merge base, head, and the
+  manifest. The shared contract is
+  `references/reverse-drift-check.md` in the doc-system skill
+  (repo fallback: `scripts/reverse-drift-check.md`). If the agent type
+  is unavailable (Codex, plugin not installed), run the script and apply
+  the contract yourself in-session.
+- **Save the reviewer's reply verbatim as
+  `docs/notes/YYYY-MM-DD-landing-<slug>-sync-report.md`** — it is
+  written as that report (verdict line, metrics line, findings,
+  per-candidate verdicts, coverage-gap recommendations, named
+  overflow). Commit it with the landing. Reference it from the closing
+  journal entry (step 2 may already be written — if so, the report
+  filename is deterministic, so the entry can cite it in advance; if
+  the entry didn't, do not edit it — the report is discoverable by its
+  dated name).
+- **Gate (armed from the first landing):** a `finding` — four-part
+  evidence: doc line, quoted claim, code line, stated contradiction —
+  blocks this landing until the doc is fixed on the branch or the
+  finding is waived. A waiver names the claim, evidence, and reason in
+  the closing journal entry. `clear`/`inconclusive`/coverage-gap
+  recommendations never gate.
+- **Coverage-gap recommendations** (changed files with no living-doc
+  home): apply them directly — add the docstrings now, on the branch,
+  before merging. Additive docstring edits need no user approval.
 
 ## 5. Merge — last step
 

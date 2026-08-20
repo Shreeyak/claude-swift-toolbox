@@ -64,9 +64,10 @@ while IFS= read -r f; do
 done < <(git ls-tree -r --name-only "$ref" -- docs/tasks/ 2>/dev/null | grep '^docs/tasks/branch-' || true)
 [ -n "$open_task" ] || exit 0
 
-# Warn-once: an identical retry passes.
-gitdir=$(git rev-parse --git-dir)
-stamp="${gitdir}/lenore-land-warned"
+# Warn-once: an identical retry passes. Stamps live in .lenore/stamps/
+# (gitignored; losing one only re-arms a warning — the safe direction).
+mkdir -p "$root/.lenore/stamps"
+stamp="$root/.lenore/stamps/land-warned"
 sig=$(git rev-parse "$ref")
 if [ -f "$stamp" ] && [ "$(cat "$stamp" 2>/dev/null)" = "$sig" ]; then
   # Leave the stamp: the git-layer pre-merge-commit hook (which also
