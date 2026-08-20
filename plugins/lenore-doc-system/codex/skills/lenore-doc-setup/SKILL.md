@@ -24,32 +24,32 @@ Only if the repo is not on disk, fall back to raw GitHub URLs **pinned to a
 specific commit** (not `main`, which can change under you and has no
 offline/no-network fallback in Codex's default sandbox):
 
-- Skill (agent-facing summary): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/skills/doc-system/SKILL.md`
-- Tier 1 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/skills/doc-system/references/rules-tier1.md`
-- Tier 0 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/skills/doc-system/references/rules-tier0.md`
-- Experiment README + notebook-entry templates (incl. candidate-system): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/skills/doc-system/references/experiment-templates.md`
-- Setup command (spine-stub contents + migration steps): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/commands/setup.md`
+- Skill (agent-facing summary): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/skills/doc-system/SKILL.md`
+- Tier 1 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/skills/doc-system/references/rules-tier1.md`
+- Tier 0 CLAUDE.md rules block: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/skills/doc-system/references/rules-tier0.md`
+- Experiment README + notebook-entry templates (incl. candidate-system): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/skills/doc-system/references/experiment-templates.md`
+- Setup command (spine-stub contents + migration steps): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/commands/setup.md`
 - Full doctrine (rationale, human-readable): https://claude.ai/code/artifact/fe938177-22fc-43d6-be6d-842ece97226b
-- Pre-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/githooks/pre-commit`
-- Pre-push hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/githooks/pre-push`
-- Commit-msg hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/githooks/commit-msg`
-- Pre-merge-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/githooks/pre-merge-commit`
-- browse.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/browse.py`
-- doc-status.sh: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/doc-status.sh`
-- docs-search.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/docs-search.py`
-- lenore-docs.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/lenore-docs.py`
-- docs/CLAUDE.md formatting details: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/docs-CLAUDE.md`
-- .gitignore snippet: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/gitignore-snippet`
-- doc-lint.sh (commit-time judgment lint): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/doc-lint.sh`
-- doc-lint-judge.md (the lint's judge prompt): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/agents/doc-lint-judge.md`
-- doc-hygiene-rules.md (the shared hygiene rulebook — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/skills/doc-system/references/doc-hygiene-rules.md`
-- doc-health.sh (background health-audit runner — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/doc-health.sh`
-- doc-health-auditor.md (the audit agent prompt — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/agents/doc-health-auditor.md`
-- land-guard.sh (landing-flow merge guard — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/land-guard.sh`
-- truth-candidates.sh (reverse-drift candidate collector — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/scripts/truth-candidates.sh`
-- reverse-drift-check.md (the shared sync-check contract — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/skills/doc-system/references/reverse-drift-check.md`
-- code-doc-sync-reviewer.md (the sync reviewer prompt — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/agents/code-doc-sync-reviewer.md`
-- Codex hooks config (SessionStart status + PreToolUse lint + landing guard): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/197d11e/plugins/lenore-doc-system/templates/codex-hooks.json`
+- Pre-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/githooks/pre-commit`
+- Pre-push hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/githooks/pre-push`
+- Commit-msg hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/githooks/commit-msg`
+- Pre-merge-commit hook: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/githooks/pre-merge-commit`
+- browse.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/scripts/browse.py`
+- doc-status.sh: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/scripts/doc-status.sh`
+- docs-search.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/scripts/docs-search.py`
+- lenore-docs.py: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/scripts/lenore-docs.py`
+- docs/CLAUDE.md formatting details: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/docs-CLAUDE.md`
+- .gitignore snippet: `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/gitignore-snippet`
+- doc-lint.sh (commit-time judgment lint): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/scripts/doc-lint.sh`
+- doc-lint-judge.md (the lint's judge prompt): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/agents/doc-lint-judge.md`
+- doc-hygiene-rules.md (the shared hygiene rulebook — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/skills/doc-system/references/doc-hygiene-rules.md`
+- doc-health.sh (background health-audit runner — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/scripts/doc-health.sh`
+- doc-health-auditor.md (the audit agent prompt — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/agents/doc-health-auditor.md`
+- land-guard.sh (landing-flow merge guard — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/scripts/land-guard.sh`
+- truth-candidates.sh (reverse-drift candidate collector — copy to scripts/, chmod +x): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/scripts/truth-candidates.sh`
+- reverse-drift-check.md (the shared sync-check contract — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/skills/doc-system/references/reverse-drift-check.md`
+- code-doc-sync-reviewer.md (the sync reviewer prompt — copy to scripts/): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/agents/code-doc-sync-reviewer.md`
+- Codex hooks config (SessionStart status + PreToolUse lint + landing guard): `https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/ff65eb7/plugins/lenore-doc-system/templates/codex-hooks.json`
 
 When you bump the pin, re-verify each template still matches what's
 described in this prompt.
