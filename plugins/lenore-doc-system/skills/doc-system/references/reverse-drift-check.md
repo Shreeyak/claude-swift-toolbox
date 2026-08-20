@@ -64,8 +64,10 @@ similarity cutoff — scores are corpus-dependent, and a doc can score
 high by discussing the concept without covering the mechanism — so the
 reviewer confirms by reading the top hit before flagging. The
 recommendation is to add docstrings to that file; the main agent may
-apply that directly (additive edit, no user approval needed). Never a
-finding.
+apply that directly (additive edit, no user approval needed). Added
+docstrings must state the concern first, in design-doc vocabulary,
+then the mechanics — mechanics-only docstrings stay invisible to this
+very check. Never a finding.
 
 ## The sync report
 

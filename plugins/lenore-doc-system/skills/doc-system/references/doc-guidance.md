@@ -169,6 +169,30 @@ but it is also what makes the landing-time reverse-drift check
 (`references/reverse-drift-check.md`) able to find a claim the code
 just falsified, so a section with no anchor at all is invisible to it.
 
+**Docstrings carry the concern, not just the mechanics.** A docstring
+that only states implementation facts ("one flat JSONL line, values
+already JSON-safe") is invisible to semantic retrieval against design
+docs, which discuss concerns and tradeoffs — measured: such a file
+scored below the hit range against a doc that discusses its topic two
+dozen times. Every class/section-level docstring names the concern it
+serves in vocabulary a design doc would use ("run-event logging for
+post-hoc diagnostics — writes the events.jsonl stream"), THEN the
+mechanics. Line-level docstrings stay mechanical. This is also the
+rule for docstrings added from a coverage-gap recommendation: writing
+mechanics-only docstrings there defeats the point of adding them.
+
+**Naming: create names freely, rename identifiers carefully.** Where
+something has no name or an opaque one, agents create a descriptive
+name directly — new docstrings, doc section slugs, new symbols — and
+give it a canonical home in the living docs (additive, no approval
+needed). Renaming an EXISTING code identifier is different: propose
+first with the old/new pair and the reason, and on approval execute
+with a semantic rename — serena's rename tool preferred, an LSP rename
+otherwise. If neither is available, skip the rename entirely (a
+text-based find-replace rename is never acceptable); note it as a task
+if it matters. Docs mentioning the old name are updated in the same
+change.
+
 ## `docs/proposals/` — designed, not committed
 
 `YYYY-MM-DD-topic.md`, the **one revisable dated class**: a proposal is a

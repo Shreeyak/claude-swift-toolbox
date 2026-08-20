@@ -154,6 +154,9 @@ the final pre-merge tree.
 - **Coverage-gap recommendations** (changed files with no living-doc
   home): apply them directly — add the docstrings now, on the branch,
   before merging. Additive docstring edits need no user approval.
+  Write them concern-first in design-doc vocabulary, then the
+  mechanics — a mechanics-only docstring stays invisible to the next
+  landing's semantic channel.
 
 ## 5. Merge — last step
 

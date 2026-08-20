@@ -74,7 +74,12 @@ There is no universal similarity cutoff — scores are corpus-dependent
 mechanism) — so confirm by reading the top hit: if no returned doc
 actually discusses this file's mechanism, emit a recommendation to add
 docstrings to that file (and where the mechanism is clearly
-spine-worthy, say which chapter would cover it). This is a
+spine-worthy, say which chapter would cover it). Recommend
+concern-first docstrings — the concern the file serves, in vocabulary
+a design doc would use, then the mechanics; mechanics-only docstrings
+are what makes a file unfindable in the first place (measured: a file
+whose only docstrings described JSON-escaping mechanics scored below
+the hit range against a doc discussing its topic two dozen times). This is a
 recommendation the main agent may apply directly — additive docstring
 edits need no user approval. It is never a finding and never gates.
 

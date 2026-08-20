@@ -61,6 +61,15 @@
   fine. Once per section/major paragraph, not every few lines — a doc
   littered with references reads worse, not truer. These anchors are
   what lets the landing sync check find claims the code just falsified.
+- Class/section-level docstrings state the CONCERN first, in vocabulary
+  a design doc would use, then the mechanics; mechanics-only docstrings
+  are invisible to semantic doc-code matching. Line-level docstrings
+  stay mechanical. Naming is two-tier: create descriptive names freely
+  where none exist (docstrings, section slugs, new symbols — additive,
+  no approval); renaming an existing code identifier is propose-first,
+  executed on approval via a semantic rename (serena preferred, LSP
+  otherwise) — no serena and no LSP means skip the rename, never
+  find-replace.
 - docs/tasks/branch-<slug>.md is this session's scratch — write freely;
   other branch files are read-only. `<slug>` is the branch name with
   every `/` replaced by `-` (branch `feature/x` -> `branch-feature-x.md`).
