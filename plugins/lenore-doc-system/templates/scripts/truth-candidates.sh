@@ -9,7 +9,9 @@
 # judge prose and never edits anything.
 #
 # Tiers (in the manifest):
-#   tier1  exact repo-relative changed path quoted in a truth doc
+#   tier1  changed path quoted in a truth doc — full repo-relative
+#          path, or bare basename when the name is distinctive
+#          (identifier-shaped or >=8-char stem; main.py never matches)
 #          (deletes/renames are the prime candidates — a doc naming a
 #          path that no longer exists is exactly what needs review)
 #   tier2  backticked identifier-shaped token in a truth doc that ALSO
@@ -71,11 +73,26 @@ sort -u -t"$(printf '\t')" -k2 "$tmpdir/changed" | while IFS=$(printf '\t') read
   [ -n "$p" ] || continue
   st="${st%%[0-9]*}"   # R100 -> R, C75 -> C
   case "$p" in docs/*|openspec/*|experiments/*/README.md) continue ;; esac  # doc-side churn isn't a code target
+  # Basename lexical channel: docs usually cite files by basename, not
+  # full path (measured on mac-stitch: this catches every literal-mention
+  # case a BM25 index would, with no index). Distinctive names only —
+  # identifier-shaped or >=8-char stems; main.py/index.ts stay out.
+  bn=$(basename "$p")
+  stem="${bn%.*}"
+  if [ "$bn" = "$p" ] || ! printf '%s' "$stem" | grep -qE '(_[a-z0-9]|-[a-z0-9]|[a-z][A-Z]|^.{8,}$)'; then
+    bn=""
+  fi
   while IFS= read -r doc; do
     grep -nF -- "$p" "$doc" 2>/dev/null | head -3 | while IFS=: read -r ln rest; do
       ex=$(printf '%s' "$rest" | sed 's/^[[:space:]]*//' | cut -c1-110)
       printf '%s\t%s\ttier1\t%s\t%s\t%s\n' "$doc" "$ln" "$p" "$st" "$ex"
     done
+    if [ -n "$bn" ] && ! grep -qF -- "$p" "$doc" 2>/dev/null; then
+      grep -nF -- "$bn" "$doc" 2>/dev/null | head -3 | while IFS=: read -r ln rest; do
+        ex=$(printf '%s' "$rest" | sed 's/^[[:space:]]*//' | cut -c1-110)
+        printf '%s\t%s\ttier1\t%s\t%s\t%s\n' "$doc" "$ln" "$p" "$st" "$ex"
+      done
+    fi
   done < "$tmpdir/docs"
 done >> "$tmpdir/rows"
 

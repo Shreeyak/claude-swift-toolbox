@@ -19,18 +19,31 @@ proposals (dated or disposable, not current truth), NOT
 
 ## Candidates
 
-- tier1: exact repo-relative changed path quoted in a truth doc.
-  Deletes and renames are the prime candidates.
+- tier1: changed path quoted in a truth doc — full repo-relative path
+  or bare basename when the name is distinctive (identifier-shaped or
+  ≥8-char stem; `main.py` never matches). Deletes and renames are the
+  prime candidates.
 - tier2: backticked identifier-shaped token (snake_case, CamelCase,
   `call()`, extension-bearing) in a truth doc that also appears in the
   branch's diff hunks.
-- tier3 (`semantic`): embedding hits from verbatim-text queries —
-  default one per class/section (its docstrings concatenated),
-  escalating to one per individual docstring when section results are
-  weak (measured: per-section 75% top-3 recall, per-docstring 100%;
-  whole-file concat dilutes on mixed-concern files). Searched over the
+- tier3 (`semantic`): embedding hits, two query kinds per changed
+  file, both run unconditionally — (1) one query per individual
+  docstring (measured: 100% top-3 recall vs 75% for per-section
+  concat, and the whole per-docstring premium on the heaviest files
+  was under 7 seconds — no escalation logic, per-docstring IS the
+  default; whole-file concat dilutes on mixed-concern files and is
+  used only for files with no docstring structure), and (2) one
+  HyDE sentence — the reviewer writes 1–3 sentences of "what a design
+  doc covering this file's concern would say" and embeds that
+  (measured: one extra top-3 rescue at the cost of a sentence; it
+  bridges the mechanics-vs-concern vocabulary gap). A file's result is
+  its best rank across all its queries. Searched over the
   current-truth index only. Requires `.lenore/embeddings/`; skipped
-  silently without it.
+  silently without it. Evaluated and rejected (measured, kept out
+  deliberately): BM25 as a separate index (tier1's basename channel
+  already catches every literal-mention case deterministically),
+  RRF/score fusion (demoted a correct rank-1 answer to rank 3),
+  doc-level score summing (zero aggregate gain, two regressions).
 
 Candidates are read-prompts. A mention is never evidence of drift.
 Caps: 50 reviewed candidates, 20 findings. Overflow is NAMED, never

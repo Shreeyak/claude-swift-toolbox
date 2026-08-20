@@ -50,25 +50,33 @@ not evidence of drift.
 
 ## Embedding channel (tier 3) — only if `.lenore/embeddings/` exists
 
-For each changed code file, build queries from its own VERBATIM text
-(verbatim beats paraphrase measurably), granularity by escalation
-(measured on a 98-doc corpus — per-section: 75% top-3 recall at ~2
-queries/file; per-docstring: 100% at ~12/file):
+For each changed code file, run two query kinds, both unconditionally
+(measured on a 98-doc corpus):
 
-1. Default: one query per class/section — that section's changed
-   docstrings concatenated. A file with no class structure gets one
-   whole-file query ONLY if it is topically coherent; concatenating a
-   mixed-concern file dilutes retrieval badly (measured rank 2 → 31).
-2. Escalate to one query per individual changed docstring when the
-   section-level results are weak or empty. Queries are cheap (~15/s
-   warm) — escalate freely; the cost is review noise, not compute.
+1. One query per individual changed docstring, VERBATIM (verbatim
+   beats paraphrase measurably). Per-docstring is the DEFAULT, not an
+   escalation — it measured 100% top-3 recall vs 75% for per-section
+   concat, the whole premium on the heaviest files was under 7
+   seconds, and only a per-docstring query can surface a doc about one
+   specific sub-behavior (a rank-11 → rank-1 rescue in the study). A
+   file with no docstrings gets one whole-file query ONLY if it is
+   topically coherent; concatenating a mixed-concern file dilutes
+   retrieval badly (measured rank 2 → 31).
+2. One HyDE query: write 1–3 sentences of what a design doc covering
+   this file's CONCERN would say (why-level, not mechanics) and search
+   that. It bridges the vocabulary gap between mechanical docstrings
+   and decision-level docs (measured: one extra top-3 rescue at the
+   cost of a sentence).
 
-Run each through `scripts/docs-search.py "<query>" -k 5`. Hits in
-current-truth docs that the manifest missed become extra candidates
-tagged `semantic`; judge them exactly like manifest rows.
+A file's result is its best rank across all its queries. Run each
+through `scripts/docs-search.py "<query>" -k 5`. Hits in current-truth
+docs that the manifest missed become extra candidates tagged
+`semantic`; judge them exactly like manifest rows. Reading result
+chunks re-ranks well but cannot fix recall — a doc missing from every
+top-k is reachable only by a finer query, never by reading more.
 
-**Per-file coverage gap:** a changed file whose queries (after
-escalating to per-docstring) all score low has no living-doc home.
+**Per-file coverage gap:** a changed file whose queries (per-docstring
+AND HyDE) all score low has no living-doc home.
 There is no universal similarity cutoff — scores are corpus-dependent
 (docs can score 0.7+ by discussing the concept without covering the
 mechanism) — so confirm by reading the top hit: if no returned doc
