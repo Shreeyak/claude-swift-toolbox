@@ -99,7 +99,8 @@ Check the change folder's `tasks.md` first:
 **If interactive:**
 
 - If the branch task file has a non-empty `## Stakeholder notes`
-  section, offer to compile the stakeholder brief (`/brief`) now,
+  section, offer to compile the stakeholder brief
+  (`/stakeholder-brief`) now,
   before the file is disposed. Declining is fine — the lines die with
   the task file. Never gates.
 - Open `docs/tasks/branch-<slug>.md`. For each open item, ask the user
@@ -117,7 +118,7 @@ Check the change folder's `tasks.md` first:
   `docs/tasks/project.md` under `## Next`, each tagged
   `(unreviewed, from branch <branch>)`. If `## Stakeholder notes` is
   non-empty, move those lines the same way, tagged
-  `(stakeholder notes, run /brief)` — never compile the brief
+  `(stakeholder notes, run /stakeholder-brief)` — never compile the brief
   autonomously; stakeholder wording needs the user present. Delete the
   branch file.
 - Leave every desk pin exactly as-is — do not unpin, do not graduate, do

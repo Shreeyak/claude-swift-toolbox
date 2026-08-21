@@ -78,7 +78,8 @@
   optional `## Stakeholder notes` section there ("unblocks the Q4
   demo", "removes the manual export step"). Sparse by design — most
   technical milestones get no line. These feed the landing-time
-  stakeholder brief (/brief) and die with the file if never compiled.
+  stakeholder brief (/stakeholder-brief) and die with the file if
+  never compiled.
   project.md is edited at landings, items graduating only with the
   user's confirmation. Entries: one-line title + ≤5 lines context; more
   becomes a note.

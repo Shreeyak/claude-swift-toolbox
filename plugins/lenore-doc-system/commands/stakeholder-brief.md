@@ -2,7 +2,7 @@
 description: Compile a stakeholder brief for the current branch — a self-contained HTML report for readers with zero technical knowledge, built from the journal span, stakeholder notes, experiment verdicts, and figures
 ---
 
-# /brief — the stakeholder report
+# /stakeholder-brief — the stakeholder report
 
 Compile the branch's work into a report for non-technical stakeholders:
 executives with **zero knowledge of software, algorithms, or the
@@ -39,11 +39,16 @@ committed; a later update is a new dated brief). Constraints:
   complete with no network and no sibling files. Downscale/compress
   images first (longest edge ~1200px, JPEG/WebP); the docs/ hooks
   enforce a 5MB file cap — target well under 2MB.
-- Diagrams (pipeline, flow, before/after) are styled HTML/CSS blocks
-  (flex boxes + arrows) or small inline SVG — never a CDN script
-  (mermaid.js etc.), which breaks offline. ONE consistent visual
-  style: define the palette and box/arrow styles once in the
-  stylesheet and reuse for every diagram.
+- Diagrams (pipeline, flow, before/after): PREFER `d2` when the
+  binary is installed — write .d2 source, render
+  (`d2 --theme <same theme for ALL diagrams> in.d2 out.svg`), inline
+  the SVG into the page, and keep each diagram's .d2 source in an
+  HTML comment beside it so the next brief re-renders in the same
+  style. Fallback without d2: styled HTML/CSS blocks (flex boxes +
+  arrows), palette and box/arrow styles defined once in the
+  stylesheet. Never a CDN script (mermaid.js etc.) — breaks offline;
+  never hand-author long SVG path data. ONE consistent visual style
+  across every diagram either way.
 - Clean, restrained design: real typographic hierarchy, a small
   palette, generous whitespace. No dashboards, no decoration for its
   own sake.
@@ -64,10 +69,29 @@ acceptable alternative for short briefs.)
   one job to the frame before passing it on").
 - Outcomes first, mechanisms nearly absent. "The app now stitches a
   full scan in one pass" — never "rewrote the coordinator."
-- Banned vocabulary: API, backend, refactor, algorithm names, branch,
-  merge, repo, framework names, model names, file paths. If a
-  technical term is unavoidable, define it in one plain sentence at
-  first use.
+- Overview altitude, never implementation detail. No config values,
+  no edge-case handling, no intermediate steps of how something was
+  built — the test is "would this reader decide anything differently
+  knowing it?" Give the generic shape of the work; details live in
+  the record, not the brief.
+- Experiments are reported as a body of work, not one by one: state
+  how many experiments the span ran (one sentence or a small stat
+  strip — "14 experiments over 3 weeks"), then show RESULTS for only
+  the 1–3 most significant, chosen by business impact. The rest exist
+  as the number.
+- ALGORITHMS ARE THE EXCEPTION to plain-language flattening: the
+  novelty and expertise of the work often live in WHICH techniques
+  were used, and the brief must not wash that out. At first mention,
+  highlight the algorithm's real name (bold), gloss it in one plain
+  sentence, and say why using it matters ("phase correlation — a
+  technique from signal processing that finds alignment even in noisy
+  frames; few consumer apps attempt it"). After first mention, refer
+  to it naturally.
+- Banned vocabulary: branch, merge, repo, commit, file paths — and
+  keep API, backend, refactor, framework names out of the narrative
+  spine (they may appear once, defined in a plain sentence, when a
+  point genuinely needs them — unlike algorithms they carry no
+  novelty signal, so they earn no emphasis).
 - Numbers are framed, not dumped: "3× faster — a scan that took a
   minute now takes 20 seconds," with at most one table, formatted for
   scanning.

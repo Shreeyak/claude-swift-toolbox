@@ -32,16 +32,19 @@ claude plugin install lenore-doc-system@claude-swift-toolbox
   (`truth-candidates.sh` manifest → `code-doc-sync-reviewer` agent →
   report saved to `docs/notes/`; evidence-backed findings gate
   warn-once), merge as the last step.
-- `/lenore-doc-system:brief` — compile a stakeholder report for the
+- `/lenore-doc-system:stakeholder-brief` — compile a stakeholder report for the
   branch: journal span + `## Stakeholder notes` (captured one line at a
   time in the branch task file) + experiment verdicts + figures →
   ONE self-contained HTML note (`docs/notes/YYYY-MM-DD-brief-<slug>.html`,
   images embedded as data URIs, no external scripts), written for
   readers with zero technical knowledge (Hook→Problem→Why→Explanation→
   Example→Takeaway→CTA framework, one concept per section, an everyday
-  analogy per abstraction, outcomes before mechanisms, honest
-  costs/risks). Offered by `/land` when stakeholder notes exist; never
-  compiled autonomously.
+  analogy per abstraction, outcomes before mechanisms at overview
+  altitude, experiments reported as a count with only the 1–3 most
+  significant results shown, algorithm names highlighted at first
+  mention as the novelty signal, honest costs/risks; diagrams via d2 →
+  inline SVG when available). Offered by `/land` when stakeholder
+  notes exist; never compiled autonomously.
 - `/lenore-doc-system:desk` — review the desk: list pins with summaries
   and ages, renew-or-drop the stale ones, suggest unpinned docs.
 - `/lenore-doc-system:doc-health` — launch the corpus-wide truth audit

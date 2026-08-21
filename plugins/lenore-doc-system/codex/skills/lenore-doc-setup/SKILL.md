@@ -183,7 +183,7 @@ abandonment) always last.
 4. **Graduate branch tasks; walk the desk.** If the branch task file
    has a non-empty `## Stakeholder notes` section, offer to compile the
    stakeholder brief first (fetch and follow
-   https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/c5638fe/plugins/lenore-doc-system/commands/brief.md
+   https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/c5638fe/plugins/lenore-doc-system/commands/stakeholder-brief.md
    — a self-contained HTML report for zero-technical-knowledge readers,
    user reviews before commit; declining is fine, the lines die with
    the file; never compile without the user present). Then open
