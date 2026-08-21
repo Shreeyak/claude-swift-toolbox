@@ -92,6 +92,13 @@ Load only the one you need.
 - `references/tools-catalog.md` — per tool: mechanism class, winning lane, blind spots,
   data boundary, tested version, install one-liner
 - `references/setup-typescript.md`, `setup-python.md`, `setup-cpp.md`, `setup-swift.md`
+- `references/setup-dart.md` — Dart/Flutter. **Read this before answering a "who calls this"
+  question in a Dart repo.** serena's `find_referencing_symbols` has been reproduced dropping a
+  real caller there that the Dart analysis server returns correctly, so the order on Dart is:
+  native LSP tool first (`code-intel-lsp` must be enabled for the project), repo-root grep as the
+  completeness cross-check, serena last. A `lib/`-scoped grep is itself a measured blind spot —
+  it misses callers in `test/`.
 - `references/setup-mixed-language.md` — evidence-gathering workflow for boundary crossing
 - `references/setup-generic.md` — any other language
-- `references/mcp-wiring.md` — `.mcp.json` patterns and the failure modes they avoid
+- `references/mcp-wiring.md` — `.mcp.json` patterns and the failure modes they avoid, plus what a
+  git worktree needs beyond its own `.serena/project.yml`

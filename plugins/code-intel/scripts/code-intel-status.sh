@@ -34,6 +34,7 @@ add_profile() { case " $profiles " in *" $1 "*) ;; *) profiles="$profiles $1" ;;
 [ -f tsconfig.json ] || [ -f package.json ] && add_profile ts
 [ -f pyproject.toml ] || [ -f setup.py ] || [ -f requirements.txt ] && add_profile py
 [ -f CMakeLists.txt ] || [ -f compile_commands.json ] && add_profile cpp
+[ -f pubspec.yaml ] && add_profile dart
 [ -f Package.swift ] && add_profile swift
 ls ./*.xcworkspace >/dev/null 2>&1 && add_profile swift
 ls ./*.xcodeproj >/dev/null 2>&1 && add_profile swift
@@ -71,6 +72,9 @@ check_lsp ts    typescript-language-server
 check_lsp py    basedpyright-langserver
 check_lsp cpp   clangd
 check_lsp swift sourcekit-lsp
+# `dart` is the bare SDK launcher, found on PATH; code-intel-lsp runs it as
+# `dart language-server --protocol=lsp`. It normally arrives inside Flutter.
+check_lsp dart  dart
 lsp_missing="${lsp_missing# }"; lsp_present="${lsp_present# }"
 
 # ------------------------------------------------------------------ graphs ---
@@ -127,6 +131,28 @@ if [ "$VERBOSE" = "1" ]; then
     printf '    - %s\n' "$declared_problems"
   fi
   echo "  semantic tool configured: $([ "$semantic_available" = 1 ] && echo yes || echo no)"
+  case " $profiles " in
+    *" dart "*)
+      echo "  dart note         : serena's find_referencing_symbols has been reproduced"
+      echo "                      UNDER-REPORTING on Dart -- symbol's own declaration"
+      echo "                      returned, a real cross-file caller dropped. The Dart"
+      echo "                      analysis server returns that same caller correctly, so"
+      echo "                      the defect is serena's Dart adapter, not Dart tooling."
+      echo "                      Prefer the native LSP tool (code-intel-lsp must be"
+      echo "                      ENABLED here), cross-check with a REPO-ROOT grep (a"
+      echo "                      lib/-scoped grep misses callers in test/), serena last."
+      echo "                      Needs 'pub get'. A cold server answers empty while still"
+      echo "                      analysing -- retry once. See setup-dart.md."
+      ;;
+  esac
+  # A linked worktree has .git as a FILE ("gitdir: .../.git/worktrees/<name>").
+  if [ -f .git ] && grep -q '/worktrees/' .git 2>/dev/null; then
+    echo "  worktree note     : this is a linked git worktree. A .serena/project.yml here is"
+    echo "                      necessary but does NOT register the worktree in the projects:"
+    echo "                      list of ~/.serena/serena_config.yml. serena resolves its"
+    echo "                      project once, from cwd, at startup. Start this worktree's"
+    echo "                      sessions with cwd inside it. See references/mcp-wiring.md."
+  fi
   exit 0
 fi
 
