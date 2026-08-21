@@ -1,6 +1,6 @@
 {
   "name": "code-intel-lsp",
-  "description": "Four language servers in one togglable plugin — typescript-language-server, basedpyright, clangd, sourcekit-lsp. Diagnostics off; servers start lazily on the first LSP tool call and are skipped when their binary is absent.",
+  "description": "Five language servers in one togglable plugin — typescript-language-server, basedpyright, clangd, sourcekit-lsp, and the Dart SDK's own analysis server. Diagnostics off; servers start lazily on the first LSP tool call and are skipped when their binary is absent.",
   "version": "0.1.0",
   "author": {
     "name": "Shreeyak"
@@ -12,6 +12,8 @@
     "python",
     "cpp",
     "swift",
+    "dart",
+    "flutter",
     "clangd",
     "sourcekit",
     "code-intelligence"
@@ -64,6 +66,14 @@
       "diagnostics": false,
       "extensionToLanguage": {
         ".swift": "swift"
+      }
+    },
+    "dart": {
+      "command": "dart",
+      "args": ["language-server", "--protocol=lsp"],
+      "diagnostics": false,
+      "extensionToLanguage": {
+        ".dart": "dart"
       }
     }
   }

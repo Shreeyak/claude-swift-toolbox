@@ -22,10 +22,25 @@ comments and unrelated same-named symbols.
 The **routing table and trust calibration are language-agnostic** and apply
 anywhere serena or a language server has a backend — roughly fifty languages.
 
-**Deep setup guides ship for six profiles**: TypeScript/JavaScript, Python, C++
+**Deep setup guides ship for seven profiles**: TypeScript/JavaScript, Python, C++
 (CMake, colcon-style workspaces, and a short cross-compile/embedded section —
-a section, not a promise of full embedded coverage), Swift, and mixed-language
-boundaries (Python↔C++, Swift↔C++).
+a section, not a promise of full embedded coverage), Swift, Dart/Flutter, and
+mixed-language boundaries (Python↔C++, Swift↔C++).
+
+Dart's server is the **Dart SDK's own analysis server**, added 2026-08-21 and
+launched as `dart language-server --protocol=lsp`. It is the one entry in
+`code-intel-lsp` with no upstream first-party counterpart — the official
+marketplace ships no `dart-lsp` — and the one with no lifecycle measurement.
+
+Dart also carries a measured caveat, and it is narrower than it first looked.
+On one Flutter symbol, serena's `find_referencing_symbols` returned exactly one
+result — the class's own declaration — dropping a real cross-file caller; the
+Dart analysis server, asked the same question directly, returned all four
+references including that caller and one in `test/`. **So the defect is in
+serena's Dart adapter, not in Dart's analysis server** — the response is to
+route around serena, not to distrust Dart tooling. Order on Dart: the native LSP
+tool when `code-intel-lsp` is enabled for the project, a repo-root grep for the
+completeness cross-check, serena last. See `setup-dart.md`.
 
 **Everything else** — Go, Rust, JVM, .NET, Ruby, PHP and the rest — gets the
 generic path: serena plus the routing table plus `setup-generic.md`, which says
@@ -98,4 +113,5 @@ database is exactly that case. The doctor says so rather than reporting green.
 
 Loaded on demand by the skill, in `skills/code-intel/references/`:
 `tools-catalog.md`, `setup-typescript.md`, `setup-python.md`, `setup-cpp.md`,
-`setup-swift.md`, `setup-mixed-language.md`, `setup-generic.md`, `mcp-wiring.md`.
+`setup-swift.md`, `setup-dart.md`, `setup-mixed-language.md`,
+`setup-generic.md`, `mcp-wiring.md`.

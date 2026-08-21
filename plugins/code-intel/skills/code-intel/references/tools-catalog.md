@@ -21,24 +21,33 @@ consequential answer across classes before acting on it, especially before a ren
 | `basedpyright-langserver` | Python | Semantic | Local process, no network | `uv tool install basedpyright` (or `pipx install basedpyright`) |
 | `clangd` | C/C++ | Semantic | Local process, no network | `brew install llvm` (macOS) / `apt install clangd` (Linux) |
 | `sourcekit-lsp` | Swift | Semantic | Local process, no network | Ships with the Swift/Xcode toolchain — locate with `xcrun --find sourcekit-lsp` |
+| `dart` | Dart/Flutter | Semantic | Local process, no network | Ships with the Dart SDK, which ships inside Flutter — put Flutter's `bin/` on `PATH`. Launched as `dart language-server --protocol=lsp`. Added 2026-08-21; **read `setup-dart.md` before trusting a serena reference answer here** |
 
 In the `code-intel-lsp` map `sourcekit-lsp` claims `.swift` only; Objective-C and Objective-C++
-(`.m`, `.mm`) belong to `clangd`. Two servers must never claim the same extension — the first
-registered wins and the other never starts for it.
+(`.m`, `.mm`) belong to `clangd`; `dart` claims `.dart` only. Two servers must never claim the
+same extension — the first registered wins and the other never starts for it.
 
 Blind spots as above, plus: needs a real build (compile_commands.json for clangd, tsconfig for
-TS, a package/SPM manifest for sourcekit-lsp) — an unrecognized project root gives an emptier
-index than the code warrants.
+TS, a package/SPM manifest for sourcekit-lsp, and for `dart` a `pubspec.yaml` at the project root
+plus a `.dart_tool/package_config.json` populated by `pub get`) — an unrecognized project root
+gives an emptier index than the code warrants. `dart` alone builds its model in memory at startup
+rather than reading a prebuilt index, so its first query can return an empty list while analysis
+is still running; retry once before believing a zero.
 
 ## serena
 
 MCP server wrapping language servers. Adds symbol-level *edit* tools on top of navigation —
 replace symbol body, insert before/after symbol, rename — and covers many more languages than the
-four bundled LSPs (see `setup-generic.md`).
+five bundled LSPs (see `setup-generic.md`).
 
 - Mechanism: Semantic. Winning lane: tasks that both read *and edit* by symbol, or a language
   with no bundled server.
-- Blind spots: same as any LSP-backed tool — stale/partial index, reflection, codegen, DI.
+- Blind spots: same as any LSP-backed tool — stale/partial index, reflection, codegen, DI —
+  **plus one reproduced adapter-level defect of its own: on Dart,
+  `find_referencing_symbols` silently drops real cross-file callers** that the same machine's
+  `dart language-server` returns correctly (measured 2026-08-21; 1 result vs. 4). This is not the
+  generic "LSPs can be stale" caveat — it is serena's Dart adapter specifically, and it means a
+  short reference list here is not evidence of few callers. See `setup-dart.md`.
 - Data boundary: local. Wraps a local language-server process; no network calls for navigation.
 - Tested version: (version unverified — record yours)
 - Install (Apple Silicon — use this form, see the trap below):

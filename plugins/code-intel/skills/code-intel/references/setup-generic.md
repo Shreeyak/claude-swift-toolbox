@@ -1,12 +1,17 @@
 # Setup: any other language
 
-For a language not covered by the four bundled servers in `code-intel-lsp`
-(typescript-language-server, basedpyright, clangd, sourcekit-lsp) — Go, Rust, JVM languages,
-.NET, Ruby, PHP, Lua, and everything else with a language server.
+For a language not covered by the five bundled servers in `code-intel-lsp`
+(typescript-language-server, basedpyright, clangd, sourcekit-lsp, dart) — Go, Rust, JVM
+languages, .NET, Ruby, PHP, Lua, and everything else with a language server.
+
+**Dart/Flutter is not covered by this page — read `setup-dart.md` instead.** Dart *does* have a
+bundled server (`code-intel-lsp` declares the Dart SDK's own `dart language-server`), so path (b)
+below already applies to it, and it carries a measured caveat about serena's Dart adapter that
+this generic page does not cover.
 
 ## Two paths
 
-**(a) serena.** Ships with support for many languages beyond the four bundled ones. Add a
+**(a) serena.** Ships with support for many languages beyond the five bundled ones. Add a
 `languages:` entry to `.serena/project.yml` and index the project — see the minimal config below.
 This is the lower-setup-cost path when serena is already wired into the session for other work.
 

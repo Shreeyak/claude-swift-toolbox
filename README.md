@@ -37,10 +37,13 @@ claude plugin install code-intel@claude-swift-toolbox
 
 ### `code-intel-lsp`
 
-`typescript-language-server`, `basedpyright`, `clangd` and `sourcekit-lsp` in one
-togglable `lspServers` map instead of four singleton plugins — so navigation is
-one toggle, not four. Diagnostics off; activation measured lazy; upstream
-provenance and the extension-conflict rule are documented in
+`typescript-language-server`, `basedpyright`, `clangd`, `sourcekit-lsp` and the
+Dart SDK's own `dart language-server` in one togglable `lspServers` map instead
+of four singleton plugins — so navigation is one toggle, not four. Dart is the
+fifth entry and has no upstream singleton plugin to consolidate; it is there
+because nothing else ships it. Diagnostics off; activation measured lazy;
+upstream provenance, the extension-conflict rule, and the Dart entry's own
+caveats are documented in
 [`plugins/code-intel-lsp/README.md`](plugins/code-intel-lsp/README.md).
 
 ```bash

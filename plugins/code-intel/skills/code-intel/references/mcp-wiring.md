@@ -87,6 +87,39 @@ Consequences:
   alone will silently survey A only — no error, just an answer that's wrong about B without
   saying so.
 
+### Git worktrees need two separate things set up, not one
+
+This applies to **every language**, not to any particular stack — the cause is serena's context
+model, not anything about the code being indexed.
+
+A `.serena/project.yml` inside a worktree is what a session whose cwd is already inside that
+worktree will pick up at startup — that part works. What it does **not** do is add the worktree to
+the `projects:` registry in `~/.serena/serena_config.yml`. That file's own comment on the
+`projects:` key says "(updated automatically)", which sits awkwardly next to the observed
+behaviour: a registry can list a main checkout opened in ordinary sessions over time while
+omitting a worktree that has had its own `.serena/project.yml` across multiple sessions. What
+triggers the append for one and not the other is **not confirmed** — plausibly an
+`activate_project` call, a non-worktree cwd path, or something else internal to serena. Treat "not
+updated for worktrees resolved by cwd" as the observed fact and the mechanism behind it as
+unconfirmed.
+
+In Claude Code's default `claude-code` context, serena is **single-project**: it resolves its
+active project once, from the session's cwd, at startup, and the `activate_project` tool that
+would let a running session switch projects is disabled in that context by design (confirmed by a
+serena maintainer, <https://github.com/oraios/serena/issues/1109>).
+
+Practically:
+
+- Start each worktree's session with cwd **already inside that worktree**.
+- Don't expect a session started in worktree A to see worktree B through serena, even if B has its
+  own `.serena/project.yml`. There is no per-call "look at this other directory instead" argument
+  — matching every other MCP server this plugin wires up, per the cwd-binding rule above.
+- If something must reach a worktree from outside a session already rooted there, add its
+  absolute path to the `projects:` list in `~/.serena/serena_config.yml` by hand.
+
+Note that a linked worktree's `.git` is a **file** (`gitdir: …/.git/worktrees/<name>`), not a
+directory — a plain `[ -d .git ]` test reports a worktree as a non-repository.
+
 Fixes, in order of how much setup they cost:
 
 1. **Use tools that take an explicit target instead of an implicit cwd.** File reads and `rg`
