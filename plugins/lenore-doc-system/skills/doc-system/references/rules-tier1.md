@@ -73,13 +73,24 @@
 - docs/tasks/branch-<slug>.md is this session's scratch — write freely;
   other branch files are read-only. `<slug>` is the branch name with
   every `/` replaced by `-` (branch `feature/x` -> `branch-feature-x.md`).
+  When the user states business context, or an outcome lands that a
+  non-technical stakeholder would care about, append ONE line to an
+  optional `## Stakeholder notes` section there ("unblocks the Q4
+  demo", "removes the manual export step"). Sparse by design — most
+  technical milestones get no line. These feed the landing-time
+  stakeholder brief (/brief) and die with the file if never compiled.
   project.md is edited at landings, items graduating only with the
   user's confirmation. Entries: one-line title + ≤5 lines context; more
   becomes a note.
 - docs/notes/YYYY-MM-DD-topic.md for all ad-hoc dated artifacts and for
   anything you're unsure how to file (the escape hatch — a dated note is
-  never wrong). Immutable once committed. Research output (literature/
-  online surveys) is named YYYY-MM-DD-research-<topic>.md. A note may be
+  never wrong). Immutable once committed. The type-bearing slug
+  segment IS the classification system — research output is
+  YYYY-MM-DD-research-<topic>.md, landing sync reports
+  YYYY-MM-DD-landing-<slug>-sync-report.md, stakeholder briefs
+  YYYY-MM-DD-brief-<slug>.html (self-contained: images as data URIs,
+  no external scripts) — filter with ls/glob on the segment; no
+  category front-matter. A note may be
   a DIRECTORY (dated bundle with an index.md) only when it holds members
   that are not your own prose — downloaded sources, .csv/.json evidence,
   figures + sources, other agents' reports; commit the bundle when the

@@ -136,6 +136,8 @@ hatch is always correct.
 | Milestone hit, no change folder (exploratory branch) | One journal entry per concluded work-topic. |
 | Status line shows a large gap | One catch-up journal entry (~20 lines) summarizing the arc from `git log` — don't back-fill many. |
 | You produce a doc FOR the user | Save it in its normal home (usually `docs/notes/`), symlink it into `docs/desk/` in the same message. |
+| User states business context, or an outcome a non-technical stakeholder would care about | Append ONE line to `## Stakeholder notes` in the branch task file. Sparse — most milestones get no line. |
+| User wants a report for non-technical stakeholders | Run `/lenore-doc-system:brief` — compiles journal span + stakeholder notes + verdicts + figures into a self-contained HTML note (`docs/notes/YYYY-MM-DD-brief-<slug>.html`); user reviews before commit. |
 | User says "put/take X on/off my desk" or "delete X" | Do it in plain words — see `references/doc-guidance.md` desk section for remove-vs-delete semantics. |
 | Branch is landing or being abandoned | Run `/lenore-doc-system:land`. Never a bare `git merge` — into main OR any other branch; a branch whose task file is still open must be closed out before its work is integrated anywhere. |
 | Repo has no doc system yet, or needs upgrading | Run `/lenore-doc-system:setup`. |

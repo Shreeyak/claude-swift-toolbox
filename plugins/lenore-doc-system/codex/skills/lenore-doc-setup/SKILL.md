@@ -180,7 +180,13 @@ abandonment) always last.
    `docs/tasks/project.md` or the closing journal entry) and archive as
    partially adopted, or keep the branch open. Dropped rather than
    completed → archive with a one-line note saying why.
-4. **Graduate branch tasks; walk the desk.** Open
+4. **Graduate branch tasks; walk the desk.** If the branch task file
+   has a non-empty `## Stakeholder notes` section, offer to compile the
+   stakeholder brief first (fetch and follow
+   https://raw.githubusercontent.com/Shreeyak/claude-swift-toolbox/72ed171/plugins/lenore-doc-system/commands/brief.md
+   — a self-contained HTML report for zero-technical-knowledge readers,
+   user reviews before commit; declining is fine, the lines die with
+   the file; never compile without the user present). Then open
    `docs/tasks/branch-<slug>.md`; for each open item, graduate it into
    `docs/tasks/project.md` (`## Next` or `## Someday`) or drop it, then
    delete the branch file. Walk `docs/desk/`: default is to unpin (`rm`

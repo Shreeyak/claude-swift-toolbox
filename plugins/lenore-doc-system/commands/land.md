@@ -98,6 +98,10 @@ Check the change folder's `tasks.md` first:
 
 **If interactive:**
 
+- If the branch task file has a non-empty `## Stakeholder notes`
+  section, offer to compile the stakeholder brief (`/brief`) now,
+  before the file is disposed. Declining is fine — the lines die with
+  the task file. Never gates.
 - Open `docs/tasks/branch-<slug>.md`. For each open item, ask the user
   whether it graduates to `docs/tasks/project.md` (Next or Someday) or is
   dropped. Apply only what's confirmed, then delete the branch file.
@@ -111,7 +115,11 @@ Check the change folder's `tasks.md` first:
 
 - Move every open item in `docs/tasks/branch-<slug>.md` verbatim into
   `docs/tasks/project.md` under `## Next`, each tagged
-  `(unreviewed, from branch <branch>)`. Delete the branch file.
+  `(unreviewed, from branch <branch>)`. If `## Stakeholder notes` is
+  non-empty, move those lines the same way, tagged
+  `(stakeholder notes, run /brief)` — never compile the brief
+  autonomously; stakeholder wording needs the user present. Delete the
+  branch file.
 - Leave every desk pin exactly as-is — do not unpin, do not graduate, do
   not touch `docs/desk/`.
 - The closing journal entry (step 2) must note "desk not reviewed."
